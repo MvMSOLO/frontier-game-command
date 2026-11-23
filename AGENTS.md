@@ -28,3 +28,7 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- FRONTIER overlay lives in `src/frontier/` (telemetry, audio, voice engines + UI); all controls stay on the left edge so gameplay remains visible.
+- Every metric/tool is tagged LIVE (real browser API), SIM (no web API exists) or NATIVE (needs Android bridge) — keep labels honest when adding features.
