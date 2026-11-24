@@ -284,6 +284,25 @@ export function VoicePage({ engine, androidOverlay = false }: { engine: React.Mu
   );
 }
 
+function DeviceDiagnostics() {
+  const [snapshot, setSnapshot] = useState<{availableMemoryMb?:number;totalMemoryMb?:number;lowMemory?:boolean;batteryPercent?:number;thermalStatus?:string}|null>(null);
+  useEffect(() => {
+    const read = () => {
+      try { const encoded = window.FrontierAndroid?.getDeviceSnapshot?.(); if (encoded) setSnapshot(JSON.parse(encoded)); } catch { setSnapshot(null); }
+    };
+    read();
+    const timer = window.setInterval(read, 15000);
+    return () => window.clearInterval(timer);
+  }, []);
+  if (!snapshot) return <p className="text-[10px] text-muted-foreground">Native device diagnostics are available in the Android overlay.</p>;
+  return <div className="grid grid-cols-2 gap-2 text-[10px]">
+    <div className="border border-line p-2"><span className="text-muted-foreground">Available RAM</span><strong className="mt-1 block">{snapshot.availableMemoryMb ?? "—"} MB</strong></div>
+    <div className="border border-line p-2"><span className="text-muted-foreground">Battery</span><strong className="mt-1 block">{snapshot.batteryPercent ?? "—"}%</strong></div>
+    <div className="border border-line p-2"><span className="text-muted-foreground">Thermal status</span><strong className="mt-1 block">{snapshot.thermalStatus ?? "—"}</strong></div>
+    <div className="border border-line p-2"><span className="text-muted-foreground">Low memory</span><strong className="mt-1 block">{snapshot.lowMemory ? "YES" : "NO"}</strong></div>
+  </div>;
+}
+
 export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void }) {
   const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
   const [launchFeedback, setLaunchFeedback] = useState<string | null>(null);
@@ -307,8 +326,13 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
           <button type="button" aria-pressed={s.language === "ru"} onClick={() => { playSfx("setting-change"); upd({ language: "ru" }); }} className={cn("chamfer-sm border px-3 py-2 text-[11px] font-semibold", s.language === "ru" ? "border-cyan/60 bg-cyan/10 text-cyan" : "border-line bg-foreground/[0.03] text-muted-foreground")}>РУССКИЙ</button>
         </div>
       </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3">
+        <Label>{tr(s.language, "Device diagnostics")}</Label>
+        <DeviceDiagnostics />
+      </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>{tr(s.language, "Game integration")}</Label>
         <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Auto-detect selected games")}</span><Toggle label="Auto-detect games" on={s.autoDetect} onChange={(v) => upd({ autoDetect: v })} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Zero-Distraction during a game")}</span><Toggle label="Zero-Distraction" on={s.zeroDistraction} onChange={(v) => upd({ zeroDistraction: v })} /></div>
       </motion.div>
       <motion.div variants={item}><Label>{tr(s.language, "Lighting")}</Label>
         <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { playSfx("setting-change"); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
