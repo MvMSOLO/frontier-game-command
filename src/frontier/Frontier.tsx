@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useMotionValue, useTransform, MotionConfig } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { haptic, setHaptics, setSound, sfx } from "./audio";
+import { haptic, playSfx, setHaptics, setSound, type SfxEvent } from "./audio";
 import { useTelemetry, type Mode } from "./telemetry";
 import { useSettings } from "./store";
 import * as Ic from "./icons";
@@ -9,6 +9,7 @@ import { HomePage, MODES, PerformancePage, SettingsPage, ToolsPage, VoicePage, t
 import type { VoiceEngine } from "./voice";
 
 type Tab = "home" | "perf" | "tools" | "voice" | "settings";
+const MODE_SFX: Record<Mode, SfxEvent> = { stealth: "mode-stealth", balanced: "mode-balanced", hyper: "mode-hyper", overdrive: "mode-overdrive" };
 const NAV: { id: Tab; label: string; icon: typeof Ic.IHome }[] = [
   { id: "home", label: "Home", icon: Ic.IHome }, { id: "perf", label: "Performance", icon: Ic.IPerf },
   { id: "tools", label: "Tools", icon: Ic.ITools }, { id: "voice", label: "Voice Changer", icon: Ic.IVoice }, { id: "settings", label: "Settings", icon: Ic.ISettings },
@@ -72,6 +73,8 @@ export function Frontier() {
   const voice = useRef<VoiceEngine | null>(null);
   const rec = useRef<{ mr: MediaRecorder; stream: MediaStream; chunks: Blob[]; kind: "rec" | "replay" } | null>(null);
   const lastTouch = useRef(Date.now());
+  const openRef = useRef(false);
+  useEffect(() => { openRef.current = open; }, [open]);
   const shieldRef = useRef(ts.shield); shieldRef.current = ts.shield;
 
   useEffect(() => { setSound(s.sound, s.volume); setHaptics(s.haptics); document.documentElement.style.setProperty("--accent-fx", `var(--${s.accent})`); }, [s.sound, s.volume, s.haptics, s.accent]);
@@ -84,28 +87,42 @@ export function Frontier() {
   }, 9000); return () => clearInterval(iv); }, []);
   useEffect(() => { if (ts.shield) setNotes([]); }, [ts.shield]);
   // Auto-hide
-  useEffect(() => { if (!open || !s.autoHide) return; const iv = setInterval(() => { if (Date.now() - lastTouch.current > s.autoHide * 1000) { setOpen(false); sfx.close(); } }, 500); return () => clearInterval(iv); }, [open, s.autoHide]);
+  useEffect(() => { if (!open || !s.autoHide) return; const iv = setInterval(() => { if (Date.now() - lastTouch.current > s.autoHide * 1000) closePanel(); }, 500); return () => clearInterval(iv); }, [open, s.autoHide]);
 
-  const doOpen = useCallback(() => { setOpen(true); sfx.open(); haptic(15); lastTouch.current = Date.now(); }, []);
-  const doClose = () => { setOpen(false); sfx.close(); haptic(10); };
+  const doOpen = useCallback(() => {
+    if (!openRef.current) {
+      openRef.current = true;
+      setOpen(true);
+      playSfx("panel-open");
+      haptic(15);
+    }
+    lastTouch.current = Date.now();
+  }, []);
+  const closePanel = useCallback(() => {
+    if (!openRef.current) return;
+    openRef.current = false;
+    setOpen(false);
+    playSfx("panel-close");
+    haptic(10);
+  }, []);
+  const doClose = closePanel;
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
-        sfx.close();
-        haptic(10);
+        closePanel();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [open, closePanel]);
   const setMode = (m: Mode) => {
     if (m === mode) return; setModeRaw(m); haptic(m === "overdrive" ? [20, 40, 20, 40, 60] as unknown as number : 12);
-    if (m === "overdrive") { sfx.overdrive(); setActivating(true); setTimeout(() => setActivating(false), 1300); } else sfx.mode();
+    playSfx(MODE_SFX[m]);
+    if (m === "overdrive") { setActivating(true); setTimeout(() => setActivating(false), 1300); }
   };
 
-  const stopRec = () => { const r = rec.current; if (!r) return; r.mr.stop(); r.stream.getTracks().forEach((x) => x.stop()); rec.current = null; setTs({ recording: false, replay: false }); };
+  const stopRec = () => { const r = rec.current; if (!r) return; playSfx("capture-stop"); r.mr.stop(); r.stream.getTracks().forEach((x) => x.stop()); rec.current = null; setTs({ recording: false, replay: false }); };
   const download = (chunks: Blob[], name: string) => { const url = URL.createObjectURL(new Blob(chunks, { type: "video/webm" })); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000); };
   const startCapture = async (kind: "rec" | "replay") => {
     setRecErr(null);
@@ -117,12 +134,12 @@ export function Frontier() {
       mr.ondataavailable = (e) => { if (!e.data.size) return; r.chunks.push(e.data); if (kind === "replay" && r.chunks.length > 31) r.chunks.splice(1, 1); };
       mr.onstop = () => { if (kind === "rec") download(r.chunks, `frontier-${Date.now()}.webm`); };
       stream.getVideoTracks()[0]?.addEventListener("ended", stopRec);
-      mr.start(1000); sfx.exec(); setTs(kind === "rec" ? { recording: true, replay: false } : { replay: true, recording: false });
-    } catch { setRecErr("Screen capture was cancelled or blocked."); }
+      mr.start(1000); playSfx("capture-start"); setTs(kind === "rec" ? { recording: true, replay: false } : { replay: true, recording: false });
+    } catch { playSfx("tool-error"); setRecErr("Screen capture was cancelled or blocked."); }
   };
   const onRecord = () => (ts.recording ? stopRec() : (stopRec(), void startCapture("rec")));
   const onReplay = () => (ts.replay ? stopRec() : (stopRec(), void startCapture("replay")));
-  const onClip = () => { const r = rec.current; if (r?.kind === "replay") { sfx.exec(); download([...r.chunks], `frontier-replay-${Date.now()}.webm`); } };
+  const onClip = () => { const r = rec.current; if (r?.kind === "replay") { playSfx("replay-save"); download([...r.chunks], `frontier-replay-${Date.now()}.webm`); } };
 
   // Magnetic edge handle
   const dragX = useMotionValue(0);
@@ -145,7 +162,7 @@ export function Frontier() {
             <>
               <motion.div key="left-edge" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="frontier-closed-edge frontier-edge-left absolute inset-y-0 left-0 z-20 flex items-center">
                 <motion.button aria-label="Open FRONTIER from left" aria-expanded={open} aria-controls="frontier-navigation" drag="x" dragConstraints={{ left: 0, right: s.edgeSensitivity + 20 }} dragElastic={0.25} dragSnapToOrigin style={{ x: dragX }}
-                  onPointerDown={() => { sfx.edge(); haptic(5); }} onDragEnd={(_, i) => { if (i.offset.x > s.edgeSensitivity) doOpen(); }} onTap={doOpen}
+                  onPointerDown={() => { playSfx("edge-touch"); haptic(5); }} onDragEnd={(_, i) => { if (i.offset.x > s.edgeSensitivity) doOpen(); }} onTap={doOpen}
                   className="frontier-edge-handle relative flex h-36 w-8 items-center">
                   <motion.span style={{ opacity: glow, width }} className="block h-28 bg-fx shadow-[0_0_16px_var(--accent-fx)] [clip-path:polygon(0_0,100%_8%,100%_92%,0_100%)]" />
                   <span className="fx-pulse absolute left-2 top-1/2 h-6 w-[2px] -translate-y-1/2 bg-fx/60" />
@@ -173,7 +190,7 @@ export function Frontier() {
                   const on = tab === n.id;
                   return (
                     <motion.button key={n.id} variants={{ closed: { opacity: 0, y: -8 }, open: { opacity: 1, y: 0 } }} aria-label={n.label} aria-current={on ? "page" : undefined}
-                      onClick={() => { if (n.id !== tab) { setTab(n.id); sfx.nav(); haptic(5); } }} whileTap={{ scale: 0.92 }}
+                      onClick={() => { if (n.id !== tab) { setTab(n.id); playSfx("navigation"); haptic(5); } }} whileTap={{ scale: 0.92 }}
                       className={cn("frontier-dock-item relative flex items-center gap-2 px-3 py-2 text-[10px] font-semibold tracking-wide transition-colors", on ? "text-cyan" : "text-muted-foreground hover:text-foreground")}>
                       {on && <motion.span layoutId="dockActive" className="absolute inset-0 chamfer-sm border border-cyan/60 bg-cyan/10 shadow-[inset_0 0 16px color-mix(in_oklab,var(--cyan)_18%,transparent)]" />}
                       <n.icon width={16} height={16} className="relative" /><span className="relative">{n.label === "Performance" ? "PERF" : n.label === "Voice Changer" ? "VOICE" : n.label.toUpperCase()}</span>
@@ -203,9 +220,9 @@ export function Frontier() {
                 <div className="frontier-page-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-width:none]">
                   <AnimatePresence mode="wait">
                     <motion.div key={tab} initial={{ opacity: 0, y: 10, scale: 0.992 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.996, transition: { duration: 0.16, ease: "easeOut" } }} transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}>
-                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); sfx.nav(); }} />}
+                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} />}
                       {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} />}
-                      {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); sfx.nav(); }} />}
+                      {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); playSfx("navigation"); }} />}
                       {tab === "voice" && <VoicePage engine={voice} />}
                       {tab === "settings" && <SettingsPage s={s} upd={upd} />}
                     </motion.div>
