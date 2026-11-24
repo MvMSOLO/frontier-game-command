@@ -14,10 +14,12 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicLong
 
 class MainActivity : Activity(), FrontierBridgeHost {
     private lateinit var webView: WebView
     private lateinit var statusLabel: TextView
+    private val nativeEventSequence = AtomicLong(0)
 
     companion object {
         const val EXTRA_MANAGE_SETUP = "frontier_manage_setup"
@@ -229,7 +231,7 @@ class MainActivity : Activity(), FrontierBridgeHost {
         if (!::webView.isInitialized) return
         val envelope = JSONObject()
             .put("version", 1)
-            .put("sequence", 1)
+            .put("sequence", nativeEventSequence.incrementAndGet())
             .put("type", "game-library")
             .put(
                 "payload",
