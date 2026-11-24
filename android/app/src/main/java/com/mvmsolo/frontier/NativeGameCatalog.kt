@@ -14,9 +14,9 @@ data class NativeUsageEvent(
 
 object NativeGameCatalog {
     val games: List<NativeGame> = listOf(
-        NativeGame("pubg-mobile", "PUBG MOBILE", listOf("com.tencent.ig")),
-        NativeGame("call-of-duty-mobile", "Call of Duty: Mobile", listOf("com.activision.callofduty.shooter")),
-        NativeGame("free-fire", "Free Fire", listOf("com.dts.freefireth", "com.dts.freefiremax")),
+        NativeGame("pubg-mobile", "PUBG MOBILE", listOf("com.tencent.ig", "com.pubg.imobile")),
+        NativeGame("call-of-duty-mobile", "Call of Duty: Mobile", listOf("com.activision.callofduty.shooter", "com.garena.game.codm")),
+        NativeGame("free-fire", "Free Fire", listOf("com.dts.freefireth", "com.dts.freefiremax", "com.dts.freefire")),
         NativeGame("fortnite", "Fortnite", listOf("com.epicgames.fortnite")),
         NativeGame("mobile-legends", "Mobile Legends: Bang Bang", listOf("com.mobile.legends")),
         NativeGame("wild-rift", "League of Legends: Wild Rift", listOf("com.riotgames.league.wildrift")),

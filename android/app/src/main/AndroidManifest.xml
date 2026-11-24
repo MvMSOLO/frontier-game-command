@@ -6,9 +6,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <queries>
         <package android:name="com.tencent.ig" />
+        <package android:name="com.pubg.imobile" />
         <package android:name="com.activision.callofduty.shooter" />
+        <package android:name="com.garena.game.codm" />
         <package android:name="com.dts.freefireth" />
         <package android:name="com.dts.freefiremax" />
+        <package android:name="com.dts.freefire" />
         <package android:name="com.epicgames.fortnite" />
         <package android:name="com.mobile.legends" />
         <package android:name="com.riotgames.league.wildrift" />
