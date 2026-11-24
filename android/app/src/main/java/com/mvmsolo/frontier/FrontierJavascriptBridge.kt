@@ -1,17 +1,19 @@
 package com.mvmsolo.frontier
 
 import android.content.Context
-import android.content.pm.PackageManager
-import android.app.usage.UsageStatsManager
-import android.os.Build
 import android.webkit.JavascriptInterface
 import org.json.JSONArray
 import org.json.JSONObject
 
 interface FrontierBridgeHost {
     fun startOverlay(): Boolean
+    fun expandOverlay(): Boolean
+    fun collapseOverlay()
     fun minimizeOverlay()
     fun stopOverlay()
+    fun setAutoDetect(enabled: Boolean): Boolean
+    fun setSelectedGames(gameIdsJson: String): Boolean
+    fun launchGame(gameId: String): String
 }
 
 class FrontierJavascriptBridge(
@@ -26,36 +28,15 @@ class FrontierJavascriptBridge(
     fun openPermissionSettings(permissionId: String): String =
         NativePermissionManager.openSettings(context, permissionId)
 
+    // This returns a cached snapshot only. PackageManager scanning happens on a background executor.
     @JavascriptInterface
-    fun getInstalledGames(): String {
-        if (!NativePermissionManager.hasUsageAccess(context)) {
-            return JSONObject()
-                .put("availability", "permission-required")
-                .put("games", JSONArray())
-                .toString()
-        }
+    fun getInstalledGames(): String = NativeGameDiscovery.toJson()
 
-        val installed = JSONArray()
-        NativeGameCatalog.games.forEach { game ->
-            val packageName = game.packageNames.firstOrNull { isInstalled(it) } ?: return@forEach
-            installed.put(
-                JSONObject()
-                    .put("id", game.id)
-                    .put("name", game.name)
-                    .put("packageName", packageName),
-            )
-        }
-        return JSONObject()
-            .put("availability", "available")
-            .put("games", installed)
-            .toString()
-    }
-
+    // This returns an atomic in-memory snapshot only; it never queries UsageStats.
     @JavascriptInterface
     fun getForegroundGame(): String {
-        if (!NativePermissionManager.hasUsageAccess(context)) return ""
-        val game = foregroundGame() ?: return ""
-        val packageName = game.packageNames.firstOrNull { isInstalled(it) } ?: return ""
+        val game = NativeForegroundState.current ?: return ""
+        val packageName = game.packageNames.firstOrNull().orEmpty()
         return JSONObject()
             .put("id", game.id)
             .put("name", game.name)
@@ -67,62 +48,28 @@ class FrontierJavascriptBridge(
     fun startOverlay(): Boolean = host.startOverlay()
 
     @JavascriptInterface
+    fun expandOverlay(): Boolean = host.expandOverlay()
+
+    @JavascriptInterface
+    fun collapseOverlay() = host.collapseOverlay()
+
+    @JavascriptInterface
     fun minimizeOverlay() = host.minimizeOverlay()
 
     @JavascriptInterface
     fun stopOverlay() = host.stopOverlay()
 
-    private fun isInstalled(packageName: String): Boolean = try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.packageManager.getApplicationInfo(
-                packageName,
-                PackageManager.ApplicationInfoFlags.of(0),
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            context.packageManager.getApplicationInfo(packageName, 0)
-        }
-        true
-    } catch (_: PackageManager.NameNotFoundException) {
-        false
-    }
+    @JavascriptInterface
+    fun setAutoDetect(enabled: Boolean): Boolean = host.setAutoDetect(enabled)
 
-    private fun foregroundGame(): NativeGame? {
-        val manager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val now = System.currentTimeMillis()
-        val events = try {
-            manager.queryEvents(now - 6 * 60 * 60 * 1000L, now) ?: return null
-        } catch (_: RuntimeException) {
-            return null
-        }
+    @JavascriptInterface
+    fun setSelectedGames(gameIdsJson: String): Boolean = host.setSelectedGames(gameIdsJson)
 
-        val event = android.app.usage.UsageEvents.Event()
-        val activityEvents = mutableListOf<NativeUsageEvent>()
-        while (events.hasNextEvent()) {
-            events.getNextEvent(event)
-            val isForeground = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                when (event.eventType) {
-                    android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED -> true
-                    android.app.usage.UsageEvents.Event.ACTIVITY_PAUSED,
-                    android.app.usage.UsageEvents.Event.ACTIVITY_STOPPED -> false
-                    else -> null
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                when (event.eventType) {
-                    android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> true
-                    android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> false
-                    else -> null
-                }
-            }
-            if (isForeground != null) {
-                activityEvents += NativeUsageEvent(
-                    packageName = event.packageName.orEmpty(),
-                    timestamp = event.timeStamp,
-                    foreground = isForeground,
-                )
-            }
-        }
-        return NativeGameCatalog.resolveForegroundGame(activityEvents)
-    }
+    @JavascriptInterface
+    fun launchGame(gameId: String): String = host.launchGame(gameId)
+}
+
+object NativeForegroundState {
+    @Volatile
+    var current: NativeGame? = null
 }

@@ -12,6 +12,11 @@ data class NativeUsageEvent(
     val foreground: Boolean,
 )
 
+object NativeForegroundState {
+    @Volatile
+    var current: NativeGame? = null
+}
+
 object NativeGameCatalog {
     val games: List<NativeGame> = listOf(
         NativeGame("pubg-mobile", "PUBG MOBILE", listOf("com.tencent.ig")),

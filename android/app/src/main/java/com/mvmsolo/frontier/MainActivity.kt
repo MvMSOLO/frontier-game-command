@@ -85,6 +85,15 @@ class MainActivity : Activity(), FrontierBridgeHost {
         setContentView(root)
         webView.loadUrl(LocalAssetWebViewClient.APP_URL)
         refreshPermissionLabel()
+        NativeGameDiscovery.refresh(this) { games ->
+            webView.post {
+                val payload = NativeGameDiscovery.toJson()
+                webView.evaluateJavascript(
+                    "window.dispatchEvent(new CustomEvent('frontier:native-event',{detail:JSON.parse(${org.json.JSONObject.quote(org.json.JSONObject().put(\"version\",1).put(\"sequence\",1).put(\"type\",\"game-library\").put(\"payload\",org.json.JSONObject(payload)).toString())})}));",
+                    null,
+                )
+            }
+        }
     }
 
     override fun onResume() {
@@ -92,6 +101,7 @@ class MainActivity : Activity(), FrontierBridgeHost {
         if (::webView.isInitialized) {
             refreshPermissionLabel()
             webView.evaluateJavascript("window.dispatchEvent(new Event('focus'));", null)
+            OverlayService.send(this, OverlayService.ACTION_REFRESH_STATE)
         }
     }
 
@@ -117,13 +127,48 @@ class MainActivity : Activity(), FrontierBridgeHost {
         }
     }
 
+    override fun expandOverlay(): Boolean = startOverlay()
+
+    override fun collapseOverlay() = minimizeOverlay()
+
     override fun minimizeOverlay() {
-        startService(Intent(this, OverlayService::class.java).setAction(OverlayService.ACTION_MINIMIZE))
+        OverlayService.send(this, OverlayService.ACTION_MINIMIZE)
     }
 
     override fun stopOverlay() {
         stopService(Intent(this, OverlayService::class.java))
     }
+
+    override fun setAutoDetect(enabled: Boolean): Boolean {
+        if (enabled && !NativePermissionManager.hasUsageAccess(this)) {
+            NativePermissionManager.openSettings(this, NativePermissionManager.USAGE_ACCESS)
+            return false
+        }
+        GameSelectionStore.setAutoDetectEnabled(this, enabled)
+        if (enabled) {
+            OverlayService.start(this)
+            OverlayService.send(
+                this,
+                OverlayService.ACTION_SET_AUTO_DETECT,
+                Intent().putExtra(OverlayService.EXTRA_ENABLED, true),
+            )
+        } else {
+            OverlayService.send(
+                this,
+                OverlayService.ACTION_SET_AUTO_DETECT,
+                Intent().putExtra(OverlayService.EXTRA_ENABLED, false),
+            )
+        }
+        return true
+    }
+
+    override fun setSelectedGames(gameIdsJson: String): Boolean {
+        val saved = GameSelectionStore.setSelectedGameIds(this, gameIdsJson)
+        if (saved) OverlayService.send(this, OverlayService.ACTION_SET_SELECTED_GAMES, Intent().putExtra(OverlayService.EXTRA_GAME_IDS, gameIdsJson))
+        return saved
+    }
+
+    override fun launchGame(gameId: String): String = NativeGameDiscovery.launch(this, gameId)
 
     private fun refreshPermissionLabel() {
         if (!::statusLabel.isInitialized) return
