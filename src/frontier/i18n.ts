@@ -36,21 +36,20 @@ const RU: Record<string, string> = {
   "GRANTED": "РАЗРЕШЕНО", "DENIED": "ЗАПРЕЩЕНО", "UNKNOWN": "НЕИЗВЕСТНО",
   "Android capability status": "Статус возможностей Android", "Only controls with a verified Android implementation are enabled. Unsupported game-level tuning is not simulated.": "Включены только проверенные функции Android. Недоступная настройка игры не имитируется.",
   "Foreground game detector": "Определение активной игры", "Launch selected games": "Запуск выбранных игр",
-  "Memory diagnostics": "Диагностика памяти", "Touch Boost": "Ускорение касания",
-  "Game FPS / GPU tuning": "Настройка FPS / GPU игры", "In-game voice routing": "Передача голоса в игру",
+  "Memory diagnostics": "Диагностика памяти", "Game FPS / GPU tuning": "Настройка FPS / GPU игры", "In-game voice routing": "Передача голоса в игру",
   "Screen recording / replay": "Запись экрана / повтор", "Crosshair over game": "Прицел поверх игры",
   "AVAILABLE": "ДОСТУПНО", "DIAGNOSTICS": "ДИАГНОСТИКА", "NATIVE DATA REQUIRED": "НУЖНЫ ДАННЫЕ ANDROID",
   "GAME FPS · NATIVE REQUIRED": "FPS ИГРЫ · НУЖЕН NATIVE API", "GAME FRAME TIME · UNAVAILABLE": "ВРЕМЯ КАДРА ИГРЫ · НЕДОСТУПНО",
   "GAME STABILITY · UNAVAILABLE": "СТАБИЛЬНОСТЬ ИГРЫ · НЕДОСТУПНО",
   "WELCOME": "ДОБРО ПОЖАЛОВАТЬ", "ACCESS": "ДОСТУП", "GAMES": "ИГРЫ", "REVIEW": "ПРОВЕРКА", "READY": "ГОТОВО",
   "Display over other apps": "Поверх других приложений", "Usage access": "Доступ к статистике использования",
-  "Notification access": "Доступ к уведомлениям", "NOT CHECKED": "НЕ ПРОВЕРЕНО", "NOT GRANTED": "НЕ РАЗРЕШЕНО",
+  "NOT CHECKED": "НЕ ПРОВЕРЕНО", "NOT GRANTED": "НЕ РАЗРЕШЕНО",
   "RESTRICTED": "ОГРАНИЧЕНО", "NATIVE REQUIRED": "НУЖЕН NATIVE API",
   "All": "Все", "Battle Royale": "Королевская битва", "MOBA": "MOBA", "Sports": "Спорт",
   "Racing": "Гонки", "Sandbox": "Песочница", "Action": "Экшен", "Search your games...": "Поиск игр...",
   "No games selected yet. You can add games later in Settings.": "Игры пока не выбраны. Их можно добавить позже в настройках.",
   "CHECK": "ПРОВЕРИТЬ", "CONTINUE": "ПРОДОЛЖИТЬ", "BACK": "НАЗАД", "EDIT": "ИЗМЕНИТЬ",
-  "REVIEW": "ПРОВЕРКА", "ACTIVATE FRONTIER": "АКТИВИРОВАТЬ FRONTIER", "INITIALIZE SYSTEM": "ЗАПУСТИТЬ СИСТЕМУ",
+  "ACTIVATE FRONTIER": "АКТИВИРОВАТЬ FRONTIER", "INITIALIZE SYSTEM": "ЗАПУСТИТЬ СИСТЕМУ",
   "ENTER FRONTIER": "ВОЙТИ В FRONTIER", "SELECTED": "ВЫБРАНО", "INSTALLED": "УСТАНОВЛЕНО"
 };
 
@@ -63,7 +62,7 @@ function translateNode(node: ReactNode, language: FrontierLanguage): ReactNode {
   if (Array.isArray(node)) return node.map((child) => translateNode(child, language));
   if (!isValidElement<Record<string, unknown>>(node)) return node;
   const props = { ...node.props };
-  for (const key of ["label", "title", "placeholder", "aria-label", "alt", "description", "purpose"]) {
+  for (const key of ["label", "title", "placeholder", "aria-label", "alt", "description", "purpose", "name"]) {
     const value = props[key];
     if (typeof value === "string") props[key] = tr(language, value);
   }
