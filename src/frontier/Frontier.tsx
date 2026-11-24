@@ -134,82 +134,151 @@ export function Frontier() {
       <div className="frontier-app fixed inset-0 select-none overflow-hidden text-foreground" data-panel-open={open} style={{ touchAction: ts.touch ? "none" : "manipulation" }}>
         <GameScene overdrive={od} />
         {ts.crosshair && <Crosshair style={ts.crossStyle} color={ts.crossColor} />}
-        {(ts.recording || ts.replay) && <div className="tnum absolute right-40 top-3 flex items-center gap-1.5 bg-obsidian/70 px-2 py-1 text-[10px] text-crimson sm:right-48"><span className="fx-pulse h-2 w-2 rounded-full bg-crimson" />{ts.recording ? "REC" : "REPLAY BUFFER"}</div>}
-        <div className="absolute right-40 top-12 space-y-1 sm:right-48">
+        {(ts.recording || ts.replay) && <div className="tnum absolute right-3 top-3 z-10 flex items-center gap-1.5 bg-obsidian/70 px-2 py-1 text-[10px] text-crimson"><span className="fx-pulse h-2 w-2 rounded-full bg-crimson" />{ts.recording ? "REC" : "REPLAY BUFFER"}</div>}
+        <div className="absolute right-3 top-12 z-10 space-y-1">
           <AnimatePresence>{notes.map((n) => <motion.div key={n.id} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="chamfer-sm bg-glass-strong px-3 py-2 text-[11px]">{n.text}</motion.div>)}</AnimatePresence>
         </div>
 
-        {/* Closed: edge indicator */}
-        <AnimatePresence>{!open && (
-          <motion.div key="edge" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="frontier-closed-edge absolute inset-y-0 z-20 flex items-center">
-            <motion.button aria-label="Open FRONTIER" aria-expanded={open} aria-controls="frontier-navigation" drag="x" dragConstraints={{ left: 0, right: s.edgeSensitivity + 20 }} dragElastic={0.25} dragSnapToOrigin style={{ x: dragX }}
-              onPointerDown={() => { sfx.edge(); haptic(5); }} onDragEnd={(_, i) => { if (i.offset.x > s.edgeSensitivity) doOpen(); }} onTap={doOpen}
-              className="frontier-edge-handle relative flex h-40 w-11 items-center">
-              <motion.span style={{ opacity: glow, width }} className="block h-32 bg-fx shadow-[0_0_16px_var(--accent-fx)] [clip-path:polygon(0_0,100%_8%,100%_92%,0_100%)]" />
-              <span className="fx-pulse absolute left-2 top-1/2 h-6 w-[2px] -translate-y-1/2 bg-fx/60" />
-            </motion.button>
-            {s.miniFps && <div className="tnum pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 bg-obsidian/60 px-2 py-0.5 text-[11px]" style={{ color: M.color }}><span className="h-1.5 w-1.5 rotate-45" style={{ background: M.color }} />{t.fps} FPS</div>}
-          </motion.div>)}</AnimatePresence>
+        <AnimatePresence>
+          {!open && (
+            <>
+              <motion.div key="left-edge" initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="frontier-closed-edge frontier-edge-left absolute inset-y-0 left-0 z-20 flex items-center">
+                <motion.button aria-label="Open FRONTIER from left" aria-expanded={open} aria-controls="frontier-navigation" drag="x" dragConstraints={{ left: 0, right: s.edgeSensitivity + 20 }} dragElastic={0.25} dragSnapToOrigin style={{ x: dragX }}
+                  onPointerDown={() => { sfx.edge(); haptic(5); }} onDragEnd={(_, i) => { if (i.offset.x > s.edgeSensitivity) doOpen(); }} onTap={doOpen}
+                  className="frontier-edge-handle relative flex h-36 w-8 items-center">
+                  <motion.span style={{ opacity: glow, width }} className="block h-28 bg-fx shadow-[0_0_16px_var(--accent-fx)] [clip-path:polygon(0_0,100%_8%,100%_92%,0_100%)]" />
+                  <span className="fx-pulse absolute left-2 top-1/2 h-6 w-[2px] -translate-y-1/2 bg-fx/60" />
+                </motion.button>
+                {s.miniFps && <div className="tnum pointer-events-none absolute left-2 top-3 bg-obsidian/70 px-2 py-1 text-[10px]" style={{ color: M.color }}>{t.fps} FPS</div>}
+              </motion.div>
+              <motion.button key="right-edge" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} onTap={doOpen} onClick={doOpen} aria-label="Open FRONTIER from right" className="frontier-edge-right absolute inset-y-0 right-0 z-20 flex w-8 items-center justify-end">
+                <span className="frontier-edge-right-line block h-28 w-[3px] bg-magenta shadow-[0_0_16px_var(--magenta)]" />
+              </motion.button>
+            </>
+          )}
+        </AnimatePresence>
 
-        {/* Open: rail + panel */}
-        <AnimatePresence>{open && (
-          <motion.div key="panel" onPointerDown={() => (lastTouch.current = Date.now())} className="frontier-overlay absolute z-30 flex" initial="closed" animate="open" exit="closed">
-            {/* Rail */}
-            <motion.nav id="frontier-navigation" aria-label="FRONTIER navigation" variants={{ closed: { x: -90 }, open: { x: 0, transition: { ...SPRING, staggerChildren: 0.05, delayChildren: 0.1 } } }}
-              className="frontier-rail relative flex w-[64px] shrink-0 flex-col items-center gap-1 border-r border-magenta/50 bg-glass-strong py-2 shadow-[4px_0_18px_color-mix(in_oklab,var(--magenta)_24%,transparent)]" style={{ opacity: s.opacity + 0.05 }}>
-              <motion.div variants={{ closed: { opacity: 0, rotate: -90, scale: 0.4 }, open: { opacity: 1, rotate: 0, scale: 1 } }} className="frontier-mark mb-2 mt-1 flex h-10 w-10 items-center justify-center chamfer-sm border border-magenta/50 bg-magenta/10" style={{ color: od ? "var(--gold)" : "var(--magenta)" }}><Ic.ILogo width={23} height={23} /></motion.div>
-              {NAV.map((n) => { const on = tab === n.id; return (
-                <motion.button key={n.id} variants={{ closed: { opacity: 0, x: -10 }, open: { opacity: 1, x: 0 } }} aria-label={n.label} aria-current={on ? "page" : undefined}
-                  onClick={() => { if (n.id !== tab) { setTab(n.id); sfx.nav(); haptic(5); } }} whileTap={{ scale: 0.9 }}
-                  className={cn("frontier-nav-button relative flex h-12 w-12 flex-col items-center justify-center gap-0.5 transition-colors focus-visible:outline-none", on ? "text-fx" : "text-muted-foreground hover:text-foreground")}>
-                  {on && <motion.span layoutId="railActive" className="absolute inset-0 chamfer-sm border border-cyan/70 bg-cyan/15 shadow-[inset_0_0_14px_color-mix(in_oklab,var(--cyan)_45%,transparent)]" />}
-                  {on && <motion.span layoutId="railBar" className="absolute -left-[6px] top-2 h-8 w-[3px] bg-fx shadow-[0_0_10px_var(--accent-fx)]" />}
-                  <n.icon width={18} height={18} className="relative shrink-0" /><span className="relative max-w-[48px] text-center text-[8px] font-semibold leading-[1.05]">{n.label}</span>
-                </motion.button>); })}
-              <div className="flex-1" />
-              <motion.button variants={{ closed: { opacity: 0 }, open: { opacity: 1 } }} onClick={doClose} aria-label="Minimize FRONTIER" title="Minimize FRONTIER (Esc)" whileTap={{ scale: 0.9 }} className="frontier-minimize flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground hover:text-crimson focus-visible:outline-none"><Ic.IMin /></motion.button>
-            </motion.nav>
-            {/* Panel */}
-            <motion.section variants={{ closed: { opacity: 0, scaleX: 0.3, x: -40 }, open: { opacity: 1, scaleX: 1, x: 0, transition: { ...SPRING, delay: 0.08 } } }} style={{ transformOrigin: "left center" }}
-              aria-label="FRONTIER control panel" className="frontier-panel relative ml-1.5 flex w-[min(330px,calc(100vw-84px))] min-w-0 flex-col overflow-hidden">
-              <div className="absolute inset-0 chamfer border border-cyan/40 bg-glass shadow-[inset_0_0_30px_color-mix(in_oklab,var(--cyan)_12%,transparent)]" style={{ opacity: s.opacity }} />
-              <motion.span key={`scan-${tab}`} initial={{ top: "0%", opacity: 1 }} animate={{ top: "100%", opacity: 0 }} transition={{ duration: 0.9, ease: "easeOut" }} className="pointer-events-none absolute inset-x-0 z-20 h-[2px] bg-cyan shadow-[0_0_16px_4px_var(--cyan)]" />
-              <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-40" aria-hidden><path className="fx-circuit" d="M0 40 H40 L60 60 V300 L80 320 H300" stroke={od ? "var(--gold)" : "var(--accent-fx)"} strokeOpacity=".35" fill="none" /></svg>
-              <span className="absolute left-0 right-8 top-0 h-px" style={{ background: `linear-gradient(90deg, ${od ? "var(--gold)" : "var(--accent-fx)"}, transparent)` }} />
-              <header className="frontier-header relative flex items-center gap-2 px-4 pb-2 pt-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2"><span className={cn("font-display text-[16px] italic tracking-[0.15em]", od ? "text-gold" : "text-foreground")}>FRONT<span className="bg-gradient-to-r from-cyan to-magenta bg-clip-text text-transparent">IER</span></span><span className="fx-pulse h-2 w-2 rounded-full bg-lime shadow-[0_0_8px_var(--lime)]" /></div>
-                  <div className="text-[8px] font-semibold tracking-[0.25em] text-muted-foreground">{tab === "home" ? "GAME SPACE • PERFORMANCE • VICTORY" : `${NAV.find((n) => n.id === tab)?.label.toUpperCase()} · ${M.name.toUpperCase()}`}</div>
+        <AnimatePresence>
+          {open && (
+            <motion.div key="twin-core" onPointerDown={() => (lastTouch.current = Date.now())} className="frontier-twin-overlay absolute inset-0 z-30" initial="closed" animate="open" exit="closed">
+              <motion.nav id="frontier-navigation" aria-label="FRONTIER main navigation" className="frontier-command-dock absolute left-1/2 top-2 z-40 flex -translate-x-1/2 items-center gap-1.5 border border-cyan/30 bg-obsidian/90 p-1.5 shadow-[0_0_32px_color-mix(in_oklab,var(--cyan)_16%,transparent)] backdrop-blur-xl"
+                variants={{ closed: { opacity: 0, y: -18, scale: 0.96 }, open: { opacity: 1, y: 0, scale: 1, transition: { ...SPRING, staggerChildren: 0.045, delayChildren: 0.06 } } }}>
+                <div className="frontier-dock-brand flex items-center gap-2 border-r border-line px-3">
+                  <span className="flex h-8 w-8 items-center justify-center chamfer-sm border border-magenta/50 bg-magenta/10 text-magenta"><Ic.ILogo width={20} height={20} /></span>
+                  <span className="font-display text-[11px] italic tracking-[0.12em]">FRONT<span className="bg-gradient-to-r from-cyan to-magenta bg-clip-text text-transparent">IER</span></span>
+                  <span className="fx-pulse h-1.5 w-1.5 rounded-full bg-lime" />
                 </div>
-                <span className="tnum text-[10px]" style={{ color: M.color }}>{t.fps}<span className="text-muted-foreground"> fps</span></span>
-              </header>
-              <div aria-label={`Simulated telemetry: CPU ${t.cpu}%, GPU ${t.gpu}%, temperature ${Math.round(t.temp)} degrees Celsius`} className="frontier-telemetry relative mx-3 mb-2 grid grid-cols-3 divide-x divide-line border-y border-line/70 py-1.5">
-                {([["CPU", `${t.cpu}%`], ["GPU", `${t.gpu}%`], ["THERMAL", `${Math.round(t.temp)}°C`]] as const).map(([label, value]) => (
-                  <div key={label} className="text-center leading-tight">
-                    <div className="tnum text-[11px] font-semibold text-foreground">{value}</div>
-                    <div className="font-display text-[7px] tracking-[0.12em] text-muted-foreground">{label} <span className="text-gold">SIM</span></div>
+                {NAV.map((n) => {
+                  const on = tab === n.id;
+                  return (
+                    <motion.button key={n.id} variants={{ closed: { opacity: 0, y: -8 }, open: { opacity: 1, y: 0 } }} aria-label={n.label} aria-current={on ? "page" : undefined}
+                      onClick={() => { if (n.id !== tab) { setTab(n.id); sfx.nav(); haptic(5); } }} whileTap={{ scale: 0.92 }}
+                      className={cn("frontier-dock-item relative flex items-center gap-2 px-3 py-2 text-[10px] font-semibold tracking-wide transition-colors", on ? "text-cyan" : "text-muted-foreground hover:text-foreground")}>
+                      {on && <motion.span layoutId="dockActive" className="absolute inset-0 chamfer-sm border border-cyan/60 bg-cyan/10 shadow-[inset_0 0 16px color-mix(in_oklab,var(--cyan)_18%,transparent)]" />}
+                      <n.icon width={16} height={16} className="relative" /><span className="relative">{n.label === "Performance" ? "PERF" : n.label === "Voice Changer" ? "VOICE" : n.label.toUpperCase()}</span>
+                    </motion.button>
+                  );
+                })}
+                <div className="frontier-dock-fps border-l border-line px-3 text-right">
+                  <div className="tnum text-[13px] font-bold" style={{ color: M.color }}>{t.fps}</div><div className="font-display text-[7px] tracking-widest text-muted-foreground">FPS</div>
+                </div>
+                <button onClick={doClose} aria-label="Minimize FRONTIER" title="Minimize FRONTIER (Esc)" className="flex h-8 w-8 items-center justify-center chamfer-sm border border-magenta/30 text-magenta transition-colors hover:bg-magenta/10"><Ic.IMin width={16} height={16} /></button>
+              </motion.nav>
+
+              <motion.section aria-label="FRONTIER Core controls" className="frontier-wing frontier-wing-left absolute bottom-3 left-3 top-[68px] flex min-h-0 flex-col overflow-hidden"
+                variants={{ closed: { opacity: 0, x: -34, scaleX: 0.96 }, open: { opacity: 1, x: 0, scaleX: 1, transition: { ...SPRING, delay: 0.05 } } }} style={{ transformOrigin: "left center" }}>
+                <div className="frontier-wing-surface absolute inset-0 chamfer border border-cyan/45 bg-glass shadow-[0_0_28px_color-mix(in_oklab,var(--cyan)_13%,transparent),inset_0 0 34px color-mix(in_oklab,var(--cyan)_7%,transparent)]" style={{ opacity: s.opacity }} />
+                <motion.span key={`left-scan-${tab}`} initial={{ top: "0%", opacity: 0.9 }} animate={{ top: "100%", opacity: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} className="pointer-events-none absolute inset-x-0 z-20 h-[2px] bg-cyan shadow-[0_0_14px_3px_var(--cyan)]" />
+                <header className="frontier-wing-header relative flex items-center justify-between gap-2 border-b border-cyan/20 px-3 py-2.5">
+                  <div className="min-w-0"><div className="font-display text-[10px] tracking-[0.18em] text-cyan">01 / CORE SYSTEM</div><div className="mt-0.5 truncate text-[9px] font-semibold tracking-wider text-foreground">{NAV.find((n) => n.id === tab)?.label.toUpperCase()} CONTROL</div></div>
+                  <span className="tnum shrink-0 text-[10px]" style={{ color: M.color }}>{M.name.toUpperCase()}</span>
+                </header>
+                <div aria-label={`Simulated telemetry: CPU ${t.cpu}%, GPU ${t.gpu}%, temperature ${Math.round(t.temp)} degrees Celsius`} className="frontier-telemetry relative mx-3 grid grid-cols-3 divide-x divide-line border-b border-line/70 py-2">
+                  {([[ "CPU", `${t.cpu}%` ], [ "GPU", `${t.gpu}%` ], [ "THERMAL", `${Math.round(t.temp)}°C` ]] as const).map(([label, value]) => (
+                    <div key={label} className="text-center leading-tight"><div className="tnum text-[12px] font-semibold text-foreground">{value}</div><div className="font-display text-[7px] tracking-[0.12em] text-muted-foreground">{label} <span className="text-gold">SIM</span></div></div>
+                  ))}
+                </div>
+                <div className="frontier-page-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-width:none]">
+                  <AnimatePresence mode="wait">
+                    <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8, transition: { duration: 0.12 } }}>
+                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); sfx.nav(); }} />}
+                      {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} />}
+                      {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); sfx.nav(); }} />}
+                      {tab === "voice" && <VoicePage engine={voice} />}
+                      {tab === "settings" && <SettingsPage s={s} upd={upd} />}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </motion.section>
+
+              <motion.aside aria-label="FRONTIER Nexus quick intelligence" className="frontier-wing frontier-wing-right absolute bottom-3 right-3 top-[68px] flex min-h-0 flex-col overflow-hidden"
+                variants={{ closed: { opacity: 0, x: 34, scaleX: 0.96 }, open: { opacity: 1, x: 0, scaleX: 1, transition: { ...SPRING, delay: 0.1 } } }} style={{ transformOrigin: "right center" }}>
+                <div className="frontier-wing-surface frontier-nexus-surface absolute inset-0 chamfer border border-magenta/45 bg-glass shadow-[0_0_28px_color-mix(in_oklab,var(--magenta)_13%,transparent),inset_0 0 34px color-mix(in_oklab,var(--magenta)_7%,transparent)]" style={{ opacity: s.opacity }} />
+                <motion.span key={`right-scan-${tab}`} initial={{ top: "100%", opacity: 0.8 }} animate={{ top: "0%", opacity: 0 }} transition={{ duration: 0.85, ease: "easeOut" }} className="pointer-events-none absolute inset-x-0 z-20 h-[2px] bg-magenta shadow-[0_0_14px_3px_var(--magenta)]" />
+                <header className="frontier-wing-header relative border-b border-magenta/20 px-3 py-2.5">
+                  <div className="font-display text-[10px] tracking-[0.18em] text-magenta">02 / NEXUS INTELLIGENCE</div>
+                  <div className="mt-0.5 text-[9px] font-semibold tracking-wider text-foreground">LIVE CONTEXT · {tab.toUpperCase()}</div>
+                </header>
+                <div className="frontier-nexus-content relative min-h-0 flex-1 overflow-y-auto px-3 py-3">
+                  <div className="space-y-3">
+                    <div className="frontier-nexus-card chamfer-sm border border-magenta/25 bg-obsidian/45 p-3">
+                      <div className="flex items-center justify-between"><span className="font-display text-[8px] tracking-[0.16em] text-muted-foreground">ACTIVE PROFILE</span><span className="h-1.5 w-1.5 rounded-full bg-lime shadow-[0_0_8px_var(--lime)]" /></div>
+                      <div className="mt-2 flex items-end justify-between gap-2"><div className="font-display text-[13px] font-bold" style={{ color: M.color }}>{M.name.toUpperCase()}</div><span className="tnum text-[10px] text-muted-foreground">TARGET {M.target} FPS</span></div>
+                      <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10"><motion.div className="h-full rounded-full" animate={{ width: `${Math.min(100, t.stability)}%` }} style={{ background: M.color, boxShadow: `0 0 10px ${M.color}` }} /></div>
+                      <div className="mt-1 flex justify-between text-[8px] text-muted-foreground"><span>FRAME STABILITY</span><span className="tnum">{t.stability}%</span></div>
+                    </div>
+                    {tab === "home" && (
+                      <>
+                        <div className="frontier-nexus-card chamfer-sm border border-cyan/20 bg-obsidian/45 p-3">
+                          <div className="font-display text-[8px] tracking-[0.16em] text-cyan">QUICK SYSTEM ACTIONS</div>
+                          <button onClick={() => setTs({ shield: !ts.shield })} aria-pressed={ts.shield} className="mt-3 flex w-full items-center justify-between text-[10px]"><span className="flex items-center gap-2"><Ic.IShield width={15} height={15} /> Distraction Shield</span><span className={cn("rounded px-2 py-1 font-display text-[8px]", ts.shield ? "bg-lime/15 text-lime" : "bg-white/5 text-muted-foreground")}>{ts.shield ? "ON" : "OFF"}</span></button>
+                          <button onClick={() => setTs({ crosshair: !ts.crosshair })} aria-pressed={ts.crosshair} className="mt-3 flex w-full items-center justify-between text-[10px]"><span className="flex items-center gap-2"><Ic.ICross width={15} height={15} /> Custom Crosshair</span><span className={cn("rounded px-2 py-1 font-display text-[8px]", ts.crosshair ? "bg-cyan/15 text-cyan" : "bg-white/5 text-muted-foreground")}>{ts.crosshair ? "ON" : "OFF"}</span></button>
+                        </div>
+                        <div className="frontier-nexus-card chamfer-sm border border-magenta/20 bg-obsidian/45 p-3">
+                          <div className="font-display text-[8px] tracking-[0.16em] text-magenta">NETWORK SNAPSHOT</div>
+                          <div className="mt-3 grid grid-cols-2 gap-2"><div><div className="tnum text-[20px] font-bold text-cyan">24<span className="text-[9px]">ms</span></div><div className="text-[8px] text-muted-foreground">SIMULATED PING</div></div><div><div className="tnum text-[20px] font-bold text-magenta">0.4<span className="text-[9px]">%</span></div><div className="text-[8px] text-muted-foreground">PACKET LOSS</div></div></div>
+                        </div>
+                      </>
+                    )}
+                    {tab === "perf" && (
+                      <div className="frontier-nexus-card chamfer-sm border border-gold/25 bg-obsidian/45 p-3">
+                        <div className="font-display text-[8px] tracking-[0.16em] text-gold">THERMAL GUARD</div>
+                        <div className="mt-3 flex items-center gap-3"><div className="tnum text-[25px] font-bold" style={{ color: t.temp > 43 ? "var(--gold)" : "var(--lime)" }}>{Math.round(t.temp)}°</div><div className="text-[9px] text-muted-foreground">Simulated device temperature<br/>Adaptive thermal awareness</div></div>
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-lime via-gold to-crimson" style={{ width: `${Math.min(100, t.temp / 60 * 100)}%` }} /></div>
+                        <div className="mt-2 text-[8px] text-muted-foreground">PROFILE: {M.tag.toUpperCase()}</div>
+                      </div>
+                    )}
+                    {tab === "tools" && (
+                      <div className="frontier-nexus-card chamfer-sm border border-cyan/20 bg-obsidian/45 p-3">
+                        <div className="font-display text-[8px] tracking-[0.16em] text-cyan">TOOL STATUS MATRIX</div>
+                        {([{label:"Touch response",on:ts.touch},{label:"Network assist",on:ts.net},{label:"Crosshair",on:ts.crosshair},{label:"No disturbance",on:ts.shield},{label:"Screen capture",on:ts.recording}] as const).map((x) => <div key={x.label} className="mt-3 flex items-center justify-between text-[9px]"><span className="text-muted-foreground">{x.label}</span><span className={x.on ? "text-lime" : "text-muted-foreground"}>{x.on ? "ACTIVE" : "STANDBY"}</span></div>)}
+                      </div>
+                    )}
+                    {tab === "voice" && (
+                      <div className="frontier-nexus-card chamfer-sm border border-magenta/25 bg-obsidian/45 p-3">
+                        <div className="font-display text-[8px] tracking-[0.16em] text-magenta">AUDIO SIGNAL</div>
+                        <div className="mt-4 flex h-14 items-center justify-center gap-1">{Array.from({length:18},(_,i)=><motion.span key={i} className="w-1 rounded-full bg-magenta" animate={{height:[6,12+(i%5)*5,8]}} transition={{duration:0.7+(i%4)*0.15,repeat:Infinity,repeatType:"mirror",ease:"easeInOut",delay:i*0.025}} />)}</div>
+                        <div className="text-center text-[8px] tracking-widest text-muted-foreground">FRONTIER AUDIO ENGINE</div>
+                      </div>
+                    )}
+                    {tab === "settings" && (
+                      <div className="frontier-nexus-card chamfer-sm border border-cyan/20 bg-obsidian/45 p-3">
+                        <div className="font-display text-[8px] tracking-[0.16em] text-cyan">INTERFACE STATUS</div>
+                        <div className="mt-3 flex items-center justify-between text-[9px]"><span className="text-muted-foreground">Motion profile</span><span className="text-foreground">{s.motion === 0 ? "REDUCED" : "DYNAMIC"}</span></div>
+                        <div className="mt-3 flex items-center justify-between text-[9px]"><span className="text-muted-foreground">Haptics</span><span className="text-foreground">{s.haptics ? "ENABLED" : "DISABLED"}</span></div>
+                        <div className="mt-3 flex items-center justify-between text-[9px]"><span className="text-muted-foreground">Sound</span><span className="text-foreground">{s.sound ? "ENABLED" : "DISABLED"}</span></div>
+                      </div>
+                    )}
+                    <div className="frontier-nexus-footer border-t border-magenta/20 pt-3 text-center">
+                      <div className="font-display text-[8px] tracking-[0.18em] text-magenta">FRONTIER / TWIN-CORE</div>
+                      <div className="mt-1 text-[8px] text-muted-foreground">CORE + NEXUS · GAME FIRST</div>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="frontier-page-scroll relative flex-1 overflow-y-auto overscroll-contain px-4 pb-4 [scrollbar-width:none]">
-                <AnimatePresence mode="wait">
-                  <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8, transition: { duration: 0.12 } }}>
-                    {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); sfx.nav(); }} />}
-                    {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} />}
-                    {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); sfx.nav(); }} />}
-                    {tab === "voice" && <VoicePage engine={voice} />}
-                    {tab === "settings" && <SettingsPage s={s} upd={upd} />}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-              <AnimatePresence>{activating && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-obsidian/85">
-                  <motion.div initial={{ scale: 0.4, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 300, damping: 14 }} className="text-gold"><Ic.IOverdrive width={56} height={56} /></motion.div>
-                  <div className="mt-3 flex gap-1">{[0, 1, 2, 3, 4, 5].map((i) => <motion.span key={i} initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ delay: 0.1 + i * 0.1 }} className="h-4 w-2 origin-bottom bg-crimson" />)}</div>
-                  <div className="mt-3 font-display text-[11px] tracking-[0.4em] text-gold">OVERDRIVE ONLINE</div>
-                </motion.div>)}</AnimatePresence>
-            </motion.section>
-          </motion.div>)}</AnimatePresence>
+                </div>
+              </motion.aside>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </MotionConfig>
   );
