@@ -45,13 +45,20 @@ object NativeGameCatalog {
 
     fun packageNames(): List<String> = games.flatMap { it.packageNames }
 
-    fun reduceForegroundPackage(currentPackage: String?, event: NativeUsageEvent): String? {
-        return if (event.foreground) {
-            event.packageName
-        } else if (currentPackage == event.packageName) {
-            null
-        } else {
-            currentPackage
-        }
+    fun reduceForegroundPackage(currentPackage: String?, event: NativeUsageEvent): String? =
+        if (event.foreground) event.packageName
+        else if (currentPackage == event.packageName) null
+        else currentPackage
+
+    fun resolveForegroundGame(events: List<NativeUsageEvent>): NativeGame? {
+        val packageName = events
+            .sortedBy { it.timestamp }
+            .fold<String?, NativeUsageEvent?>(null) { current, event ->
+                val currentPackage = current?.let { it.packageName }
+                val nextPackage = reduceForegroundPackage(currentPackage, event)
+                nextPackage?.let { NativeUsageEvent(it, event.timestamp, true) }
+            }
+            ?.packageName
+        return forPackage(packageName)
     }
 }
