@@ -191,6 +191,69 @@
   font-family: var(--font-mono);
 }
 body { font-family: var(--font-body); background: var(--obsidian); overscroll-behavior: none; }
+.frontier-app {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  isolation: isolate;
+}
+.frontier-app[data-panel-open="true"] .frontier-preview-badge {
+  left: calc(50% + min(202px, (100vw - 16px) / 2));
+}
+.frontier-overlay {
+  inset-block: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-bottom));
+  left: max(8px, env(safe-area-inset-left));
+  width: min(404px, calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  min-height: 0;
+}
+.frontier-rail {
+  height: 100%;
+  min-height: 0;
+}
+.frontier-panel {
+  width: min(330px, calc(100% - 72px));
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+.frontier-page-scroll {
+  min-height: 0;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.frontier-page-scroll::-webkit-scrollbar { display: none; }
+.frontier-app button:focus-visible,
+.frontier-app input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+.frontier-nav-button { height: clamp(42px, 8.4dvh, 48px); }
+.frontier-closed-edge { left: max(0px, env(safe-area-inset-left)); }
+@media (max-width: 440px) {
+  .frontier-preview-badge { display: none; }
+  .frontier-overlay {
+    width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+  }
+  .frontier-rail { width: 56px; }
+  .frontier-panel {
+    width: calc(100% - 64px);
+    margin-left: 4px;
+  }
+  .frontier-header { padding-inline: 12px; }
+  .frontier-page-scroll { padding-inline: 12px; }
+}
+@media (max-height: 500px) {
+  .frontier-rail { gap: 0; padding-block: 4px; }
+  .frontier-nav-button { height: 42px; }
+  .frontier-mark { height: 34px; width: 34px; margin-block: 2px 4px; }
+  .frontier-minimize { height: 40px; width: 40px; }
+  .frontier-header { padding-top: 8px; padding-bottom: 5px; }
+  .frontier-page-scroll { padding-bottom: 10px; }
+}
+@media (max-height: 390px) {
+  .frontier-mark { display: none; }
+}
 @keyframes fx-dash { to { stroke-dashoffset: -200; } }
 .fx-circuit { stroke-dasharray: 6 14; animation: fx-dash 6s linear infinite; }
 @keyframes fx-pulse { 0%,100% { opacity: .45 } 50% { opacity: 1 } }

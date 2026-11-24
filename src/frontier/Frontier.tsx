@@ -11,7 +11,7 @@ import type { VoiceEngine } from "./voice";
 type Tab = "home" | "perf" | "tools" | "voice" | "settings";
 const NAV: { id: Tab; label: string; icon: typeof Ic.IHome }[] = [
   { id: "home", label: "Home", icon: Ic.IHome }, { id: "perf", label: "Performance", icon: Ic.IPerf },
-  { id: "tools", label: "Tools", icon: Ic.ITools }, { id: "voice", label: "Voice", icon: Ic.IVoice }, { id: "settings", label: "Settings", icon: Ic.ISettings },
+  { id: "tools", label: "Tools", icon: Ic.ITools }, { id: "voice", label: "Voice Changer", icon: Ic.IVoice }, { id: "settings", label: "Settings", icon: Ic.ISettings },
 ];
 const SPRING = { type: "spring" as const, stiffness: 380, damping: 28 };
 const NOTES = ["Squad invite from N1GHTFALL", "New message: 'gg wp'", "Battery saver suggestion", "Store: weekend bundle -40%", "Friend is now online"];
@@ -34,7 +34,10 @@ function GameScene({ overdrive }: { overdrive: boolean }) {
         {Array.from({ length: 22 }).map((_, i) => <path key={i} d={`M${i * 75 + 20} ${730 - (i % 3) * 12} l14 -50 l14 50z`} fill="oklch(0.18 0.05 150)" />)}
         <path d="M0 900 L700 760 L900 760 L1600 900Z" fill="oklch(0.16 0.02 140)" opacity=".7" />
       </svg>
-      {/* mock in-game HUD (right side belongs to the game) */}
+      {/* Fictional game-space HUD; this is a preview, not an Android system overlay. */}
+      <div className="frontier-preview-badge absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1.5 border border-foreground/20 bg-obsidian/65 px-2 py-1 font-display text-[8px] tracking-[0.16em] text-foreground/75">
+        <span className="h-1.5 w-1.5 rounded-full bg-cyan" /> GAME PREVIEW · SIM
+      </div>
       <div className="absolute right-3 top-3 h-24 w-32 border border-foreground/30 bg-obsidian/50 sm:h-28 sm:w-40"><div className="absolute left-1/2 top-1/2 h-0 w-0 -translate-x-1/2 -translate-y-1/2 border-x-[6px] border-b-[12px] border-x-transparent border-b-cyan" /></div>
       <div className="tnum absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-3 text-sm text-foreground/90"><span className="border border-gold/70 bg-obsidian/50 px-3 py-1">40 / 180</span><span className="border border-foreground/30 bg-obsidian/40 px-3 py-1">5 / 30</span></div>
       <div className="absolute bottom-6 right-6 h-20 w-20 rounded-full border-2 border-foreground/40 bg-obsidian/30 sm:h-24 sm:w-24" />
@@ -84,6 +87,18 @@ export function Frontier() {
 
   const doOpen = useCallback(() => { setOpen(true); sfx.open(); haptic(15); lastTouch.current = Date.now(); }, []);
   const doClose = () => { setOpen(false); sfx.close(); haptic(10); };
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        sfx.close();
+        haptic(10);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
   const setMode = (m: Mode) => {
     if (m === mode) return; setModeRaw(m); haptic(m === "overdrive" ? [20, 40, 20, 40, 60] as unknown as number : 12);
     if (m === "overdrive") { sfx.overdrive(); setActivating(true); setTimeout(() => setActivating(false), 1300); } else sfx.mode();
@@ -93,7 +108,7 @@ export function Frontier() {
   const download = (chunks: Blob[], name: string) => { const url = URL.createObjectURL(new Blob(chunks, { type: "video/webm" })); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000); };
   const startCapture = async (kind: "rec" | "replay") => {
     setRecErr(null);
-    if (!navigator.mediaDevices?.getDisplayMedia) { setRecErr("Screen capture isn't available in this browser. On Android it runs through the native bridge."); return; }
+    if (!navigator.mediaDevices?.getDisplayMedia) { setRecErr("Screen capture isn't available in this browser. Support depends on the browser and device."); return; }
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 60 }, audio: true });
       const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm" });
@@ -116,7 +131,7 @@ export function Frontier() {
 
   return (
     <MotionConfig reducedMotion={s.motion === 0 ? "always" : "never"} transition={{ ...SPRING, stiffness: 380 * Math.max(0.5, s.motion) }}>
-      <div className="fixed inset-0 select-none overflow-hidden text-foreground" style={{ touchAction: ts.touch ? "none" : "manipulation" }}>
+      <div className="frontier-app fixed inset-0 select-none overflow-hidden text-foreground" data-panel-open={open} style={{ touchAction: ts.touch ? "none" : "manipulation" }}>
         <GameScene overdrive={od} />
         {ts.crosshair && <Crosshair style={ts.crossStyle} color={ts.crossColor} />}
         {(ts.recording || ts.replay) && <div className="tnum absolute right-40 top-3 flex items-center gap-1.5 bg-obsidian/70 px-2 py-1 text-[10px] text-crimson sm:right-48"><span className="fx-pulse h-2 w-2 rounded-full bg-crimson" />{ts.recording ? "REC" : "REPLAY BUFFER"}</div>}
@@ -126,10 +141,10 @@ export function Frontier() {
 
         {/* Closed: edge indicator */}
         <AnimatePresence>{!open && (
-          <motion.div key="edge" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="absolute inset-y-0 left-0 z-20 flex items-center">
-            <motion.button aria-label="Open FRONTIER" drag="x" dragConstraints={{ left: 0, right: s.edgeSensitivity + 20 }} dragElastic={0.25} dragSnapToOrigin style={{ x: dragX }}
+          <motion.div key="edge" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="frontier-closed-edge absolute inset-y-0 z-20 flex items-center">
+            <motion.button aria-label="Open FRONTIER" aria-expanded={open} aria-controls="frontier-navigation" drag="x" dragConstraints={{ left: 0, right: s.edgeSensitivity + 20 }} dragElastic={0.25} dragSnapToOrigin style={{ x: dragX }}
               onPointerDown={() => { sfx.edge(); haptic(5); }} onDragEnd={(_, i) => { if (i.offset.x > s.edgeSensitivity) doOpen(); }} onTap={doOpen}
-              className="relative flex h-40 w-8 items-center">
+              className="frontier-edge-handle relative flex h-40 w-11 items-center">
               <motion.span style={{ opacity: glow, width }} className="block h-32 bg-fx shadow-[0_0_16px_var(--accent-fx)] [clip-path:polygon(0_0,100%_8%,100%_92%,0_100%)]" />
               <span className="fx-pulse absolute left-2 top-1/2 h-6 w-[2px] -translate-y-1/2 bg-fx/60" />
             </motion.button>
@@ -138,37 +153,45 @@ export function Frontier() {
 
         {/* Open: rail + panel */}
         <AnimatePresence>{open && (
-          <motion.div key="panel" onPointerDown={() => (lastTouch.current = Date.now())} className="absolute bottom-2 left-0 top-2 z-30 flex max-w-[calc(100vw-1rem)]" initial="closed" animate="open" exit="closed">
+          <motion.div key="panel" onPointerDown={() => (lastTouch.current = Date.now())} className="frontier-overlay absolute z-30 flex" initial="closed" animate="open" exit="closed">
             {/* Rail */}
-            <motion.nav aria-label="FRONTIER navigation" variants={{ closed: { x: -90 }, open: { x: 0, transition: { ...SPRING, staggerChildren: 0.05, delayChildren: 0.1 } } }}
-              className="relative flex w-[68px] flex-col items-center gap-1 border-r-2 border-magenta/70 bg-glass-strong py-2 shadow-[4px_0_18px_color-mix(in_oklab,var(--magenta)_40%,transparent)] [clip-path:polygon(0_0,100%_3%,100%_97%,0_100%)]" style={{ opacity: s.opacity + 0.05 }}>
-              <motion.div variants={{ closed: { opacity: 0, rotate: -90, scale: 0.4 }, open: { opacity: 1, rotate: 0, scale: 1 } }} className="mb-2 mt-1 flex h-11 w-11 items-center justify-center chamfer-sm border border-magenta/60 bg-magenta/10 shadow-[0_0_14px_var(--magenta)]" style={{ color: od ? "var(--gold)" : "var(--magenta)" }}><Ic.ILogo width={24} height={24} /></motion.div>
+            <motion.nav id="frontier-navigation" aria-label="FRONTIER navigation" variants={{ closed: { x: -90 }, open: { x: 0, transition: { ...SPRING, staggerChildren: 0.05, delayChildren: 0.1 } } }}
+              className="frontier-rail relative flex w-[64px] shrink-0 flex-col items-center gap-1 border-r border-magenta/50 bg-glass-strong py-2 shadow-[4px_0_18px_color-mix(in_oklab,var(--magenta)_24%,transparent)]" style={{ opacity: s.opacity + 0.05 }}>
+              <motion.div variants={{ closed: { opacity: 0, rotate: -90, scale: 0.4 }, open: { opacity: 1, rotate: 0, scale: 1 } }} className="frontier-mark mb-2 mt-1 flex h-10 w-10 items-center justify-center chamfer-sm border border-magenta/50 bg-magenta/10" style={{ color: od ? "var(--gold)" : "var(--magenta)" }}><Ic.ILogo width={23} height={23} /></motion.div>
               {NAV.map((n) => { const on = tab === n.id; return (
                 <motion.button key={n.id} variants={{ closed: { opacity: 0, x: -10 }, open: { opacity: 1, x: 0 } }} aria-label={n.label} aria-current={on ? "page" : undefined}
                   onClick={() => { if (n.id !== tab) { setTab(n.id); sfx.nav(); haptic(5); } }} whileTap={{ scale: 0.9 }}
-                  className={cn("relative flex h-14 w-14 flex-col items-center justify-center gap-0.5 transition-colors", on ? "text-fx" : "text-muted-foreground hover:text-foreground")}>
+                  className={cn("frontier-nav-button relative flex h-12 w-12 flex-col items-center justify-center gap-0.5 transition-colors focus-visible:outline-none", on ? "text-fx" : "text-muted-foreground hover:text-foreground")}>
                   {on && <motion.span layoutId="railActive" className="absolute inset-0 chamfer-sm border border-cyan/70 bg-cyan/15 shadow-[inset_0_0_14px_color-mix(in_oklab,var(--cyan)_45%,transparent)]" />}
                   {on && <motion.span layoutId="railBar" className="absolute -left-[6px] top-2 h-8 w-[3px] bg-fx shadow-[0_0_10px_var(--accent-fx)]" />}
-                  <n.icon width={20} height={20} className="relative" /><span className="relative text-[8px] font-semibold">{n.id === "perf" ? "Perform" : n.label}</span>
+                  <n.icon width={18} height={18} className="relative shrink-0" /><span className="relative max-w-[48px] text-center text-[8px] font-semibold leading-[1.05]">{n.label}</span>
                 </motion.button>); })}
               <div className="flex-1" />
-              <motion.button variants={{ closed: { opacity: 0 }, open: { opacity: 1 } }} onClick={doClose} aria-label="Minimize FRONTIER" whileTap={{ scale: 0.9 }} className="flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-crimson"><Ic.IMin /></motion.button>
+              <motion.button variants={{ closed: { opacity: 0 }, open: { opacity: 1 } }} onClick={doClose} aria-label="Minimize FRONTIER" title="Minimize FRONTIER (Esc)" whileTap={{ scale: 0.9 }} className="frontier-minimize flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground hover:text-crimson focus-visible:outline-none"><Ic.IMin /></motion.button>
             </motion.nav>
             {/* Panel */}
             <motion.section variants={{ closed: { opacity: 0, scaleX: 0.3, x: -40 }, open: { opacity: 1, scaleX: 1, x: 0, transition: { ...SPRING, delay: 0.08 } } }} style={{ transformOrigin: "left center" }}
-              className="relative ml-1.5 flex w-[min(330px,calc(100vw-84px))] flex-col overflow-hidden">
+              aria-label="FRONTIER control panel" className="frontier-panel relative ml-1.5 flex w-[min(330px,calc(100vw-84px))] min-w-0 flex-col overflow-hidden">
               <div className="absolute inset-0 chamfer border border-cyan/40 bg-glass shadow-[inset_0_0_30px_color-mix(in_oklab,var(--cyan)_12%,transparent)]" style={{ opacity: s.opacity }} />
               <motion.span key={`scan-${tab}`} initial={{ top: "0%", opacity: 1 }} animate={{ top: "100%", opacity: 0 }} transition={{ duration: 0.9, ease: "easeOut" }} className="pointer-events-none absolute inset-x-0 z-20 h-[2px] bg-cyan shadow-[0_0_16px_4px_var(--cyan)]" />
               <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-40" aria-hidden><path className="fx-circuit" d="M0 40 H40 L60 60 V300 L80 320 H300" stroke={od ? "var(--gold)" : "var(--accent-fx)"} strokeOpacity=".35" fill="none" /></svg>
               <span className="absolute left-0 right-8 top-0 h-px" style={{ background: `linear-gradient(90deg, ${od ? "var(--gold)" : "var(--accent-fx)"}, transparent)` }} />
-              <header className="relative flex items-center gap-2 px-4 pb-2 pt-3">
+              <header className="frontier-header relative flex items-center gap-2 px-4 pb-2 pt-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2"><span className={cn("font-display text-[16px] italic tracking-[0.15em]", od ? "text-gold" : "text-foreground")}>FRONT<span className="bg-gradient-to-r from-cyan to-magenta bg-clip-text text-transparent">IER</span></span><span className="fx-pulse h-2 w-2 rounded-full bg-lime shadow-[0_0_8px_var(--lime)]" /></div>
                   <div className="text-[8px] font-semibold tracking-[0.25em] text-muted-foreground">{tab === "home" ? "GAME SPACE • PERFORMANCE • VICTORY" : `${NAV.find((n) => n.id === tab)?.label.toUpperCase()} · ${M.name.toUpperCase()}`}</div>
                 </div>
                 <span className="tnum text-[10px]" style={{ color: M.color }}>{t.fps}<span className="text-muted-foreground"> fps</span></span>
               </header>
-              <div className="relative flex-1 overflow-y-auto overscroll-contain px-4 pb-4 [scrollbar-width:none]">
+              <div aria-label={`Simulated telemetry: CPU ${t.cpu}%, GPU ${t.gpu}%, temperature ${Math.round(t.temp)} degrees Celsius`} className="frontier-telemetry relative mx-3 mb-2 grid grid-cols-3 divide-x divide-line border-y border-line/70 py-1.5">
+                {([["CPU", `${t.cpu}%`], ["GPU", `${t.gpu}%`], ["THERMAL", `${Math.round(t.temp)}°C`]] as const).map(([label, value]) => (
+                  <div key={label} className="text-center leading-tight">
+                    <div className="tnum text-[11px] font-semibold text-foreground">{value}</div>
+                    <div className="font-display text-[7px] tracking-[0.12em] text-muted-foreground">{label} <span className="text-gold">SIM</span></div>
+                  </div>
+                ))}
+              </div>
+              <div className="frontier-page-scroll relative flex-1 overflow-y-auto overscroll-contain px-4 pb-4 [scrollbar-width:none]">
                 <AnimatePresence mode="wait">
                   <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8, transition: { duration: 0.12 } }}>
                     {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); sfx.nav(); }} />}
@@ -187,24 +210,6 @@ export function Frontier() {
                 </motion.div>)}</AnimatePresence>
             </motion.section>
           </motion.div>)}</AnimatePresence>
-        {/* Right wing: compact reactor pod (SIM data) */}
-        <AnimatePresence>{open && (
-          <motion.aside key="wing" aria-label="Reactor telemetry" initial={{ x: 120, opacity: 0 }} animate={{ x: 0, opacity: 1, transition: { ...SPRING, delay: 0.15 } }} exit={{ x: 120, opacity: 0 }}
-            className="pointer-events-none absolute right-0 top-1/2 z-20 hidden w-[92px] -translate-y-1/2 flex-col items-center gap-2 border-l-2 border-magenta/60 bg-glass-strong py-3 sm:flex [clip-path:polygon(18%_0,100%_0,100%_100%,18%_100%,0_88%,0_12%)]">
-            <span className="fx-laser absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-transparent via-cyan to-transparent" />
-            {([["GPU", t.gpu, "var(--magenta)"], ["CPU", t.cpu, "var(--cyan)"]] as const).map(([l, v, c]) => (
-              <div key={l} className="relative flex h-16 w-16 items-center justify-center">
-                <svg viewBox="0 0 64 64" className="absolute inset-0" style={{ color: c }}>
-                  <ellipse className="fx-spin" cx="32" cy="38" rx="28" ry="10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="6 4" style={{ transformOrigin: "32px 38px" }} />
-                  <ellipse className="fx-spin-rev" cx="32" cy="38" rx="20" ry="6" fill="none" stroke="currentColor" strokeOpacity=".6" strokeDasharray="3 3" style={{ transformOrigin: "32px 38px" }} />
-                </svg>
-                <div className="relative -mt-3 text-center"><div className="tnum text-[15px] font-bold" style={{ color: c, textShadow: `0 0 8px ${c}` }}>{v}%</div><div className="font-display text-[8px] tracking-widest text-muted-foreground">{l} · SIM</div></div>
-              </div>))}
-            <div className="flex flex-col-reverse gap-[3px]" aria-label={`Thermal ${t.temp}°C`}>
-              {Array.from({ length: 12 }).map((_, i) => { const lit = i < Math.round((t.temp / 60) * 12); return <span key={i} className="h-[4px] transition-colors" style={{ width: 20 + i * 2, background: lit ? (i > 8 ? "var(--crimson)" : i > 5 ? "var(--gold)" : "var(--cyan)") : "var(--line)", boxShadow: lit ? "0 0 6px currentColor" : undefined }} />; })}
-            </div>
-            <div className="tnum text-[9px] text-muted-foreground">{t.temp}°C</div>
-          </motion.aside>)}</AnimatePresence>
       </div>
     </MotionConfig>
   );
