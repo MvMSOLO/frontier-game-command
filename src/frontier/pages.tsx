@@ -134,8 +134,8 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
           <div className="min-w-0 flex-1"><Wave data={t.history} color="var(--cyan)" /></div>
         </div>
         <div className="mt-1 grid grid-cols-2 divide-x divide-line text-center">
-          <div><div className="tnum text-[14px] font-bold text-cyan">{t.frameTime}<span className="text-[10px]">ms</span></div><div className="text-[9px] text-muted-foreground">Frame Time</div></div>
-          <div><div className="tnum text-[14px] font-bold text-cyan">{t.stability}%</div><div className="text-[9px] text-muted-foreground">Stability</div></div>
+          <div><div className="tnum text-[14px] font-bold text-cyan">{t.frameTime}<span className="text-[10px]">ms</span></div><div className="text-[9px] text-muted-foreground">{tx("Frame Time")}</div></div>
+          <div><div className="tnum text-[14px] font-bold text-cyan">{t.stability}%</div><div className="text-[9px] text-muted-foreground">{tx("Stability")}</div></div>
         </div>
       </Card>}
       {!androidPresentation && <Card glow="var(--magenta)">
@@ -151,18 +151,18 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
         {androidPresentation && <p className="mb-2 text-[9px] leading-relaxed text-muted-foreground">{tx("Profiles change FRONTIER's own interface only; they do not boost the game or change device refresh rate.")}</p>}
         <div className="frontier-mode-grid grid grid-cols-2 gap-1.5">
           {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const c = MODE_COL[k]; const od = k === "overdrive"; return (
-            <motion.button key={k} whileTap={{ scale: 0.92 }} aria-label={M.name} aria-pressed={on} onClick={() => setMode(k)}
+            <motion.button key={k} whileTap={{ scale: 0.92 }} aria-label={tx(M.name)} aria-pressed={on} onClick={() => setMode(k)}
               className={cn("relative isolate flex h-[58px] flex-col items-center justify-center gap-1 overflow-hidden chamfer-sm border text-[9px] font-semibold leading-tight transition-colors", on ? "border-current" : "border-line")}
               style={{ color: on ? c : "var(--foreground)", background: on ? `color-mix(in oklab, ${c} 18%, transparent)` : "color-mix(in oklab, var(--foreground) 4%, transparent)", boxShadow: on ? `0 0 14px color-mix(in oklab, ${c} 50%, transparent), inset 0 0 12px color-mix(in oklab, ${c} 30%, transparent)` : undefined }}>
               <PerformanceArtwork mode={k} className="frontier-mode-art-image" /><span className="frontier-mode-art-scrim" />
               {on && od && <motion.span initial={{ x: "-100%" }} animate={{ x: "100%" }} transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }} className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-gold/30 to-transparent" />}
               <span className="relative z-10" style={{ color: c, filter: `drop-shadow(0 0 4px ${c})` }}><M.icon width={18} height={18} /></span>
-              <span className="relative z-10 text-center">{od ? <>FRONTIER<br />OVERDRIVE</> : M.name.split(/[ -]/)[0]}</span>
+              <span className="relative z-10 text-center">{od ? <>FRONTIER<br />{tx("OVERDRIVE")}</> : tx(M.name.split(/[ -]/)[0] ?? M.name)}</span>
             </motion.button>); })}
         </div>
       </Card>
       {!androidPresentation && <Card glow="var(--magenta)">
-        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>Quick Tools<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">6 ›</button></div>
+        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>{tx("Quick Tools")}<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">6 ›</button></div>
         <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5">
           <QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} />
           <QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} />
@@ -183,7 +183,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
   );
 }
 
-export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setMode: (m: Mode) => void; t: Telemetry; s: Settings; upd: (p: Partial<Settings>) => void }) {
+export function PerformancePage({ mode, setMode, t, s, upd, androidPresentation = false }: { mode: Mode; setMode: (m: Mode) => void; t: Telemetry; s: Settings; upd: (p: Partial<Settings>) => void; androidPresentation?: boolean }) {
   const tx = useText();
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-performance">
@@ -198,28 +198,34 @@ export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setM
             <div className="relative z-10 flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center chamfer-sm" style={{ color: M.color, background: `color-mix(in oklab, ${M.color} ${on ? 18 : 6}%, transparent)` }}><M.icon /></span>
               <div className="flex-1">
-                <div className={cn("text-[13px] font-semibold", od && "font-display text-[11px] tracking-widest")} style={{ color: on ? M.color : undefined }}>{od ? "FRONTIER OVERDRIVE" : M.name}</div>
-                <div className="text-[10px] text-muted-foreground">{M.tag} · target <span className="tnum">{M.target}</span> fps</div>
+                <div className={cn("text-[13px] font-semibold", od && "font-display text-[11px] tracking-widest")} style={{ color: on ? M.color : undefined }}>{od ? "FRONTIER " + tx("OVERDRIVE") : tx(M.name)}</div>
+                <div className="text-[10px] text-muted-foreground">{tx(M.tag)} · {tx("target")} <span className="tnum">{M.target}</span> fps</div>
               </div>
               <span className={cn("h-2 w-2 rotate-45", on ? "fx-pulse" : "opacity-20")} style={{ background: od && on ? "var(--gold)" : M.color }} />
             </div>
             <AnimatePresence>{on && (
               <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-12 text-[10px] text-muted-foreground">
-                {M.bullets.map((b) => <li key={b} className="pt-1">› {b}</li>)}
+                {M.bullets.map((b) => <li key={b} className="pt-1">› {tx(b)}</li>)}
               </motion.ul>)}</AnimatePresence>
           </motion.button>); })}
       </div>
-      <motion.div variants={item} className="space-y-3">
-        <Label right={<Src k="native" />}>Display</Label>
-        <Seg label="Refresh rate" value={s.refresh} onChange={(v) => upd({ refresh: v })} options={[60, 90, 120, 144].map((v) => ({ v, l: `${v}Hz` }))} />
-        <div className="flex items-center justify-between text-[12px]"><span>Frame pacing lock</span><Toggle label="Frame pacing" on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
-      </motion.div>
-      <motion.div variants={item}>
-        <Label right={<Src k="sim" />}>Thermal envelope</Label>
-        <div className="relative h-2 bg-gradient-to-r from-lime via-gold to-crimson opacity-80 chamfer-sm" />
-        <div className="relative h-3"><motion.span animate={{ left: `${Math.min(100, ((t.temp - 25) / 30) * 100)}%` }} className="absolute top-0 h-3 w-[2px] bg-foreground" /></div>
-        <div className="tnum flex justify-between text-[9px] text-muted-foreground"><span>25°</span><span>{t.temp}°C</span><span>55°</span></div>
-      </motion.div>
+      {androidPresentation ? (
+        <motion.div variants={item} className="rounded-md border border-line/70 bg-foreground/[0.025] p-3 text-[9px] leading-relaxed text-muted-foreground">
+          {tx("These profiles change FRONTIER's own presentation. Android does not grant this app permission to force another game's FPS, display refresh rate, CPU or GPU settings.")}
+        </motion.div>
+      ) : <>
+        <motion.div variants={item} className="space-y-3">
+          <Label right={<Src k="native" />}>Display</Label>
+          <Seg label="Refresh rate" value={s.refresh} onChange={(v) => upd({ refresh: v })} options={[60, 90, 120, 144].map((v) => ({ v, l: `${v}Hz` }))} />
+          <div className="flex items-center justify-between text-[12px]"><span>Frame pacing lock</span><Toggle label="Frame pacing" on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
+        </motion.div>
+        <motion.div variants={item}>
+          <Label right={<Src k="sim" />}>Thermal envelope</Label>
+          <div className="relative h-2 bg-gradient-to-r from-lime via-gold to-crimson opacity-80 chamfer-sm" />
+          <div className="relative h-3"><motion.span animate={{ left: `${Math.min(100, ((t.temp - 25) / 30) * 100)}%` }} className="absolute top-0 h-3 w-[2px] bg-foreground" /></div>
+          <div className="tnum flex justify-between text-[9px] text-muted-foreground"><span>25°</span><span>{t.temp}°C</span><span>55°</span></div>
+        </motion.div>
+      </>}
     </motion.div>
   );
 }
@@ -227,6 +233,7 @@ export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setM
 export type ToolState = { touch: boolean; net: boolean; crosshair: boolean; crossStyle: "dot" | "cross" | "ring"; crossColor: string; shield: boolean; replay: boolean; recording: boolean };
 
 function Tile({ icon: I, name, on, onClick, src, children, color = "var(--accent-fx)" }: { icon: typeof Ic.IHome; name: string; on: boolean; onClick: () => void; src: "live" | "sim" | "native"; children?: React.ReactNode; color?: string }) {
+  const tx = useText();
   return (
     <motion.div variants={item} className={cn("frontier-tool-tile relative chamfer bg-foreground/[0.03] p-2.5 transition-colors", on && "bg-foreground/[0.08]")}>
       <button onClick={onClick} aria-pressed={on} className="flex w-full items-center gap-2.5 text-left">
@@ -234,7 +241,7 @@ function Tile({ icon: I, name, on, onClick, src, children, color = "var(--accent
           <svg viewBox="0 0 32 32" className="absolute inset-0"><path d="M6 1h25v25l-5 5H1V6z" fill="none" stroke="currentColor" strokeOpacity={on ? 0.7 : 0.25} /></svg>
           <I width={16} height={16} />
         </span>
-        <span className="flex-1"><span className="block text-[12px] font-semibold">{name}</span><span className="flex items-center gap-1 text-[9px] text-muted-foreground">{on ? "ENGAGED" : "STANDBY"} <Src k={src} /></span></span>
+        <span className="flex-1"><span className="block text-[12px] font-semibold">{tx(name)}</span><span className="flex items-center gap-1 text-[9px] text-muted-foreground">{tx(on ? "ENGAGED" : "STANDBY")} <Src k={src} /></span></span>
         <span className="h-1.5 w-4" style={{ background: on ? color : "var(--line)", boxShadow: on ? `0 0 8px ${color}` : undefined }} />
       </button>
       {children}
@@ -264,7 +271,7 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
         </div>}
       </Tile>}
       <Tile icon={Ic.IShield} name="Zero-Distraction" on={androidPresentation ? ts.shield : false} onClick={tog("shield")} src={androidPresentation ? "native" : "live"} color="var(--lime)">
-        {ts.shield && <div className="tnum pt-1 pl-10 text-[10px] text-muted-foreground">{blocked} notifications blocked</div>}
+        {ts.shield && <div className="tnum pt-1 pl-10 text-[10px] text-muted-foreground">{blocked} {tx("notifications blocked")}</div>}
       </Tile>
       {!androidPresentation && <Tile icon={Ic.IReplay} name="Instant Replay" on={ts.replay} onClick={onReplay} src="live" color="var(--gold)">
         {ts.replay && <button onClick={onClip} className="mt-2 w-full chamfer-sm bg-gold/20 py-1.5 text-[11px] font-semibold text-gold">SAVE LAST 30s</button>}
@@ -300,17 +307,17 @@ export function VoicePage({ engine, androidPresentation = false }: { engine: Rea
           <Ic.IVoice width={24} height={24} />{live && <span className="fx-pulse absolute right-1.5 top-1.5 h-1.5 w-1.5 bg-crimson" />}
         </button>
         <div className="flex-1">
-          <div className="text-[13px] font-semibold">{live ? "Voice engine live" : "Engine offline"}</div>
-          <div className="tnum text-[10px] text-muted-foreground">{live ? `Output latency ${engine.current?.latency ?? 0}ms` : "Tap to arm microphone"} <Src k="live" /></div>
+          <div className="text-[13px] font-semibold">{tx(live ? "Voice engine live" : "Engine offline")}</div>
+          <div className="tnum text-[10px] text-muted-foreground">{live ? tx("Output latency") + " " + (engine.current?.latency ?? 0) + "ms" : tx("Tap to arm microphone")} <Src k="live" /></div>
         </div>
       </motion.div>
-      {err && <div className="text-[10px] text-crimson">{err}</div>}
+      {err && <div className="text-[10px] text-crimson">{tx(err)}</div>}
       <motion.div variants={item} ref={bars} className="frontier-voice-wave flex h-12 items-center gap-[3px]">
         {Array.from({ length: 24 }).map((_, i) => <span key={i} className="h-full flex-1 origin-center bg-fx" style={{ transform: "scaleY(.06)", opacity: 0.4 + (i / 24) * 0.6 }} />)}
       </motion.div>
       <motion.div variants={item}><Label>Presets</Label>
         <div className="grid grid-cols-3 gap-1">{PRESET_LIST.map((o) => (
-          <button key={o.v} onClick={() => { playSfx("voice-preset"); pick(o.v); }} className={cn("chamfer-sm py-2 text-[11px] transition-colors", p.preset === o.v ? "bg-fx font-bold text-obsidian" : "bg-foreground/5 text-muted-foreground")}>{o.l}</button>))}
+          <button key={o.v} onClick={() => { playSfx("voice-preset"); pick(o.v); }} className={cn("chamfer-sm py-2 text-[11px] transition-colors", p.preset === o.v ? "bg-fx font-bold text-obsidian" : "bg-foreground/5 text-muted-foreground")}>{tx(o.l)}</button>))}
         </div>
       </motion.div>
       <motion.div variants={item} className="space-y-3"><Label>Custom voice</Label>
@@ -318,7 +325,7 @@ export function VoicePage({ engine, androidPresentation = false }: { engine: Rea
         <Slider label="Modulation" min={0} max={100} value={p.mod} onChange={(v) => setP({ ...p, mod: v })} unit="%" />
         <Slider label="Echo" min={0} max={100} value={p.echo} onChange={(v) => setP({ ...p, echo: v })} unit="%" />
         <Slider label="Input gain" min={0} max={100} value={p.gain} onChange={(v) => setP({ ...p, gain: v })} unit="%" />
-        <div className="flex items-center justify-between text-[12px]"><span>Monitor in headphones</span><Toggle label="Monitor" on={p.monitor} onChange={(v) => setP({ ...p, monitor: v })} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tx("Monitor in headphones")}</span><Toggle label="Monitor" on={p.monitor} onChange={(v) => setP({ ...p, monitor: v })} /></div>
         <div className="text-[9px] text-muted-foreground">{tx(androidPresentation ? "Android does not provide a generic API to inject this processed microphone into another game's voice chat. This is local preview only." : "Routing into in-game voice chat requires the Android native bridge.")}</div>
       </motion.div>
     </motion.div>
