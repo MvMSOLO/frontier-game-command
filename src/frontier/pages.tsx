@@ -85,7 +85,7 @@ function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon:
 }
 const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(--cyan)", hyper: "var(--magenta)", overdrive: "var(--gold)" };
 
-export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, activeGameName = null, installedGameCount = 0, androidPresentation = false }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void; activeGameName?: string | null; installedGameCount?: number; androidPresentation?: boolean }) {
+export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, activeGameName = null, installedGameCount = 0, installedGames = [], selectedGameIds = [], launchMessage = null, onLaunchGame, androidPresentation = false }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void; activeGameName?: string | null; installedGameCount?: number; installedGames?: Array<{ id: string; name: string; packageName: string }>; selectedGameIds?: string[]; launchMessage?: string | null; onLaunchGame?: (gameId: string) => void; androidPresentation?: boolean }) {
   const tx = useText();
   const fps = useCount(t.fps, 260);
   const [purged, setPurged] = useState(false);
@@ -105,6 +105,24 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
           </div>
           <div className="mt-3 border-t border-line/70 pt-2 text-[10px] leading-relaxed text-muted-foreground">
             {tx("Android does not expose another game's FPS, CPU or GPU to ordinary apps. No game performance values are fabricated.")}
+          </div>
+          <div className="mt-3 border-t border-line/70 pt-2">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="font-display text-[8px] tracking-[0.16em] text-muted-foreground">{tx("YOUR GAME LIBRARY")}</span>
+              <span className="tnum text-[9px] text-cyan">{selectedGameIds.length} {tx("SELECTED")}</span>
+            </div>
+            <div className="space-y-1.5">
+              {installedGames.filter((game) => selectedGameIds.includes(game.id)).slice(0, 5).map((game) => (
+                <div key={game.id} className="flex items-center gap-2 rounded-md border border-line/70 bg-foreground/[0.025] px-2 py-2">
+                  <span className="min-w-0 flex-1 truncate text-[10px] font-semibold">{game.name}</span>
+                  <button type="button" className="rounded border border-cyan/35 bg-cyan/10 px-2 py-1 text-[8px] font-display tracking-wider text-cyan" onClick={() => onLaunchGame?.(game.id)}>{tx("LAUNCH")}</button>
+                </div>
+              ))}
+              {installedGames.filter((game) => selectedGameIds.includes(game.id)).length === 0 && (
+                <p className="text-[9px] text-muted-foreground">{tx("No selected supported games are installed. Open Settings → Manage Games & Setup.")}</p>
+              )}
+            </div>
+            {launchMessage && <p role="status" className="mt-2 text-[9px] text-cyan">{tx(launchMessage === "launched" ? "Game launch requested." : launchMessage === "not-installed" ? "This game is not installed." : launchMessage === "not-launchable" ? "Android did not provide a launch action for this game." : "Game launch is unavailable.")}</p>}
           </div>
         </Card>
       ) : <Card>
