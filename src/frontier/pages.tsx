@@ -223,7 +223,7 @@ export function PerformancePage({ mode, setMode, t, s, upd, androidPresentation 
         <motion.div variants={item} className="space-y-3">
           <Label right={<Src k="native" />}>Display</Label>
           <Seg label="Refresh rate" value={s.refresh} onChange={(v) => upd({ refresh: v })} options={[60, 90, 120, 144].map((v) => ({ v, l: `${v}Hz` }))} />
-          <div className="flex items-center justify-between text-[12px]"><span>Frame pacing lock</span><Toggle label="Frame pacing" on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
+          <div className="flex items-center justify-between text-[12px]"><span>{tx("Frame pacing lock")}</span><Toggle label="Frame pacing" on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
         </motion.div>
         <motion.div variants={item}>
           <Label right={<Src k="sim" />}>Thermal envelope</Label>
@@ -379,7 +379,7 @@ export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false,
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3">
         <Label>System setup</Label>
-        <p className="text-[10px] leading-relaxed text-muted-foreground">Manage the games selected during initiation and review platform access.</p>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">{tx("Manage the games selected during initiation and review platform access.")}</p>
         <button type="button" onClick={onManageSetup} className="frontier-setup-manage-button" disabled={!onManageSetup}>
           <span>{tx("MANAGE GAMES & SETUP")}</span><span aria-hidden>↗</span>
         </button>
