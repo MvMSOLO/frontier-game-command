@@ -13,10 +13,17 @@ import android.webkit.WebView
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicLong
 
 class MainActivity : Activity(), FrontierBridgeHost {
     private lateinit var webView: WebView
     private lateinit var statusLabel: TextView
+    private val nativeEventSequence = AtomicLong(0)
+
+    companion object {
+        const val EXTRA_MANAGE_SETUP = "frontier_manage_setup"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,8 +66,14 @@ class MainActivity : Activity(), FrontierBridgeHost {
 
         toolbar.addView(brand, LinearLayout.LayoutParams(0, dp(36), 1f))
         toolbar.addView(statusLabel, LinearLayout.LayoutParams(dp(92), dp(36)))
-        toolbar.addView(startButton, LinearLayout.LayoutParams(dp(122), dp(36)).apply { leftMargin = dp(6) })
-        toolbar.addView(stopButton, LinearLayout.LayoutParams(dp(54), dp(36)).apply { leftMargin = dp(6) })
+        toolbar.addView(
+            startButton,
+            LinearLayout.LayoutParams(dp(122), dp(36)).apply { leftMargin = dp(6) },
+        )
+        toolbar.addView(
+            stopButton,
+            LinearLayout.LayoutParams(dp(54), dp(36)).apply { leftMargin = dp(6) },
+        )
         root.addView(toolbar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)))
 
         webView = WebView(this).apply {
@@ -72,7 +85,8 @@ class MainActivity : Activity(), FrontierBridgeHost {
             settings.blockNetworkLoads = true
             settings.mediaPlaybackRequiresUserGesture = true
             settings.javaScriptCanOpenWindowsAutomatically = false
-            webViewClient = LocalAssetWebViewClient()
+            settings.setSupportMultipleWindows(false)
+            webViewClient = LocalAssetWebViewClient { emitLibraryEvent() }
             addJavascriptInterface(
                 FrontierJavascriptBridge(this@MainActivity, this@MainActivity),
                 "FrontierAndroid",
@@ -85,6 +99,19 @@ class MainActivity : Activity(), FrontierBridgeHost {
         setContentView(root)
         webView.loadUrl(LocalAssetWebViewClient.APP_URL)
         refreshPermissionLabel()
+        NativeGameDiscovery.refresh(this, force = true) {
+            emitLibraryEvent()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_MANAGE_SETUP, false) && ::webView.isInitialized) {
+            webView.post {
+                webView.evaluateJavascript("window.dispatchEvent(new Event('frontier:manage-setup'));", null)
+            }
+        }
     }
 
     override fun onResume() {
@@ -92,6 +119,9 @@ class MainActivity : Activity(), FrontierBridgeHost {
         if (::webView.isInitialized) {
             refreshPermissionLabel()
             webView.evaluateJavascript("window.dispatchEvent(new Event('focus'));", null)
+            if (OverlayService.isRunning(this)) {
+                OverlayService.send(this, OverlayService.ACTION_REFRESH_STATE)
+            }
         }
     }
 
@@ -117,17 +147,111 @@ class MainActivity : Activity(), FrontierBridgeHost {
         }
     }
 
+    override fun expandOverlay(): Boolean = startOverlay()
+
+    override fun collapseOverlay() = minimizeOverlay()
+
     override fun minimizeOverlay() {
-        startService(Intent(this, OverlayService::class.java).setAction(OverlayService.ACTION_MINIMIZE))
+        if (OverlayService.isRunning(this)) {
+            OverlayService.send(this, OverlayService.ACTION_MINIMIZE)
+        }
     }
 
     override fun stopOverlay() {
         stopService(Intent(this, OverlayService::class.java))
     }
 
+    override fun setAutoDetect(enabled: Boolean): Boolean {
+        if (enabled && !NativePermissionManager.hasUsageAccess(this)) {
+            NativePermissionManager.openSettings(this, NativePermissionManager.USAGE_ACCESS)
+            return false
+        }
+        val saved = GameSelectionStore.setAutoDetectEnabled(this, enabled)
+        if (!saved) return false
+        if (enabled) {
+            OverlayService.start(this)
+            OverlayService.send(
+                this,
+                OverlayService.ACTION_SET_AUTO_DETECT,
+                Intent().putExtra(OverlayService.EXTRA_ENABLED, true),
+            )
+        } else if (OverlayService.isRunning(this)) {
+            OverlayService.send(
+                this,
+                OverlayService.ACTION_SET_AUTO_DETECT,
+                Intent().putExtra(OverlayService.EXTRA_ENABLED, false),
+            )
+        }
+        return true
+    }
+
+    override fun setSelectedGames(gameIdsJson: String): Boolean {
+        val saved = GameSelectionStore.setSelectedGameIds(this, gameIdsJson)
+        if (saved && OverlayService.isRunning(this)) {
+            OverlayService.send(
+                this,
+                OverlayService.ACTION_SET_SELECTED_GAMES,
+                Intent().putExtra(OverlayService.EXTRA_GAME_IDS, gameIdsJson),
+            )
+        }
+        return saved
+    }
+
+    override fun launchGame(gameId: String): String = NativeGameDiscovery.launch(this, gameId)
+
+    override fun getAutoDetectEnabled(): Boolean = GameSelectionStore.isAutoDetectEnabled(this)
+
+    override fun getSelectedGameIds(): String =
+        JSONObject().put("ids", org.json.JSONArray(GameSelectionStore.selectedGameIds(this))).toString()
+
+    override fun getDetectorStatus(): String = when {
+        !NativePermissionManager.hasUsageAccess(this) -> "permission-required"
+        !OverlayService.isRunning(this) -> "disabled"
+        !GameSelectionStore.isAutoDetectEnabled(this) -> "monitoring"
+        else -> "running"
+    }
+
+    override fun openSetup() {
+        if (::webView.isInitialized) {
+            webView.post { webView.evaluateJavascript("window.dispatchEvent(new Event('frontier:manage-setup'));", null) }
+        }
+    }
+
+    override fun setNotificationSuppression(enabled: Boolean): Boolean {
+        if (enabled && !NativePermissionManager.hasNotificationAccess(this)) {
+            NativePermissionManager.openSettings(this, NativePermissionManager.NOTIFICATION_ACCESS)
+            return false
+        }
+        return NotificationPolicyStore.setEnabled(this, enabled)
+    }
+
+    override fun getNotificationSuppressionEnabled(): Boolean = NotificationPolicyStore.isEnabled(this)
+
+    private fun emitLibraryEvent() {
+        if (!::webView.isInitialized) return
+        val envelope = JSONObject()
+            .put("version", 1)
+            .put("sequence", nativeEventSequence.incrementAndGet())
+            .put("type", "game-library")
+            .put(
+                "payload",
+                JSONObject()
+                    .put("availability", "available")
+                    .put("games", NativeGameDiscovery.toJsonArray()),
+            )
+        val quotedEnvelope = JSONObject.quote(envelope.toString())
+        webView.post {
+            webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('frontier:native-event',{detail:JSON.parse($quotedEnvelope)}));",
+                null,
+            )
+        }
+    }
+
     private fun refreshPermissionLabel() {
         if (!::statusLabel.isInitialized) return
-        statusLabel.text = if (Settings.canDrawOverlays(this)) "OVERLAY READY" else "OVERLAY ACCESS NEEDED"
+        statusLabel.text =
+            if (Settings.canDrawOverlays(this)) "OVERLAY READY" else "OVERLAY ACCESS NEEDED"
     }
 
     private fun toolbarButton(label: String) = Button(this).apply {

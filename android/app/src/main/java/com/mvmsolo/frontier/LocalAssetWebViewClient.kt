@@ -6,7 +6,14 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import java.io.ByteArrayInputStream
 
-class LocalAssetWebViewClient : WebViewClient() {
+class LocalAssetWebViewClient(
+    private val onLocalPageReady: (() -> Unit)? = null,
+) : WebViewClient() {
+
+    override fun onPageFinished(view: WebView?, url: String?) {
+        super.onPageFinished(view, url)
+        if (url?.startsWith("https://$LOCAL_HOST/web/") == true) onLocalPageReady?.invoke()
+    }
     override fun shouldInterceptRequest(
         view: WebView?,
         request: WebResourceRequest,

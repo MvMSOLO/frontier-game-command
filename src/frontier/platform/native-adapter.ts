@@ -8,6 +8,18 @@ export interface FrontierAndroidBridge {
   startOverlay?(): boolean;
   minimizeOverlay?(): void;
   stopOverlay?(): void;
+  expandOverlay?(): void;
+  collapseOverlay?(): void;
+  setAutoDetect?(enabled: boolean): boolean;
+  setSelectedGames?(gameIdsJson: string): boolean;
+  getAutoDetectEnabled?(): boolean;
+  getSelectedGameIds?(): string;
+  getDetectorStatus?(): string;
+  launchGame?(gameId: string): string;
+  openSetup?(): void;
+  getNotificationSuppressionEnabled?(): boolean;
+  setNotificationSuppression?(enabled: boolean): boolean;
+  getDeviceSnapshot?(): string;
 }
 
 declare global {

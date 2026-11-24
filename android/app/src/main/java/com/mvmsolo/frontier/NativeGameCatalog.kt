@@ -12,6 +12,11 @@ data class NativeUsageEvent(
     val foreground: Boolean,
 )
 
+object NativeForegroundState {
+    @Volatile
+    var current: NativeGame? = null
+}
+
 object NativeGameCatalog {
     val games: List<NativeGame> = listOf(
         NativeGame("pubg-mobile", "PUBG MOBILE", listOf("com.tencent.ig")),
@@ -31,13 +36,25 @@ object NativeGameCatalog {
     private val byPackage: Map<String, NativeGame> = games
         .flatMap { game -> game.packageNames.map { packageName -> packageName to game } }
         .toMap()
+    private val byId = games.associateBy { it.id }
 
     fun forPackage(packageName: String?): NativeGame? =
         if (packageName == null) null else byPackage[packageName]
 
+    fun forId(id: String?): NativeGame? = if (id == null) null else byId[id]
+
+    fun packageNames(): List<String> = games.flatMap { it.packageNames }
+
+    fun reduceForegroundPackage(currentPackage: String?, event: NativeUsageEvent): String? =
+        if (event.foreground) event.packageName
+        else if (currentPackage == event.packageName) null
+        else currentPackage
+
     fun resolveForegroundGame(events: List<NativeUsageEvent>): NativeGame? {
-        val latest = events.maxByOrNull { it.timestamp } ?: return null
-        if (!latest.foreground) return null
-        return forPackage(latest.packageName)
+        var currentPackage: String? = null
+        events.sortedBy { it.timestamp }.forEach { event ->
+            currentPackage = reduceForegroundPackage(currentPackage, event)
+        }
+        return forPackage(currentPackage)
     }
 }
