@@ -51,14 +51,10 @@ object NativeGameCatalog {
         else currentPackage
 
     fun resolveForegroundGame(events: List<NativeUsageEvent>): NativeGame? {
-        val packageName = events
-            .sortedBy { it.timestamp }
-            .fold<String?, NativeUsageEvent?>(null) { current, event ->
-                val currentPackage = current?.let { it.packageName }
-                val nextPackage = reduceForegroundPackage(currentPackage, event)
-                nextPackage?.let { NativeUsageEvent(it, event.timestamp, true) }
-            }
-            ?.packageName
-        return forPackage(packageName)
+        var currentPackage: String? = null
+        events.sortedBy { it.timestamp }.forEach { event ->
+            currentPackage = reduceForegroundPackage(currentPackage, event)
+        }
+        return forPackage(currentPackage)
     }
 }
