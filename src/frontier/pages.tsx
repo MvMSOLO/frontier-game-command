@@ -184,12 +184,6 @@ export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setM
         <div className="relative h-3"><motion.span animate={{ left: `${Math.min(100, ((t.temp - 25) / 30) * 100)}%` }} className="absolute top-0 h-3 w-[2px] bg-foreground" /></div>
         <div className="tnum flex justify-between text-[9px] text-muted-foreground"><span>25°</span><span>{t.temp}°C</span><span>55°</span></div>
       </motion.div>
-      <motion.div variants={item} className="frontier-settings-group space-y-3">
-        <Label>{tr(s.language, "Launch selected game")}</Label>
-        <div className="space-y-1.5">{GAME_CATALOG.filter((game) => selectedGameIds.includes(game.id)).map((game) => <button key={game.id} type="button" onClick={() => launchSelectedGame(game.id)} className="flex min-h-10 w-full items-center justify-between chamfer-sm border border-line bg-foreground/[0.03] px-3 text-left text-[11px] hover:border-cyan/50"><span>{game.name}</span><span className="font-display text-[8px] tracking-widest text-cyan">{tr(s.language, "LAUNCH")}</span></button>)}</div>
-        {selectedGameIds.length === 0 && <p className="text-[10px] text-muted-foreground">{tr(s.language, "No games selected yet.")}</p>}
-        {launchFeedback && <p role="status" className="text-[10px] text-muted-foreground">{launchFeedback}</p>}
-      </motion.div>
     </motion.div>
   );
 }
@@ -358,6 +352,12 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>{tr(s.language, "Performance preference")}</Label>
         <Seg label={tr(s.language, "Launch profile")} value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />
+      </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3">
+        <Label>{tr(s.language, "Launch selected game")}</Label>
+        <div className="space-y-1.5">{GAME_CATALOG.filter((game) => selectedGameIds.includes(game.id)).map((game) => <button key={game.id} type="button" onClick={() => launchSelectedGame(game.id)} className="flex min-h-10 w-full items-center justify-between chamfer-sm border border-line bg-foreground/[0.03] px-3 text-left text-[11px] hover:border-cyan/50"><span>{game.name}</span><span className="font-display text-[8px] tracking-widest text-cyan">{tr(s.language, "LAUNCH")}</span></button>)}</div>
+        {selectedGameIds.length === 0 && <p className="text-[10px] text-muted-foreground">{tr(s.language, "No games selected yet.")}</p>}
+        {launchFeedback && <p role="status" className="text-[10px] text-muted-foreground">{launchFeedback}</p>}
       </motion.div>
     </motion.div>
   );
