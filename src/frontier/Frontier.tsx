@@ -8,6 +8,9 @@ import * as Ic from "./icons";
 import { SceneArtwork } from "./components/Artwork";
 import { HomePage, MODES, PerformancePage, SettingsPage, ToolsPage, VoicePage, type ToolState } from "./pages";
 import type { VoiceEngine } from "./voice";
+import { LanguageProvider } from "./i18n";
+import { getPlatformAdapter } from "./platform";
+import { subscribeNativeEvents } from "./platform/native-events";
 
 export type FrontierPresentation = "browser" | "android-overlay";
 type Tab = "home" | "perf" | "tools" | "voice" | "settings";
@@ -50,6 +53,11 @@ function Crosshair({ style, color }: { style: "dot" | "cross" | "ring"; color: s
 
 export function Frontier({ onManageSetup, presentation = "browser" }: { onManageSetup?: () => void; presentation?: FrontierPresentation } = {}) {
   const [s, upd] = useSettings();
+  const nativeAdapter = useMemo(() => getPlatformAdapter(), []);
+  const [autoDetectEnabled, setAutoDetectEnabled] = useState(false);
+  const [detectorStatus, setDetectorStatus] = useState<"disabled" | "running" | "permission-required" | "unavailable">("disabled");
+  const [activeGameName, setActiveGameName] = useState<string | null>(null);
+  const [installedGameCount, setInstalledGameCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("home");
   const [activeWing, setActiveWing] = useState<"core" | "nexus">("core");
@@ -69,6 +77,35 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
 
   useEffect(() => { setSound(s.sound, s.volume); setHaptics(s.haptics); document.documentElement.style.setProperty("--accent-fx", `var(--${s.accent})`); }, [s.sound, s.volume, s.haptics, s.accent]);
   useEffect(() => { setModeRaw(s.startMode); }, [s.startMode]);
+  useEffect(() => {
+    if (presentation !== "android-overlay" || nativeAdapter.kind !== "android") return;
+    const bridge = window.FrontierAndroid;
+    if (bridge) {
+      try {
+        const discovery = JSON.parse(bridge.getInstalledGames()) as { games?: unknown[] };
+        if (Array.isArray(discovery.games)) setInstalledGameCount(discovery.games.length);
+      } catch {
+        setInstalledGameCount(0);
+      }
+      if (bridge.getAutoDetectEnabled) setAutoDetectEnabled(bridge.getAutoDetectEnabled());
+      if (bridge.getDetectorStatus) {
+        const status = bridge.getDetectorStatus();
+        if (status === "disabled" || status === "running" || status === "permission-required" || status === "unavailable") {
+          setDetectorStatus(status);
+        }
+      }
+      const activeGame = nativeAdapter.getForegroundGame();
+      setActiveGameName(activeGame?.name ?? null);
+    }
+    return subscribeNativeEvents((event) => {
+      if (event.type === "game-library") setInstalledGameCount(event.payload.games.length);
+      if (event.type === "game-state") setActiveGameName(event.payload.game?.name ?? null);
+      if (event.type === "detector-state") setDetectorStatus(event.payload.status);
+      if (event.type === "selection-state") {
+        bridge?.setSelectedGames?.(JSON.stringify(event.payload.selectedGameIds));
+      }
+    });
+  }, [nativeAdapter, presentation]);
   // Browser preview notices only; Android Zero-Distraction uses native notifications.
   useEffect(() => {
     if (presentation !== "browser") return;
@@ -142,7 +179,8 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
   const od = mode === "overdrive"; const M = MODES[mode];
 
   return (
-    <MotionConfig reducedMotion={s.motion === 0 ? "always" : "user"} transition={{ ...SPRING, stiffness: 380 * Math.max(0.5, s.motion) }}>
+    <LanguageProvider language={s.language}>
+      <MotionConfig reducedMotion={s.motion === 0 ? "always" : "user"} transition={{ ...SPRING, stiffness: 380 * Math.max(0.5, s.motion) }}>
       <div className={cn("frontier-app fixed inset-0 select-none overflow-hidden text-foreground", presentation === "android-overlay" && "frontier-android-presentation")} data-panel-open={open} data-presentation={presentation} style={{ touchAction: ts.touch && presentation === "browser" ? "none" : "manipulation" }}>
         {presentation === "browser" && <GameScene overdrive={od} />}
         {presentation === "browser" && ts.crosshair && <Crosshair style={ts.crossStyle} color={ts.crossColor} />}
@@ -214,11 +252,17 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
                 <div className="frontier-page-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-width:none]">
                   <AnimatePresence mode="wait">
                     <motion.div key={tab} initial={{ opacity: 0, y: 10, scale: 0.992 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.996, transition: { duration: 0.16, ease: "easeOut" } }} transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}>
-                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} />}
+                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} activeGameName={activeGameName} installedGameCount={installedGameCount} />}
                       {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} />}
                       {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); playSfx("navigation"); }} />}
                       {tab === "voice" && <VoicePage engine={voice} />}
-                      {tab === "settings" && <SettingsPage s={s} upd={upd} onManageSetup={onManageSetup} />}
+                      {tab === "settings" && <SettingsPage s={s} upd={upd} onManageSetup={onManageSetup ?? (() => window.FrontierAndroid?.openSetup?.())}
+    autoDetectEnabled={autoDetectEnabled}
+    detectorStatus={detectorStatus}
+    onAutoDetectChange={(enabled) => {
+      const success = window.FrontierAndroid?.setAutoDetect?.(enabled) ?? false;
+      if (success) setAutoDetectEnabled(enabled);
+    }} />}
                     </motion.div>
                   </AnimatePresence>
                 </div>
@@ -293,6 +337,7 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
           )}
         </AnimatePresence>
       </div>
-    </MotionConfig>
+      </MotionConfig>
+    </LanguageProvider>
   );
 }
