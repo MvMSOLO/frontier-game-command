@@ -48,9 +48,13 @@ function GameCard({ game, selected, installed, onToggle }: { game: GameCatalogIt
     <span className="frontier-init-game-check">{selected ? <Check size={14} /> : "+"}</span>
   </button>;
 }
+export function InitiationProtocol(props: InitiationProtocolProps) {
+  const [settings] = useSettings();
+  return <LanguageProvider language={settings.language}><InitiationProtocolContent {...props} /></LanguageProvider>;
+}
+
 function InitiationProtocolContent({ initialState, onStateChange, onComplete, adapter = getPlatformAdapter() }: InitiationProtocolProps) {
   const t = useText();
-  const [settings] = useSettings();
   const [state, setState] = useState(initialState);
   const [permissionStatuses, setPermissionStatuses] = useState<Record<SystemPermissionId, PermissionStatus>>({ overlay: "unknown", "usage-access": "unknown", "notification-access": "unknown" });
   const [search, setSearch] = useState("");
