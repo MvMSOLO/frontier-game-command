@@ -1,3 +1,5 @@
+import { cloneElement, createElement, Fragment, isValidElement, type ReactNode } from "react";
+
 export type FrontierLanguage = "en" | "ru";
 
 const RU: Record<string, string> = {
@@ -25,11 +27,73 @@ const RU: Record<string, string> = {
   "Performance Mode": "Режим производительности", "Quick Tools": "Быстрые инструменты", "Frame Time": "Время кадра",
   "Stability": "Стабильность", "Performance Optimized!": "Производительность оптимизирована!",
   "Enjoy smoother gameplay": "Играйте плавнее", "Purging…": "Очистка…", "Crosshair": "Прицел",
-  "No Disturb": "Не беспокоить", "Frame pacing": "Синхронизация кадров", "Foreground game": "Игра на переднем плане", "No supported game detected": "Поддерживаемая игра не обнаружена", "Usage access required for detection": "Для обнаружения нужен доступ к статистике использования", "Notification access": "Доступ к уведомлениям", "Native device diagnostics are available in the Android overlay.": "Диагностика устройства доступна в Android-оверлее.", "YES": "ДА", "NO": "НЕТ", "NORMAL": "НОРМА", "LIGHT": "ЛЁГКИЙ", "MODERATE": "УМЕРЕННЫЙ", "SEVERE": "СЕРЬЁЗНЫЙ", "CRITICAL": "КРИТИЧЕСКИЙ", "EMERGENCY": "АВАРИЙНЫЙ", "UNSUPPORTED": "НЕ ПОДДЕРЖИВАЕТСЯ", "GRANTED": "РАЗРЕШЕНО", "DENIED": "ЗАПРЕЩЕНО", "UNKNOWN": "НЕИЗВЕСТНО"
+  "No Disturb": "Не беспокоить", "Frame pacing": "Синхронизация кадров",
+  "Foreground game": "Игра на переднем плане", "No supported game detected": "Поддерживаемая игра не обнаружена",
+  "Usage access required for detection": "Для обнаружения нужен доступ к статистике использования",
+  "Notification access": "Доступ к уведомлениям", "Native device diagnostics are available in the Android overlay.": "Диагностика устройства доступна в Android-оверлее.",
+  "YES": "ДА", "NO": "НЕТ", "NORMAL": "НОРМА", "LIGHT": "ЛЁГКИЙ", "MODERATE": "УМЕРЕННЫЙ",
+  "SEVERE": "СЕРЬЁЗНЫЙ", "CRITICAL": "КРИТИЧЕСКИЙ", "EMERGENCY": "АВАРИЙНЫЙ", "UNSUPPORTED": "НЕ ПОДДЕРЖИВАЕТСЯ",
+  "GRANTED": "РАЗРЕШЕНО", "DENIED": "ЗАПРЕЩЕНО", "UNKNOWN": "НЕИЗВЕСТНО",
+  "Android capability status": "Статус возможностей Android", "Only controls with a verified Android implementation are enabled. Unsupported game-level tuning is not simulated.": "Включены только проверенные функции Android. Недоступная настройка игры не имитируется.",
+  "Foreground game detector": "Определение активной игры", "Launch selected games": "Запуск выбранных игр",
+  "Memory diagnostics": "Диагностика памяти", "Touch Boost": "Ускорение касания",
+  "Game FPS / GPU tuning": "Настройка FPS / GPU игры", "In-game voice routing": "Передача голоса в игру",
+  "Screen recording / replay": "Запись экрана / повтор", "Crosshair over game": "Прицел поверх игры",
+  "AVAILABLE": "ДОСТУПНО", "DIAGNOSTICS": "ДИАГНОСТИКА", "NATIVE DATA REQUIRED": "НУЖНЫ ДАННЫЕ ANDROID",
+  "GAME FPS · NATIVE REQUIRED": "FPS ИГРЫ · НУЖЕН NATIVE API", "GAME FRAME TIME · UNAVAILABLE": "ВРЕМЯ КАДРА ИГРЫ · НЕДОСТУПНО",
+  "GAME STABILITY · UNAVAILABLE": "СТАБИЛЬНОСТЬ ИГРЫ · НЕДОСТУПНО",
+  "WELCOME": "ДОБРО ПОЖАЛОВАТЬ", "ACCESS": "ДОСТУП", "GAMES": "ИГРЫ", "REVIEW": "ПРОВЕРКА", "READY": "ГОТОВО",
+  "Display over other apps": "Поверх других приложений", "Usage access": "Доступ к статистике использования",
+  "Notification access": "Доступ к уведомлениям", "NOT CHECKED": "НЕ ПРОВЕРЕНО", "NOT GRANTED": "НЕ РАЗРЕШЕНО",
+  "RESTRICTED": "ОГРАНИЧЕНО", "NATIVE REQUIRED": "НУЖЕН NATIVE API",
+  "All": "Все", "Battle Royale": "Королевская битва", "MOBA": "MOBA", "Sports": "Спорт",
+  "Racing": "Гонки", "Sandbox": "Песочница", "Action": "Экшен", "Search your games...": "Поиск игр...",
+  "No games selected yet. You can add games later in Settings.": "Игры пока не выбраны. Их можно добавить позже в настройках.",
+  "CHECK": "ПРОВЕРИТЬ", "CONTINUE": "ПРОДОЛЖИТЬ", "BACK": "НАЗАД", "EDIT": "ИЗМЕНИТЬ",
+  "REVIEW": "ПРОВЕРКА", "ACTIVATE FRONTIER": "АКТИВИРОВАТЬ FRONTIER", "INITIALIZE SYSTEM": "ЗАПУСТИТЬ СИСТЕМУ",
+  "ENTER FRONTIER": "ВОЙТИ В FRONTIER", "SELECTED": "ВЫБРАНО", "INSTALLED": "УСТАНОВЛЕНО"
 };
 
 export function tr(language: FrontierLanguage, value: string): string {
   return language === "ru" ? (RU[value] ?? value) : value;
+}
+
+function translateNode(node: ReactNode, language: FrontierLanguage): ReactNode {
+  if (typeof node === "string") return tr(language, node);
+  if (Array.isArray(node)) return node.map((child) => translateNode(child, language));
+  if (!isValidElement<Record<string, unknown>>(node)) return node;
+  const props = { ...node.props };
+  for (const key of ["label", "title", "placeholder", "aria-label", "alt", "description", "purpose"]) {
+    const value = props[key];
+    if (typeof value === "string") props[key] = tr(language, value);
+  }
+  if (Array.isArray(props.options)) {
+    props.options = props.options.map((option) => {
+      if (!option || typeof option !== "object") return option;
+      const next = { ...(option as Record<string, unknown>) };
+      if (typeof next.l === "string") next.l = tr(language, next.l);
+      if (typeof next.label === "string") next.label = tr(language, next.label);
+      return next;
+    });
+  }
+  if (props.item && typeof props.item === "object") {
+    const item = { ...(props.item as Record<string, unknown>) };
+    for (const key of ["title", "description", "purpose", "category"]) {
+      if (typeof item[key] === "string") item[key] = tr(language, item[key] as string);
+    }
+    props.item = item;
+  }
+  if (props.game && typeof props.game === "object") {
+    const game = { ...(props.game as Record<string, unknown>) };
+    if (typeof game.category === "string") game.category = tr(language, game.category);
+    props.game = game;
+  }
+  if ("children" in props) props.children = translateNode(props.children as ReactNode, language);
+  return cloneElement(node, props);
+}
+
+export function LocalizedTree({ language, children }: { language: FrontierLanguage; children: ReactNode }) {
+  return createElement(Fragment, null, translateNode(children, language));
 }
 
 export function applyLanguage(language: FrontierLanguage) {
