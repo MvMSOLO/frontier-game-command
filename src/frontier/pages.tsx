@@ -6,6 +6,7 @@ import type { Mode, Telemetry } from "./telemetry";
 import type { Settings } from "./store";
 import { Label, Ring, Seg, Slider, Src, Toggle } from "./ui";
 import * as Ic from "./icons";
+import { PerformanceArtwork } from "./components/Artwork";
 import { PRESETS, VoiceEngine, type VoiceParams, type VoicePreset } from "./voice";
 
 export const item = { hidden: { opacity: 0, y: 11, scale: 0.985 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 360, damping: 27, mass: 0.72 } } };
@@ -114,11 +115,12 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
         <div className="frontier-mode-grid grid grid-cols-2 gap-1.5">
           {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const c = MODE_COL[k]; const od = k === "overdrive"; return (
             <motion.button key={k} whileTap={{ scale: 0.92 }} aria-label={M.name} aria-pressed={on} onClick={() => setMode(k)}
-              className={cn("relative flex h-[58px] flex-col items-center justify-center gap-1 overflow-hidden chamfer-sm border text-[9px] font-semibold leading-tight transition-colors", on ? "border-current" : "border-line")}
+              className={cn("relative isolate flex h-[58px] flex-col items-center justify-center gap-1 overflow-hidden chamfer-sm border text-[9px] font-semibold leading-tight transition-colors", on ? "border-current" : "border-line")}
               style={{ color: on ? c : "var(--foreground)", background: on ? `color-mix(in oklab, ${c} 18%, transparent)` : "color-mix(in oklab, var(--foreground) 4%, transparent)", boxShadow: on ? `0 0 14px color-mix(in oklab, ${c} 50%, transparent), inset 0 0 12px color-mix(in oklab, ${c} 30%, transparent)` : undefined }}>
+              <PerformanceArtwork mode={k} className="frontier-mode-art-image" /><span className="frontier-mode-art-scrim" />
               {on && od && <motion.span initial={{ x: "-100%" }} animate={{ x: "100%" }} transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }} className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-gold/30 to-transparent" />}
-              <span style={{ color: c, filter: `drop-shadow(0 0 4px ${c})` }}><M.icon width={18} height={18} /></span>
-              <span className="text-center">{od ? <>FRONTIER<br />OVERDRIVE</> : M.name.split(/[ -]/)[0]}</span>
+              <span className="relative z-10" style={{ color: c, filter: `drop-shadow(0 0 4px ${c})` }}><M.icon width={18} height={18} /></span>
+              <span className="relative z-10 text-center">{od ? <>FRONTIER<br />OVERDRIVE</> : M.name.split(/[ -]/)[0]}</span>
             </motion.button>); })}
         </div>
       </Card>
@@ -151,10 +153,11 @@ export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setM
       <div className="space-y-1.5">
         {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const od = k === "overdrive"; return (
           <motion.button variants={item} key={k} onClick={() => setMode(k)} whileTap={{ scale: 0.98 }}
-            className={cn("frontier-mode-card relative block w-full overflow-hidden chamfer p-3 text-left transition-colors", on ? "bg-foreground/[0.08]" : "bg-foreground/[0.03] hover:bg-foreground/[0.06]")}>
+            className={cn("frontier-mode-card relative isolate block w-full overflow-hidden chamfer p-3 text-left transition-colors", on ? "bg-foreground/[0.08]" : "bg-foreground/[0.03] hover:bg-foreground/[0.06]")}>
+            <PerformanceArtwork mode={k} className="frontier-mode-art-image" /><span className="frontier-mode-art-scrim" />
             {on && <motion.span layoutId="modebar" className="absolute inset-y-0 left-0 w-[3px]" style={{ background: M.color, boxShadow: `0 0 12px ${M.color}` }} />}
             {on && od && <motion.span initial={{ x: "-100%" }} animate={{ x: "100%" }} transition={{ repeat: Infinity, duration: 1.8, ease: "linear" }} className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />}
-            <div className="flex items-center gap-3">
+            <div className="relative z-10 flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center chamfer-sm" style={{ color: M.color, background: `color-mix(in oklab, ${M.color} ${on ? 18 : 6}%, transparent)` }}><M.icon /></span>
               <div className="flex-1">
                 <div className={cn("text-[13px] font-semibold", od && "font-display text-[11px] tracking-widest")} style={{ color: on ? M.color : undefined }}>{od ? "FRONTIER OVERDRIVE" : M.name}</div>

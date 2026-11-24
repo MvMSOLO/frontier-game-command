@@ -5,6 +5,7 @@ import { haptic, playSfx, setHaptics, setSound, type SfxEvent } from "./audio";
 import { useTelemetry, type Mode } from "./telemetry";
 import { useSettings } from "./store";
 import * as Ic from "./icons";
+import { SceneArtwork } from "./components/Artwork";
 import { HomePage, MODES, PerformancePage, SettingsPage, ToolsPage, VoicePage, type ToolState } from "./pages";
 import type { VoiceEngine } from "./voice";
 
@@ -18,23 +19,11 @@ const SPRING = { type: "spring" as const, stiffness: 380, damping: 28 };
 const NOTES = ["Squad invite from N1GHTFALL", "New message: 'gg wp'", "Battery saver suggestion", "Store: weekend bundle -40%", "Friend is now online"];
 
 function GameScene({ overdrive }: { overdrive: boolean }) {
+  // Browser-only preview art. The future Android overlay must stay transparent over live gameplay.
   return (
     <div className="absolute inset-0 overflow-hidden bg-obsidian" aria-hidden>
-      <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMax slice" viewBox="0 0 1600 900">
-        <defs>
-          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="oklch(0.22 0.06 260)" /><stop offset=".6" stopColor="oklch(0.42 0.09 240)" /><stop offset="1" stopColor="oklch(0.7 0.1 60)" /></linearGradient>
-          <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="oklch(0.32 0.05 250)" /><stop offset="1" stopColor="oklch(0.2 0.03 250)" /></linearGradient>
-          <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="oklch(0.26 0.06 150)" /><stop offset="1" stopColor="oklch(0.14 0.03 160)" /></linearGradient>
-        </defs>
-        <rect width="1600" height="900" fill="url(#sky)" />
-        <circle cx="1180" cy="520" r="90" fill="oklch(0.9 0.12 75)" opacity=".55" />
-        <g className="fx-drift" opacity=".35">{[0, 1600].map((o) => <g key={o} transform={`translate(${o},0)`} fill="oklch(0.85 0.03 240)">{[[200, 180, 140], [620, 120, 90], [980, 220, 160], [1350, 150, 110]].map(([x, y, r]) => <ellipse key={x} cx={x} cy={y} rx={r} ry={(r ?? 0) / 3.5} />)}</g>)}</g>
-        <path d="M0 620 L180 480 L320 560 L520 400 L720 540 L900 430 L1100 560 L1300 450 L1600 580 V900 H0Z" fill="url(#m1)" />
-        <path d="M0 720 Q300 620 600 700 T1200 680 T1600 700 V900 H0Z" fill="url(#m2)" />
-        <path d="M1050 560 h40 l12 -110 h-64z" fill="oklch(0.3 0.02 250)" />
-        {Array.from({ length: 22 }).map((_, i) => <path key={i} d={`M${i * 75 + 20} ${730 - (i % 3) * 12} l14 -50 l14 50z`} fill="oklch(0.18 0.05 150)" />)}
-        <path d="M0 900 L700 760 L900 760 L1600 900Z" fill="oklch(0.16 0.02 140)" opacity=".7" />
-      </svg>
+      <SceneArtwork className="absolute inset-0 h-full w-full object-cover" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-obsidian/5 via-obsidian/10 to-obsidian/45" />
       {/* Fictional game-space HUD; this is a preview, not an Android system overlay. */}
       <div className="frontier-preview-badge absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-1.5 border border-foreground/20 bg-obsidian/65 px-2 py-1 font-display text-[8px] tracking-[0.16em] text-foreground/75">
         <span className="h-1.5 w-1.5 rounded-full bg-cyan" /> GAME PREVIEW · SIM

@@ -647,3 +647,16 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
   .frontier-entry-loading-line span,.frontier-init-reactor .ring-one,.frontier-init-reactor .ring-two{animation:none}
   .frontier-init-game,.frontier-init-primary{transition:none}
 }
+
+
+/* FRONTIER Task 5 — local, offline-ready visual artwork layers */
+.frontier-mode-art-image{position:absolute;inset:0;z-index:0;width:100%;height:100%;object-fit:cover;opacity:.34;filter:saturate(.9);transition:opacity .22s ease,transform .35s ease}
+.frontier-mode-art-scrim{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(3,9,18,.86),rgba(3,9,18,.54) 54%,rgba(3,9,18,.2))}
+.frontier-mode-card:hover .frontier-mode-art-image,.frontier-mode-card:focus-visible .frontier-mode-art-image{opacity:.48;transform:scale(1.025)}
+.frontier-init-game-art{display:block;position:relative;width:52px;height:52px;flex:0 0 52px;overflow:hidden;border:1px solid rgba(98,231,255,.3);background:rgba(4,14,24,.9);box-shadow:inset 0 0 18px rgba(98,231,255,.08)}
+.frontier-init-game-art img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .25s ease}
+.frontier-init-game:hover .frontier-init-game-art img{transform:scale(1.08)}
+.frontier-init-reactor-art{position:absolute;inset:-5px;width:calc(100% + 10px);height:calc(100% + 10px);object-fit:cover;border-radius:50%;opacity:.74;mix-blend-mode:screen}
+.frontier-init-review-games>span{display:inline-flex;align-items:center;gap:7px}
+.frontier-init-review-game-art{width:24px;height:24px;flex:0 0 24px;object-fit:cover;border:1px solid rgba(98,231,255,.2)}
+@media(prefers-reduced-motion:reduce){.frontier-mode-art-image,.frontier-init-game-art img{transition:none}}
