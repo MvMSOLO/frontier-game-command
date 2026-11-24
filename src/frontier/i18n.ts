@@ -18,7 +18,7 @@ const RU: Record<string, string> = {
   "Spectre": "Призрак", "Comms": "Связь", "Xeno": "Ксеноморф", "Tone (dark ↔ bright)": "Тон (низкий ↔ высокий)",
   "Modulation": "Модуляция", "Echo": "Эхо", "Input gain": "Усиление входа", "Monitor in headphones": "Прослушивать в наушниках",
   "Manage games & setup": "Управление играми и настройкой", "Sound": "Звук", "Haptics": "Вибрация",
-  "English": "Английский", "Russian": "Русский", "Language": "Язык"
+  "English": "Английский", "Russian": "Русский", "Language": "Язык", "Game integration": "Интеграция игр", "Auto-detect selected games": "Автоопределение выбранных игр", "Launch selected game": "Запуск выбранной игры", "LAUNCH": "ЗАПУСК", "No games selected yet.": "Игры ещё не выбраны."
 };
 
 export function tr(language: FrontierLanguage, value: string): string {

@@ -8,6 +8,8 @@ import { Label, Ring, Seg, Slider, Src, Toggle } from "./ui";
 import * as Ic from "./icons";
 import { PerformanceArtwork } from "./components/Artwork";
 import { PRESETS, VoiceEngine, type VoiceParams, type VoicePreset } from "./voice";
+import { GAME_CATALOG } from "./onboarding/catalog";
+import { tr } from "./i18n";
 
 export const item = { hidden: { opacity: 0, y: 11, scale: 0.985 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 360, damping: 27, mass: 0.72 } } };
 export const list = { hidden: {}, show: { transition: { staggerChildren: 0.045, delayChildren: 0.035 } } };
@@ -182,6 +184,12 @@ export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setM
         <div className="relative h-3"><motion.span animate={{ left: `${Math.min(100, ((t.temp - 25) / 30) * 100)}%` }} className="absolute top-0 h-3 w-[2px] bg-foreground" /></div>
         <div className="tnum flex justify-between text-[9px] text-muted-foreground"><span>25°</span><span>{t.temp}°C</span><span>55°</span></div>
       </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3">
+        <Label>{tr(s.language, "Launch selected game")}</Label>
+        <div className="space-y-1.5">{GAME_CATALOG.filter((game) => selectedGameIds.includes(game.id)).map((game) => <button key={game.id} type="button" onClick={() => launchSelectedGame(game.id)} className="flex min-h-10 w-full items-center justify-between chamfer-sm border border-line bg-foreground/[0.03] px-3 text-left text-[11px] hover:border-cyan/50"><span>{game.name}</span><span className="font-display text-[8px] tracking-widest text-cyan">{tr(s.language, "LAUNCH")}</span></button>)}</div>
+        {selectedGameIds.length === 0 && <p className="text-[10px] text-muted-foreground">{tr(s.language, "No games selected yet.")}</p>}
+        {launchFeedback && <p role="status" className="text-[10px] text-muted-foreground">{launchFeedback}</p>}
+      </motion.div>
     </motion.div>
   );
 }
@@ -286,6 +294,19 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
 }
 
 export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void }) {
+  const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
+  const [launchFeedback, setLaunchFeedback] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("frontier.onboarding.v1") ?? "{}") as { selectedGameIds?: unknown };
+      if (Array.isArray(saved.selectedGameIds)) setSelectedGameIds(saved.selectedGameIds.filter((id): id is string => typeof id === "string"));
+    } catch { setSelectedGameIds([]); }
+  }, []);
+  const launchSelectedGame = (gameId: string) => {
+    const launched = window.FrontierAndroid?.launchGame?.(gameId) ?? false;
+    setLaunchFeedback(launched ? (s.language === "ru" ? "Игра запускается…" : "Launching game…") : (s.language === "ru" ? "Игра не установлена или запуск недоступен." : "Game is not installed or cannot be launched."));
+    playSfx(launched ? "tool-complete" : "tool-error");
+  };
   const accents = [["cyan", "var(--cyan)"], ["lime", "var(--lime)"], ["crimson", "var(--crimson)"], ["gold", "var(--gold)"]] as const;
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-settings">
@@ -295,21 +316,21 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
           <button type="button" aria-pressed={s.language === "ru"} onClick={() => { playSfx("setting-change"); upd({ language: "ru" }); }} className={cn("chamfer-sm border px-3 py-2 text-[11px] font-semibold", s.language === "ru" ? "border-cyan/60 bg-cyan/10 text-cyan" : "border-line bg-foreground/[0.03] text-muted-foreground")}>РУССКИЙ</button>
         </div>
       </motion.div>
-      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Game integration</Label>
-        <div className="flex items-center justify-between text-[12px]"><span>Auto-detect selected games</span><Toggle label="Auto-detect games" on={s.autoDetect} onChange={(v) => upd({ autoDetect: v })} /></div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>{tr(s.language, "Game integration")}</Label>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Auto-detect selected games")}</span><Toggle label="Auto-detect games" on={s.autoDetect} onChange={(v) => upd({ autoDetect: v })} /></div>
       </motion.div>
-      <motion.div variants={item}><Label>Lighting</Label>
+      <motion.div variants={item}><Label>{tr(s.language, "Lighting")}</Label>
         <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { playSfx("setting-change"); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
       </motion.div>
-      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Interface</Label>
-        <Slider label="Animation intensity" min={0} max={2} step={0.5} value={s.motion} onChange={(v) => upd({ motion: v })} unit="×" />
-        <Slider label="Panel opacity" min={0.6} max={1} step={0.05} value={s.opacity} onChange={(v) => upd({ opacity: v })} />
-        <div className="flex items-center justify-between text-[12px]"><span>Mini FPS when closed</span><Toggle label="Mini FPS" on={s.miniFps} onChange={(v) => upd({ miniFps: v })} /></div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>{tr(s.language, "Interface")}</Label>
+        <Slider label={tr(s.language, "Animation intensity")} min={0} max={2} step={0.5} value={s.motion} onChange={(v) => upd({ motion: v })} unit="×" />
+        <Slider label={tr(s.language, "Panel opacity")} min={0.6} max={1} step={0.05} value={s.opacity} onChange={(v) => upd({ opacity: v })} />
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Mini FPS when closed")}</span><Toggle label="Mini FPS" on={s.miniFps} onChange={(v) => upd({ miniFps: v })} /></div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group frontier-sound-settings space-y-3">
-        <Label>Sound & haptics</Label>
-        <div className="flex items-center justify-between text-[12px]"><span>Interface sounds</span><Toggle label="Sounds" on={s.sound} onChange={(v) => { setSound(v, s.volume); upd({ sound: v }); if (v) playSfx("toggle-on"); }} /></div>
-        <Slider label="Master volume" min={0} max={1} step={0.05} value={s.volume} onChange={(v) => { setSound(s.sound, v); upd({ volume: v }); }} />
+        <Label>{tr(s.language, "Sound & haptics")}</Label>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Interface sounds")}</span><Toggle label="Sounds" on={s.sound} onChange={(v) => { setSound(v, s.volume); upd({ sound: v }); if (v) playSfx("toggle-on"); }} /></div>
+        <Slider label={tr(s.language, "Master volume")} min={0} max={1} step={0.05} value={s.volume} onChange={(v) => { setSound(s.sound, v); upd({ volume: v }); }} />
         <div className="frontier-sound-preview">
           <div className="flex items-center justify-between gap-2">
             <span className="font-display text-[9px] tracking-[0.16em] text-muted-foreground">SONIC PREVIEW</span>
@@ -322,21 +343,21 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
           </div>
           {!s.sound || s.volume === 0 ? <p className="mt-1 text-[9px] text-muted-foreground">Enable interface sounds and raise the volume to preview FRONTIER SFX.</p> : null}
         </div>
-        <div className="flex items-center justify-between text-[12px]"><span>Haptic feedback</span><Toggle label="Haptics" on={s.haptics} onChange={(v) => upd({ haptics: v })} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Haptic feedback")}</span><Toggle label="Haptics" on={s.haptics} onChange={(v) => upd({ haptics: v })} /></div>
       </motion.div>
-      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Gestures & overlay</Label>
-        <Slider label="Edge swipe distance" min={20} max={90} step={5} value={s.edgeSensitivity} onChange={(v) => upd({ edgeSensitivity: v })} unit="px" />
-        <Seg label="Auto-hide" value={s.autoHide} onChange={(v) => upd({ autoHide: v })} options={[{ v: 0, l: "Never" }, { v: 5, l: "5s" }, { v: 10, l: "10s" }, { v: 20, l: "20s" }]} />
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>{tr(s.language, "Gestures & overlay")}</Label>
+        <Slider label={tr(s.language, "Edge swipe distance")} min={20} max={90} step={5} value={s.edgeSensitivity} onChange={(v) => upd({ edgeSensitivity: v })} unit="px" />
+        <Seg label={tr(s.language, "Auto-hide")} value={s.autoHide} onChange={(v) => upd({ autoHide: v })} options={[{ v: 0, l: "Never" }, { v: 5, l: "5s" }, { v: 10, l: "10s" }, { v: 20, l: "20s" }]} />
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3">
-        <Label>System setup</Label>
-        <p className="text-[10px] leading-relaxed text-muted-foreground">Manage the games selected during initiation and review platform access.</p>
+        <Label>{tr(s.language, "System setup")}</Label>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">{tr(s.language, "Manage the games selected during initiation and review platform access.")}</p>
         <button type="button" onClick={onManageSetup} className="frontier-setup-manage-button" disabled={!onManageSetup}>
-          <span>MANAGE GAMES & SETUP</span><span aria-hidden>↗</span>
+          <span>{tr(s.language, "MANAGE GAMES & SETUP")}</span><span aria-hidden>↗</span>
         </button>
       </motion.div>
-      <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>Performance preference</Label>
-        <Seg label="Launch profile" value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />
+      <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>{tr(s.language, "Performance preference")}</Label>
+        <Seg label={tr(s.language, "Launch profile")} value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />
       </motion.div>
     </motion.div>
   );
