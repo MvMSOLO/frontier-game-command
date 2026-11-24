@@ -198,61 +198,95 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
   isolation: isolate;
 }
 .frontier-app[data-panel-open="true"] .frontier-preview-badge {
-  left: calc(50% + min(202px, (100vw - 16px) / 2));
+  left: 50%;
+  transform: translateX(-50%);
 }
-.frontier-overlay {
-  inset-block: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-bottom));
-  left: max(8px, env(safe-area-inset-left));
-  width: min(404px, calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)));
-  min-height: 0;
+.frontier-twin-overlay {
+  pointer-events: none;
+  isolation: isolate;
 }
-.frontier-rail {
-  height: 100%;
-  min-height: 0;
+.frontier-twin-overlay > * { pointer-events: auto; }
+.frontier-command-dock {
+  max-width: calc(100vw - 24px);
+  border-radius: 10px 3px 10px 3px;
 }
-.frontier-panel {
-  width: min(330px, calc(100% - 72px));
-  height: 100%;
-  max-height: 100%;
-  min-height: 0;
+.frontier-dock-item { min-height: 40px; }
+.frontier-wing {
+  width: clamp(230px, 23vw, 350px);
+  min-width: 0;
+  border-radius: 14px 3px 14px 3px;
+  isolation: isolate;
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
 }
-.frontier-page-scroll {
-  min-height: 0;
+.frontier-wing-left { margin-right: auto; }
+.frontier-wing-right { margin-left: auto; }
+.frontier-wing-surface { z-index: -1; }
+.frontier-wing-header { min-height: 48px; }
+.frontier-page-scroll,
+.frontier-nexus-content {
   overscroll-behavior: contain;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
-.frontier-page-scroll::-webkit-scrollbar { display: none; }
+.frontier-page-scroll::-webkit-scrollbar,
+.frontier-nexus-content::-webkit-scrollbar { display: none; }
 .frontier-app button:focus-visible,
 .frontier-app input:focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
 }
-.frontier-nav-button { height: clamp(42px, 8.4dvh, 48px); }
-.frontier-closed-edge { left: max(0px, env(safe-area-inset-left)); }
-@media (max-width: 440px) {
-  .frontier-preview-badge { display: none; }
-  .frontier-overlay {
-    width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
-  }
-  .frontier-rail { width: 56px; }
-  .frontier-panel {
-    width: calc(100% - 64px);
-    margin-left: 4px;
-  }
-  .frontier-header { padding-inline: 12px; }
-  .frontier-page-scroll { padding-inline: 12px; }
+.frontier-edge-left { left: max(0px, env(safe-area-inset-left)); }
+.frontier-edge-right { right: max(0px, env(safe-area-inset-right)); }
+.frontier-edge-right-line {
+  clip-path: polygon(0 0,100% 8%,100% 92%,0 100%);
+}
+.frontier-nexus-card {
+  box-shadow: inset 0 0 20px color-mix(in oklab, var(--magenta) 5%, transparent);
+}
+@media (max-width: 760px) {
+  .frontier-wing { width: calc(50vw - 22px); }
+  .frontier-dock-brand { padding-inline: 6px; }
+  .frontier-dock-item { gap: 5px; padding-inline: 8px; }
+  .frontier-dock-fps { padding-inline: 7px; }
+}
+@media (max-width: 560px) {
+  .frontier-command-dock { gap: 2px; padding: 4px; }
+  .frontier-dock-brand { gap: 4px; padding-inline: 3px; }
+  .frontier-dock-brand > span:first-child { width: 27px; height: 27px; }
+  .frontier-dock-item { min-height: 36px; padding-inline: 6px; }
+  .frontier-dock-item span { font-size: 8px; }
+  .frontier-dock-item svg { width: 14px; height: 14px; }
+  .frontier-dock-fps { display: none; }
+  .frontier-wing { width: calc(50vw - 18px); }
+  .frontier-wing-left { left: 5px !important; }
+  .frontier-wing-right { right: 5px !important; }
+  .frontier-wing-header { min-height: 42px; padding: 7px 8px; }
+  .frontier-wing-header .font-display { font-size: 8px; }
+  .frontier-wing-header .text-\\[9px\\] { font-size: 7px; }
+  .frontier-page-scroll, .frontier-nexus-content { padding-inline: 7px; }
+  .frontier-telemetry { margin-inline: 7px; }
+  .frontier-nexus-card { padding: 8px; }
 }
 @media (max-height: 500px) {
-  .frontier-rail { gap: 0; padding-block: 4px; }
-  .frontier-nav-button { height: 42px; }
-  .frontier-mark { height: 34px; width: 34px; margin-block: 2px 4px; }
-  .frontier-minimize { height: 40px; width: 40px; }
-  .frontier-header { padding-top: 8px; padding-bottom: 5px; }
-  .frontier-page-scroll { padding-bottom: 10px; }
+  .frontier-wing { top: 58px; bottom: 6px; }
+  .frontier-command-dock { top: 4px; }
+  .frontier-dock-item { min-height: 34px; }
+  .frontier-wing-header { min-height: 38px; padding-block: 5px; }
 }
-@media (max-height: 390px) {
-  .frontier-mark { display: none; }
+@media (max-width: 560px) and (orientation: portrait) {
+  .frontier-wing { top: 58px; bottom: 6px; }
+  .frontier-wing-left { width: calc(50vw - 14px); }
+  .frontier-wing-right { width: calc(50vw - 14px); }
+  .frontier-command-dock { max-width: calc(100vw - 12px); }
+  .frontier-dock-brand .font-display { display: none; }
+  .frontier-dock-item { padding-inline: 5px; }
+  .frontier-dock-item span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .frontier-twin-overlay *, .frontier-twin-overlay *::before, .frontier-twin-overlay *::after {
+    scroll-behavior: auto !important;
+  }
 }
 @keyframes fx-dash { to { stroke-dashoffset: -200; } }
 .fx-circuit { stroke-dasharray: 6 14; animation: fx-dash 6s linear infinite; }
