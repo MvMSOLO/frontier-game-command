@@ -372,8 +372,8 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
 .frontier-nexus-card { border-radius: 10px 3px 10px 3px; background: linear-gradient(145deg, rgba(26,17,39,.78), rgba(9,12,24,.84)); box-shadow: inset 0 1px rgba(255,255,255,.05), inset 0 0 22px rgba(219,131,255,.045); }
 .frontier-nexus-content { scrollbar-width: none; }
 .frontier-nexus-content::-webkit-scrollbar { display: none; }
-.frontier-page .text-\\[9px\\] { line-height: 1.35; }
-.frontier-page .text-\\[10px\\] { line-height: 1.4; }
+.frontier-page [class*="text-[9px]"] { line-height: 1.35; }
+.frontier-page [class*="text-[10px]"] { line-height: 1.4; }
 .frontier-page button:focus-visible, .frontier-command-dock button:focus-visible { outline: 2px solid var(--frontier-core); outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) { .frontier-hud-card:hover, .frontier-tool-tile:hover { transform: translateY(-1px); } }
 @media (max-width: 560px) and (orientation: portrait) {
@@ -385,9 +385,64 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
   .frontier-dock-item span { display: none; }
   .frontier-dock-brand .font-display { display: none; }
   .frontier-dock-fps { display: none; }
-  .frontier-page .text-\\[9px\\] { font-size: 10px; }
+  .frontier-page [class*="text-[9px]"] { font-size: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .frontier-hud-card, .frontier-tool-tile, .frontier-quick-tool { transition: none !important; }
   .frontier-page-voice .frontier-voice-wave span { box-shadow: none; }
+}
+
+/* Directional energy seams and restrained motion accents */
+.frontier-wing-left::after,
+.frontier-wing-right::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 8%;
+  bottom: 8%;
+  width: 1px;
+  pointer-events: none;
+  opacity: .62;
+}
+.frontier-wing-left::after { left: 0; background: linear-gradient(180deg, transparent, var(--frontier-core), transparent); }
+.frontier-wing-right::after { right: 0; background: linear-gradient(180deg, transparent, var(--frontier-nexus), transparent); }
+.frontier-command-dock .frontier-dock-item[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 3px;
+  height: 1px;
+  background: currentColor;
+  box-shadow: 0 0 9px currentColor;
+}
+.frontier-mode-card[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 0%, color-mix(in oklab, currentColor 7%, transparent) 48%, transparent 72%);
+  animation: frontier-mode-charge 3.6s ease-in-out infinite;
+}
+.frontier-page-tools .frontier-tool-tile:focus-within,
+.frontier-page-voice button:focus-visible,
+.frontier-page-settings button:focus-visible {
+  border-color: rgba(98,231,255,.55);
+  box-shadow: 0 0 0 1px rgba(98,231,255,.12), 0 0 18px rgba(98,231,255,.08);
+}
+@keyframes frontier-mode-charge {
+  0%, 100% { opacity: .1; transform: translateX(-18%); }
+  50% { opacity: .72; transform: translateX(18%); }
+}
+@keyframes frontier-signal-breathe {
+  0%, 100% { opacity: .5; filter: saturate(.9); }
+  50% { opacity: 1; filter: saturate(1.15); }
+}
+.frontier-page-voice .frontier-voice-wave { animation: frontier-signal-breathe 4.2s ease-in-out infinite; }
+.frontier-page-home .frontier-hud-card:first-child .tnum {
+  text-shadow: 0 0 20px rgba(98,231,255,.22);
+}
+@media (prefers-reduced-motion: reduce) {
+  .frontier-mode-card[aria-pressed="true"]::after,
+  .frontier-page-voice .frontier-voice-wave { animation: none !important; }
 }
