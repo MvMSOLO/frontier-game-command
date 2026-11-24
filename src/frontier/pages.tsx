@@ -133,7 +133,7 @@ export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setM
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-performance">
       <motion.div variants={item}><Label right={<Src k="native" />}>Engine profile</Label></motion.div>
-      <div className="space-y-1.5 frontier-page frontier-page-tools">
+      <div className="space-y-1.5">
         {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const od = k === "overdrive"; return (
           <motion.button variants={item} key={k} onClick={() => setMode(k)} whileTap={{ scale: 0.98 }}
             className={cn("frontier-mode-card relative block w-full overflow-hidden chamfer p-3 text-left transition-colors", on ? "bg-foreground/[0.08]" : "bg-foreground/[0.03] hover:bg-foreground/[0.06]")}>
@@ -191,7 +191,7 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
   const runPurge = () => { if (purge === "run") return; sfx.exec(); haptic(20); setPurge("run"); setTimeout(() => { setFreed(Math.round(300 + Math.random() * 900)); setPurge("done"); }, 1400); };
   const tog = (k: keyof ToolState) => () => { (ts[k] ? sfx.toggleOff : sfx.toggleOn)(); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   return (
-    <motion.div variants={list} initial="hidden" animate="show" className="space-y-1.5">
+    <motion.div variants={list} initial="hidden" animate="show" className="space-y-1.5 frontier-page frontier-page-tools">
       <motion.div variants={item}><Label>Tactical tools</Label></motion.div>
       <Tile icon={Ic.IRam} name="RAM Purge" on={purge !== "idle"} onClick={runPurge} src="sim" color="var(--lime)">
         <AnimatePresence>{purge !== "idle" && <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="overflow-hidden pt-2">
