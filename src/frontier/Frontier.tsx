@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { haptic, playSfx, setHaptics, setSound, type SfxEvent } from "./audio";
 import { useTelemetry, type Mode } from "./telemetry";
 import { useSettings } from "./store";
-import { applyLanguage, tr } from "./i18n";
+import { applyLanguage, LocalizedTree, tr } from "./i18n";
 import * as Ic from "./icons";
 import { SceneArtwork } from "./components/Artwork";
 import { HomePage, MODES, PerformancePage, SettingsPage, ToolsPage, VoicePage, type ToolState } from "./pages";
@@ -157,6 +157,7 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
 
   return (
     <MotionConfig reducedMotion={s.motion === 0 ? "always" : "user"} transition={{ ...SPRING, stiffness: 380 * Math.max(0.5, s.motion) }}>
+      <LocalizedTree language={s.language}>
       <div className="frontier-app fixed inset-0 select-none overflow-hidden text-foreground" data-panel-open={open} data-android-overlay={androidOverlay ? "true" : undefined} style={{ touchAction: ts.touch && !androidOverlay ? "none" : "manipulation" }}>
         {!androidOverlay && <GameScene overdrive={od} />}
         {ts.crosshair && !androidOverlay && <Crosshair style={ts.crossStyle} color={ts.crossColor} />}
@@ -307,6 +308,7 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
           )}
         </AnimatePresence>
       </div>
+      </LocalizedTree>
     </MotionConfig>
   );
 }

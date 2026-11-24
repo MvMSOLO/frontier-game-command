@@ -112,6 +112,9 @@ class OverlayService : Service(), FrontierBridgeHost {
             if (!viewAttached) { windowManager.addView(webView, params); viewAttached = true }
             else windowManager.updateViewLayout(webView, params)
             this.expanded = expanded
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
             dispatchExpandedState(expanded)
         } catch (_: WindowManager.BadTokenException) {
             stopSelf()

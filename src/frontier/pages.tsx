@@ -299,18 +299,21 @@ function DeviceDiagnostics({ language }: { language: FrontierLanguage }) {
   const [game, setGame] = useState<{name:string;packageName:string}|null>(null);
   const [notificationAccess, setNotificationAccess] = useState("unknown");
   useEffect(() => {
-    const read = () => {
+    const readDevice = () => {
+      try { const encoded = window.FrontierAndroid?.getDeviceSnapshot?.(); if (encoded) setSnapshot(JSON.parse(encoded)); }
+      catch { setSnapshot(null); }
+    };
+    const readGameAndPermissions = () => {
       try {
-        const encoded = window.FrontierAndroid?.getDeviceSnapshot?.();
-        if (encoded) setSnapshot(JSON.parse(encoded));
         const foreground = window.FrontierAndroid?.getForegroundGame?.();
         setGame(foreground ? JSON.parse(foreground) : null);
         setNotificationAccess(window.FrontierAndroid?.getPermissionStatus("notification-access") ?? "unsupported");
-      } catch { setSnapshot(null); setGame(null); }
+      } catch { setGame(null); }
     };
-    read();
-    const timer = window.setInterval(read, 2000);
-    return () => window.clearInterval(timer);
+    readDevice(); readGameAndPermissions();
+    const deviceTimer = window.setInterval(readDevice, 15000);
+    const gameTimer = window.setInterval(readGameAndPermissions, 1800);
+    return () => { window.clearInterval(deviceTimer); window.clearInterval(gameTimer); };
   }, []);
   if (!snapshot) return <LocalizedTree language={language}><p className="text-[10px] text-muted-foreground">{tr(language, "Native device diagnostics are available in the Android overlay.")}</p></LocalizedTree>;
   return <LocalizedTree language={language}><div className="grid grid-cols-2 gap-2 text-[10px]">
