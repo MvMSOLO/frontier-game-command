@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:assets": "node .github/scripts/check-frontier-assets.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1",

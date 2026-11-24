@@ -2,6 +2,7 @@ import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Gamepad2, Search, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { GAME_CATALOG, type GameCatalogItem } from "./catalog";
+import { GameArtwork, ReactorArtwork } from "../components/Artwork";
 import { completeOnboarding, ONBOARDING_STEPS, type OnboardingState, type OnboardingStep } from "./model";
 import { getPlatformAdapter, SYSTEM_PERMISSION_IDS, type PermissionStatus, type PlatformAdapter, type SystemPermissionId } from "../platform";
 
@@ -36,7 +37,7 @@ function PermissionCard({ item, status, onCheck }: { item: (typeof PERMISSION_IN
 }
 function GameCard({ game, selected, onToggle }: { game: GameCatalogItem; selected: boolean; onToggle: () => void }) {
   return <button type="button" className={"frontier-init-game" + (selected ? " is-selected" : "")} aria-pressed={selected} onClick={onToggle}>
-    <span className="frontier-init-game-art">{game.shortName}</span><span className="frontier-init-game-copy"><strong>{game.name}</strong><small>{game.category}</small></span>
+    <span className="frontier-init-game-art"><GameArtwork gameId={game.id} /></span><span className="frontier-init-game-copy"><strong>{game.name}</strong><small>{game.category}</small></span>
     <span className="frontier-init-game-check">{selected ? <Check size={14} /> : "+"}</span>
   </button>;
 }
@@ -85,7 +86,7 @@ export function InitiationProtocol({ initialState, onStateChange, onComplete, ad
           <motion.div key={state.currentStep} className="frontier-init-stage" initial={{ opacity: 0, y: 12, filter: "blur(4px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: -8, filter: "blur(3px)" }} transition={{ duration: 0.22, ease: "easeOut" }}>
             {state.currentStep === "welcome" && <div className="frontier-init-welcome">
               <div className="frontier-init-eyebrow"><span /> SYSTEM INITIALIZATION / 01</div>
-              <div className="frontier-init-reactor" aria-hidden="true"><div className="frontier-init-reactor-ring ring-one" /><div className="frontier-init-reactor-ring ring-two" /><div className="frontier-init-reactor-core"><Zap size={36} /></div></div>
+              <div className="frontier-init-reactor" aria-hidden="true"><ReactorArtwork className="frontier-init-reactor-art" /><div className="frontier-init-reactor-ring ring-one" /><div className="frontier-init-reactor-ring ring-two" /><div className="frontier-init-reactor-core"><Zap size={36} /></div></div>
               <h1>YOUR GAME SPACE.<br /><span>YOUR CONTROL.</span></h1><p>Configure your game library and review the system capabilities FRONTIER can use on this device.</p>
               <div className="frontier-init-feature-row"><span><ShieldCheck size={15} /> CONTROL</span><span><Gamepad2 size={15} /> GAME LIBRARY</span><span><Sparkles size={15} /> PERSONAL SETUP</span></div>
             </div>}
@@ -109,7 +110,7 @@ export function InitiationProtocol({ initialState, onStateChange, onComplete, ad
                 <article><span className="frontier-init-review-icon"><Gamepad2 size={19} /></span><div><small>GAME LIBRARY</small><strong>{state.selectedGameIds.length} selected</strong></div><button type="button" onClick={() => goTo("games")}>EDIT</button></article>
                 <article><span className="frontier-init-review-icon"><ShieldCheck size={19} /></span><div><small>SYSTEM PERMISSIONS</small><strong>{permissionCount} of 3 granted</strong></div><button type="button" onClick={() => goTo("permissions")}>REVIEW</button></article>
               </div>
-              <div className="frontier-init-review-games"><small>SELECTED TITLES</small>{state.selectedGameIds.length > 0 ? GAME_CATALOG.filter((game) => state.selectedGameIds.includes(game.id)).map((game) => <span key={game.id}>{game.name}</span>) : <span>No games selected yet. You can add games later in Settings.</span>}</div>
+              <div className="frontier-init-review-games"><small>SELECTED TITLES</small>{state.selectedGameIds.length > 0 ? GAME_CATALOG.filter((game) => state.selectedGameIds.includes(game.id)).map((game) => <span key={game.id}><GameArtwork gameId={game.id} className="frontier-init-review-game-art" /><span>{game.name}</span></span>) : <span>No games selected yet. You can add games later in Settings.</span>}</div>
               <div className="frontier-init-note"><span className="frontier-init-note-dot" />Missing permissions do not block setup. Features requiring unavailable access remain inactive.</div>
             </div>}
             {state.currentStep === "ready" && <div className="frontier-init-welcome frontier-init-ready">
