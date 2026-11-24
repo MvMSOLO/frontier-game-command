@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { haptic, playSfx, setHaptics, setSound, type SfxEvent } from "./audio";
 import { useTelemetry, type Mode } from "./telemetry";
 import { useSettings } from "./store";
+import { applyLanguage, tr } from "./i18n";
 import * as Ic from "./icons";
 import { SceneArtwork } from "./components/Artwork";
 import { HomePage, MODES, PerformancePage, SettingsPage, ToolsPage, VoicePage, type ToolState } from "./pages";
@@ -76,6 +77,7 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
   }, [androidOverlay]);
   const shieldRef = useRef(ts.shield); shieldRef.current = ts.shield;
 
+  useEffect(() => { applyLanguage(s.language); }, [s.language]);
   useEffect(() => { setSound(s.sound, s.volume); setHaptics(s.haptics); document.documentElement.style.setProperty("--accent-fx", `var(--${s.accent})`); }, [s.sound, s.volume, s.haptics, s.accent]);
   useEffect(() => { setModeRaw(s.startMode); }, [s.startMode]);
   // Fake game notifications — Zero-Distraction shield actually suppresses them
@@ -189,11 +191,11 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
                 {NAV.map((n) => {
                   const on = tab === n.id;
                   return (
-                    <motion.button key={n.id} variants={{ closed: { opacity: 0, y: -8 }, open: { opacity: 1, y: 0 } }} aria-label={n.label} aria-current={on ? "page" : undefined}
+                    <motion.button key={n.id} variants={{ closed: { opacity: 0, y: -8 }, open: { opacity: 1, y: 0 } }} aria-label={tr(s.language, n.label)} aria-current={on ? "page" : undefined}
                       onClick={() => { if (n.id !== tab) { setTab(n.id); playSfx("navigation"); haptic(5); } }} whileTap={{ scale: 0.92 }}
                       className={cn("frontier-dock-item relative flex items-center gap-2 px-3 py-2 text-[10px] font-semibold tracking-wide transition-colors", on ? "text-cyan" : "text-muted-foreground hover:text-foreground")}>
                       {on && <motion.span layoutId="dockActive" className="absolute inset-0 chamfer-sm border border-cyan/60 bg-cyan/10 shadow-[inset_0 0 16px color-mix(in_oklab,var(--cyan)_18%,transparent)]" />}
-                      <n.icon width={16} height={16} className="relative" /><span className="relative">{n.label === "Performance" ? "PERF" : n.label === "Voice Changer" ? "VOICE" : n.label.toUpperCase()}</span>
+                      <n.icon width={16} height={16} className="relative" /><span className="relative">{n.id === "perf" ? "PERF" : n.id === "voice" ? "VOICE" : tr(s.language, n.label).toUpperCase()}</span>
                     </motion.button>
                   );
                 })}
@@ -209,7 +211,7 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
                 <div className="frontier-wing-surface absolute inset-0 chamfer border border-cyan/45 bg-glass shadow-[0_0_28px_color-mix(in_oklab,var(--cyan)_13%,transparent),inset_0 0 34px color-mix(in_oklab,var(--cyan)_7%,transparent)]" style={{ opacity: s.opacity }} />
                 <motion.span key={`left-scan-${tab}`} initial={{ top: "0%", opacity: 0.9 }} animate={{ top: "100%", opacity: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} className="pointer-events-none absolute inset-x-0 z-20 h-[2px] bg-cyan shadow-[0_0_14px_3px_var(--cyan)]" />
                 <header className="frontier-wing-header relative flex items-center justify-between gap-2 border-b border-cyan/20 px-3 py-2.5">
-                  <div className="min-w-0"><div className="font-display text-[10px] tracking-[0.18em] text-cyan">01 / CORE SYSTEM</div><div className="mt-0.5 truncate text-[9px] font-semibold tracking-wider text-foreground">{NAV.find((n) => n.id === tab)?.label.toUpperCase()} CONTROL</div></div>
+                  <div className="min-w-0"><div className="font-display text-[10px] tracking-[0.18em] text-cyan">01 / CORE SYSTEM</div><div className="mt-0.5 truncate text-[9px] font-semibold tracking-wider text-foreground">{tr(s.language, NAV.find((n) => n.id === tab)?.label ?? "Home").toUpperCase()} CONTROL</div></div>
                   <span className="tnum shrink-0 text-[10px]" style={{ color: M.color }}>{M.name.toUpperCase()}</span>
                 </header>
                 <div aria-label={`Simulated telemetry: CPU ${t.cpu}%, GPU ${t.gpu}%, temperature ${Math.round(t.temp)} degrees Celsius`} className="frontier-telemetry relative mx-3 grid grid-cols-3 divide-x divide-line border-b border-line/70 py-2">
