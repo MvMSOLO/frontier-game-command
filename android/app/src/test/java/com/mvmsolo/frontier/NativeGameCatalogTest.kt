@@ -21,6 +21,30 @@ class NativeGameCatalogTest {
     }
 
     @Test
+    fun `latest foreground event resolves the currently active supported game`() {
+        val events = listOf(
+            NativeUsageEvent("com.activision.callofduty.shooter", 10L, true),
+            NativeUsageEvent("com.activision.callofduty.shooter", 20L, false),
+            NativeUsageEvent("jp.konami.pesam", 30L, true),
+        )
+        assertEquals("efootball", NativeGameCatalog.resolveForegroundGame(events)?.id)
+    }
+
+    @Test
+    fun `latest background event and unknown foreground app resolve to no supported game`() {
+        val backgroundEvents = listOf(
+            NativeUsageEvent("com.konami.pesam", 10L, true),
+            NativeUsageEvent("com.konami.pesam", 20L, false),
+        )
+        val unknownEvents = listOf(
+            NativeUsageEvent("com.konami.pesam", 10L, true),
+            NativeUsageEvent("com.example.launcher", 20L, true),
+        )
+        assertNull(NativeGameCatalog.resolveForegroundGame(backgroundEvents))
+        assertNull(NativeGameCatalog.resolveForegroundGame(unknownEvents))
+    }
+
+    @Test
     fun `every entry has a display name and at least one package alias`() {
         NativeGameCatalog.games.forEach { game ->
             assertNotNull(game.name)
