@@ -11,6 +11,7 @@ import org.json.JSONObject
 interface FrontierBridgeHost {
     fun startOverlay(): Boolean
     fun minimizeOverlay()
+    fun expandOverlay()
     fun stopOverlay()
 }
 
@@ -68,6 +69,9 @@ class FrontierJavascriptBridge(
 
     @JavascriptInterface
     fun minimizeOverlay() = host.minimizeOverlay()
+
+    @JavascriptInterface
+    fun expandOverlay() = host.expandOverlay()
 
     @JavascriptInterface
     fun stopOverlay() = host.stopOverlay()

@@ -7,6 +7,7 @@ export interface FrontierAndroidBridge {
   getForegroundGame(): string;
   startOverlay?(): boolean;
   minimizeOverlay?(): void;
+  expandOverlay?(): void;
   stopOverlay?(): void;
 }
 

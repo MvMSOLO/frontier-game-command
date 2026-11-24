@@ -117,6 +117,8 @@ class MainActivity : Activity(), FrontierBridgeHost {
         }
     }
 
+    override fun expandOverlay() { startOverlay() }
+
     override fun minimizeOverlay() {
         startService(Intent(this, OverlayService::class.java).setAction(OverlayService.ACTION_MINIMIZE))
     }
