@@ -482,3 +482,34 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
   .frontier-mode-grid > button { min-height: 56px; }
   .frontier-quick-tools-grid > button { min-height: 56px; }
 }
+
+/* SONIC SIGNATURE — interactive local SFX preview */
+.frontier-sound-preview {
+  padding: 10px;
+  border: 1px solid rgba(98,231,255,.16);
+  border-radius: 9px 3px 9px 3px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(98,231,255,.08), transparent 72%), linear-gradient(145deg, rgba(255,255,255,.035), rgba(255,255,255,.008));
+}
+.frontier-sound-preview-button {
+  display: flex;
+  min-width: 0;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  padding: 7px 8px;
+  border: 1px solid rgba(98,231,255,.2);
+  border-radius: 7px 2px 7px 2px;
+  background: linear-gradient(145deg, rgba(98,231,255,.075), rgba(255,255,255,.018));
+  color: var(--foreground);
+  text-align: left;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.frontier-sound-preview-button span { color: var(--frontier-core); font: 600 8px var(--font-mono); letter-spacing: .16em; }
+.frontier-sound-preview-button strong { overflow: hidden; max-width: 100%; font: 600 9px var(--font-display); letter-spacing: .06em; text-overflow: ellipsis; }
+.frontier-sound-preview-button:hover:not(:disabled) { border-color: rgba(98,231,255,.48); background: rgba(98,231,255,.12); }
+.frontier-sound-preview-button:active:not(:disabled) { transform: scale(.97); }
+.frontier-sound-preview-button:disabled { cursor: not-allowed; opacity: .38; filter: grayscale(.65); }
+.frontier-sound-preview-button:focus-visible { outline: 2px solid var(--frontier-core); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .frontier-sound-preview-button { transition: none; } }
