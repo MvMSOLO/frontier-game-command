@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { sfx, haptic } from "./audio";
+import { haptic, playSfx } from "./audio";
 import type { Mode, Telemetry } from "./telemetry";
 import type { Settings } from "./store";
 import { Label, Ring, Seg, Slider, Src, Toggle } from "./ui";
@@ -84,8 +84,8 @@ const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(
 export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void }) {
   const fps = useCount(t.fps, 260);
   const [purged, setPurged] = useState(false);
-  const tog = (k: keyof ToolState) => () => { (ts[k] ? sfx.toggleOff : sfx.toggleOn)(); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
-  const purge = () => { sfx.exec(); haptic(20); setPurged(true); setTimeout(() => setPurged(false), 1600); };
+  const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
+  const purge = () => { playSfx("tool-start"); haptic(20); setPurged(true); setTimeout(() => { setPurged(false); playSfx("tool-complete"); }, 1600); };
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-home">
       <Card>
@@ -203,8 +203,8 @@ function Tile({ icon: I, name, on, onClick, src, children, color = "var(--accent
 
 export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recErr, goVoice }: { ts: ToolState; setTs: (p: Partial<ToolState>) => void; blocked: number; onRecord: () => void; onReplay: () => void; onClip: () => void; recErr: string | null; goVoice: () => void }) {
   const [purge, setPurge] = useState<"idle" | "run" | "done">("idle"); const [freed, setFreed] = useState(0);
-  const runPurge = () => { if (purge === "run") return; sfx.exec(); haptic(20); setPurge("run"); setTimeout(() => { setFreed(Math.round(300 + Math.random() * 900)); setPurge("done"); }, 1400); };
-  const tog = (k: keyof ToolState) => () => { (ts[k] ? sfx.toggleOff : sfx.toggleOn)(); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
+  const runPurge = () => { if (purge === "run") return; playSfx("tool-start"); haptic(20); setPurge("run"); setTimeout(() => { setFreed(Math.round(300 + Math.random() * 900)); setPurge("done"); playSfx("tool-complete"); }, 1400); };
+  const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-1.5 frontier-page frontier-page-tools">
       <motion.div variants={item}><Label>Tactical tools</Label></motion.div>
@@ -245,9 +245,9 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
     const loop = () => { hist.shift(); hist.push(engine.current?.level() ?? 0); if (bars.current) Array.from(bars.current.children).forEach((c, i) => ((c as HTMLElement).style.transform = `scaleY(${0.06 + (hist[i] ?? 0)})`)); r = requestAnimationFrame(loop); };
     loop(); return () => cancelAnimationFrame(r); }, [live, engine]);
   const toggle = async () => {
-    if (live) { engine.current?.stop(); engine.current = null; setLive(false); sfx.toggleOff(); return; }
-    try { const e = new VoiceEngine(); await e.start(); engine.current = e; e.apply(p); setLive(true); setErr(null); sfx.toggleOn(); }
-    catch { setErr("Microphone access was blocked. Allow it in your browser to use the voice changer."); }
+    if (live) { engine.current?.stop(); engine.current = null; setLive(false); playSfx("voice-stop"); return; }
+    try { const e = new VoiceEngine(); await e.start(); engine.current = e; e.apply(p); setLive(true); setErr(null); playSfx("voice-start"); }
+    catch { playSfx("tool-error"); setErr("Microphone access was blocked. Allow it in your browser to use the voice changer."); }
   };
   const pick = (v: VoicePreset) => setP((o) => ({ ...o, preset: v, ...(v === "off" ? {} : PRESETS[v]) }));
   return (
@@ -267,7 +267,7 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
       </motion.div>
       <motion.div variants={item}><Label>Presets</Label>
         <div className="grid grid-cols-3 gap-1">{PRESET_LIST.map((o) => (
-          <button key={o.v} onClick={() => { sfx.nav(); pick(o.v); }} className={cn("chamfer-sm py-2 text-[11px] transition-colors", p.preset === o.v ? "bg-fx font-bold text-obsidian" : "bg-foreground/5 text-muted-foreground")}>{o.l}</button>))}
+          <button key={o.v} onClick={() => { playSfx("voice-preset"); pick(o.v); }} className={cn("chamfer-sm py-2 text-[11px] transition-colors", p.preset === o.v ? "bg-fx font-bold text-obsidian" : "bg-foreground/5 text-muted-foreground")}>{o.l}</button>))}
         </div>
       </motion.div>
       <motion.div variants={item} className="space-y-3"><Label>Custom voice</Label>
@@ -287,16 +287,29 @@ export function SettingsPage({ s, upd }: { s: Settings; upd: (p: Partial<Setting
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-settings">
       <motion.div variants={item}><Label>Lighting</Label>
-        <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { sfx.nav(); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
+        <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { playSfx("setting-change"); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Interface</Label>
         <Slider label="Animation intensity" min={0} max={2} step={0.5} value={s.motion} onChange={(v) => upd({ motion: v })} unit="×" />
         <Slider label="Panel opacity" min={0.6} max={1} step={0.05} value={s.opacity} onChange={(v) => upd({ opacity: v })} />
         <div className="flex items-center justify-between text-[12px]"><span>Mini FPS when closed</span><Toggle label="Mini FPS" on={s.miniFps} onChange={(v) => upd({ miniFps: v })} /></div>
       </motion.div>
-      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Sound & haptics</Label>
-        <div className="flex items-center justify-between text-[12px]"><span>Interface sounds</span><Toggle label="Sounds" on={s.sound} onChange={(v) => upd({ sound: v })} /></div>
-        <Slider label="Volume" min={0} max={1} step={0.05} value={s.volume} onChange={(v) => upd({ volume: v })} />
+      <motion.div variants={item} className="frontier-settings-group frontier-sound-settings space-y-3">
+        <Label>Sound & haptics</Label>
+        <div className="flex items-center justify-between text-[12px]"><span>Interface sounds</span><Toggle label="Sounds" on={s.sound} onChange={(v) => { setSound(v, s.volume); upd({ sound: v }); if (v) playSfx("toggle-on"); }} /></div>
+        <Slider label="Master volume" min={0} max={1} step={0.05} value={s.volume} onChange={(v) => { setSound(s.sound, v); upd({ volume: v }); }} />
+        <div className="frontier-sound-preview">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-display text-[9px] tracking-[0.16em] text-muted-foreground">SONIC PREVIEW</span>
+            <span className="tnum text-[8px] text-muted-foreground">{s.sound && s.volume > 0 ? "READY" : "MUTED"}</span>
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-1.5">
+            <button type="button" disabled={!s.sound || s.volume === 0} onClick={() => playSfx("panel-open")} className="frontier-sound-preview-button"><span>01</span><strong>DEPLOY</strong></button>
+            <button type="button" disabled={!s.sound || s.volume === 0} onClick={() => playSfx("navigation")} className="frontier-sound-preview-button"><span>02</span><strong>SELECT</strong></button>
+            <button type="button" disabled={!s.sound || s.volume === 0} onClick={() => playSfx("mode-overdrive")} className="frontier-sound-preview-button"><span>03</span><strong>OVERDRIVE</strong></button>
+          </div>
+          {!s.sound || s.volume === 0 ? <p className="mt-1 text-[9px] text-muted-foreground">Enable interface sounds and raise the volume to preview FRONTIER SFX.</p> : null}
+        </div>
         <div className="flex items-center justify-between text-[12px]"><span>Haptic feedback</span><Toggle label="Haptics" on={s.haptics} onChange={(v) => upd({ haptics: v })} /></div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Gestures & overlay</Label>
