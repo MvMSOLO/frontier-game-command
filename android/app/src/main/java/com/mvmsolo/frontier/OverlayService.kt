@@ -380,6 +380,8 @@ class OverlayService : Service(), FrontierBridgeHost {
                 } ?: JSONObject.NULL),
         )
         emitPermissionSnapshot()
+        emitNativeEvent("device-snapshot", DeviceSnapshotProvider.read(this))
+        emitNativeEvent("notification-policy-state", JSONObject().put("enabled", NotificationPolicyStore.isEnabled(this)))
     }
 
     private fun emitPermissionSnapshot() {
