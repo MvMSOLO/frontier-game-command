@@ -27,6 +27,8 @@ class OverlayService : Service(), FrontierBridgeHost {
     private var layoutParams: WindowManager.LayoutParams? = null
     private var expanded = false
     private var viewAttached = false
+    private var gameMonitor: NativeGameMonitor? = null
+    private var manuallyDismissedPackage: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -35,6 +37,21 @@ class OverlayService : Service(), FrontierBridgeHost {
         startAsForegroundService()
         createPersistentWebView()
         attachOverlay(expanded = false)
+        gameMonitor = NativeGameMonitor(this) { game ->
+            mainHandler.post {
+                if (game == null) {
+                    manuallyDismissedPackage = null
+                    if (expanded) setExpanded(false)
+                } else {
+                    val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    val selected = prefs.getStringSet(KEY_SELECTED_GAMES, emptySet()).orEmpty()
+                    val autoDetect = prefs.getBoolean(KEY_AUTO_DETECT, true)
+                    if (autoDetect && game.id in selected && manuallyDismissedPackage != game.packageNames.firstOrNull()) {
+                        setExpanded(true)
+                    }
+                }
+            }
+        }.start()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,7 +75,10 @@ class OverlayService : Service(), FrontierBridgeHost {
     }
 
     override fun minimizeOverlay() {
-        mainHandler.post { setExpanded(false) }
+        mainHandler.post {
+            manuallyDismissedPackage = NativeGameMonitor.currentGame?.packageNames?.firstOrNull()
+            setExpanded(false)
+        }
     }
 
     override fun stopOverlay() {
@@ -67,6 +87,8 @@ class OverlayService : Service(), FrontierBridgeHost {
 
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
+        gameMonitor?.stop()
+        gameMonitor = null
         detachAndDestroyWebView()
         super.onDestroy()
     }
@@ -146,9 +168,6 @@ class OverlayService : Service(), FrontierBridgeHost {
             gravity = Gravity.START or Gravity.CENTER_VERTICAL
             x = 0
             y = 0
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-            }
         }
     }
 
@@ -226,6 +245,9 @@ class OverlayService : Service(), FrontierBridgeHost {
         const val ACTION_STOP = "com.mvmsolo.frontier.action.STOP"
         private const val CHANNEL_ID = "frontier_overlay"
         private const val NOTIFICATION_ID = 6041
+        const val PREFS_NAME = "frontier_native"
+        const val KEY_SELECTED_GAMES = "selected_game_ids"
+        const val KEY_AUTO_DETECT = "auto_detect"
 
         fun start(context: Context) {
             val intent = Intent(context, OverlayService::class.java)

@@ -54,14 +54,33 @@ class FrontierJavascriptBridge(
 
     @JavascriptInterface
     fun getForegroundGame(): String {
-        if (!NativePermissionManager.hasUsageAccess(context)) return ""
-        val game = foregroundGame() ?: return ""
+        val game = NativeGameMonitor.currentGame ?: return ""
         val packageName = game.packageNames.firstOrNull { isInstalled(it) } ?: return ""
-        return JSONObject()
-            .put("id", game.id)
-            .put("name", game.name)
-            .put("packageName", packageName)
-            .toString()
+        return JSONObject().put("id", game.id).put("name", game.name).put("packageName", packageName).toString()
+    }
+
+    @JavascriptInterface
+    fun setSelectedGames(encodedIds: String) {
+        val ids = try { JSONArray(encodedIds).let { array ->
+            (0 until array.length()).mapNotNull { array.optString(it).takeIf(String::isNotBlank) }.toSet()
+        } } catch (_: Exception) { emptySet() }
+        context.getSharedPreferences(OverlayService.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putStringSet(OverlayService.KEY_SELECTED_GAMES, ids).apply()
+    }
+
+    @JavascriptInterface
+    fun setAutoDetectEnabled(enabled: Boolean) {
+        context.getSharedPreferences(OverlayService.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putBoolean(OverlayService.KEY_AUTO_DETECT, enabled).apply()
+    }
+
+    @JavascriptInterface
+    fun launchGame(gameId: String): Boolean {
+        val game = NativeGameCatalog.games.firstOrNull { it.id == gameId } ?: return false
+        val packageName = game.packageNames.firstOrNull { isInstalled(it) } ?: return false
+        val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return false
+        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        return try { context.startActivity(intent); true } catch (_: Exception) { false }
     }
 
     @JavascriptInterface
@@ -91,42 +110,4 @@ class FrontierJavascriptBridge(
         false
     }
 
-    private fun foregroundGame(): NativeGame? {
-        val manager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val now = System.currentTimeMillis()
-        val events = try {
-            manager.queryEvents(now - 6 * 60 * 60 * 1000L, now) ?: return null
-        } catch (_: RuntimeException) {
-            return null
-        }
-
-        val event = android.app.usage.UsageEvents.Event()
-        val activityEvents = mutableListOf<NativeUsageEvent>()
-        while (events.hasNextEvent()) {
-            events.getNextEvent(event)
-            val isForeground = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                when (event.eventType) {
-                    android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED -> true
-                    android.app.usage.UsageEvents.Event.ACTIVITY_PAUSED,
-                    android.app.usage.UsageEvents.Event.ACTIVITY_STOPPED -> false
-                    else -> null
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                when (event.eventType) {
-                    android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> true
-                    android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> false
-                    else -> null
-                }
-            }
-            if (isForeground != null) {
-                activityEvents += NativeUsageEvent(
-                    packageName = event.packageName.orEmpty(),
-                    timestamp = event.timeStamp,
-                    foreground = isForeground,
-                )
-            }
-        }
-        return NativeGameCatalog.resolveForegroundGame(activityEvents)
-    }
 }
