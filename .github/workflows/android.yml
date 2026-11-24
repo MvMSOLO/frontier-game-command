@@ -1,0 +1,88 @@
+name: FRONTIER Android verification
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+    paths:
+      - "android/**"
+      - "src/android/**"
+      - "src/frontier/platform/**"
+      - "src/frontier/onboarding/**"
+      - "src/frontier/store.ts"
+      - "src/styles.css"
+      - "index.android.html"
+      - "index.overlay.html"
+      - "vite.android.config.ts"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/android.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "android/**"
+      - "src/android/**"
+      - "src/frontier/platform/**"
+      - "src/frontier/onboarding/**"
+      - "src/frontier/store.ts"
+      - "src/styles.css"
+      - "index.android.html"
+      - "index.overlay.html"
+      - "vite.android.config.ts"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Build and test Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install locked web dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build local Android web assets
+        run: bun run build:android
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android API 36 build tools
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: "9.6.0"
+
+      - name: Run native unit tests and assemble debug APK
+        run: gradle -p android --no-daemon :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontier-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

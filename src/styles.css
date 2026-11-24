@@ -660,3 +660,67 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
 .frontier-init-review-games>span{display:inline-flex;align-items:center;gap:7px}
 .frontier-init-review-game-art{width:24px;height:24px;flex:0 0 24px;object-fit:cover;border:1px solid rgba(98,231,255,.2)}
 @media(prefers-reduced-motion:reduce){.frontier-mode-art-image,.frontier-init-game-art img{transition:none}}
+
+
+/* FRONTIER Task 6 — transparent, left-edge Android overlay surface */
+html.frontier-android-overlay,html.frontier-android-overlay body,html.frontier-android-overlay #root{width:100%;height:100%;min-height:100%;margin:0;background:transparent!important;overflow:hidden}
+.frontier-native-overlay{box-sizing:border-box;display:flex;flex-direction:column;width:100%;height:100%;min-height:0;overflow:hidden;color:#eaf4ff;background:linear-gradient(155deg,rgba(7,14,25,.985),rgba(4,8,16,.98) 55%,rgba(9,17,29,.985));border:1px solid rgba(76,218,255,.42);border-left:0;border-radius:0 18px 18px 0;box-shadow:0 12px 38px rgba(0,0,0,.5),inset -1px 0 rgba(255,255,255,.05);font-family:var(--font-body,Arial,sans-serif);backdrop-filter:blur(18px)}
+.frontier-native-header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto;padding:12px 12px 10px;border-bottom:1px solid rgba(85,211,245,.18);background:linear-gradient(90deg,rgba(43,188,222,.09),transparent)}
+.frontier-native-brand{display:flex;align-items:center;gap:9px;min-width:0}
+.frontier-native-mark{display:grid;place-items:center;width:33px;height:33px;border:1px solid rgba(77,228,255,.7);background:rgba(35,187,223,.12);color:#6cecff;font-family:var(--font-display,monospace);font-size:16px;font-weight:800;clip-path:polygon(0 0,100% 0,100% 78%,78% 100%,0 100%)}
+.frontier-native-mark span{color:#f14a85}
+.frontier-native-brand strong{display:block;font-family:var(--font-display,monospace);font-size:11px;letter-spacing:.2em}
+.frontier-native-brand small{display:block;margin-top:3px;color:#6f8da3;font:7px var(--font-mono,monospace);letter-spacing:.14em}
+.frontier-native-header-actions{display:flex;gap:5px}
+.frontier-native-header-actions button{display:grid;place-items:center;width:29px;height:29px;border:1px solid rgba(129,166,193,.23);border-radius:7px;background:rgba(255,255,255,.035);color:#a6c5d8}
+.frontier-native-layout{display:flex;flex:1;min-height:0}
+.frontier-native-nav{display:flex;flex:0 0 58px;flex-direction:column;align-items:stretch;gap:5px;padding:9px 5px;border-right:1px solid rgba(87,184,215,.15);background:rgba(0,0,0,.15)}
+.frontier-native-nav button{display:flex;min-height:48px;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid transparent;border-radius:8px;background:transparent;color:#6e869b}
+.frontier-native-nav button span{font:6px var(--font-mono,monospace);letter-spacing:.08em}
+.frontier-native-nav button.is-active{border-color:rgba(80,225,255,.27);background:linear-gradient(135deg,rgba(49,200,231,.17),rgba(48,105,147,.08));color:#75ecff;box-shadow:inset 2px 0 #52e3ff,0 0 17px rgba(46,201,237,.07)}
+.frontier-native-content{flex:1;min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.frontier-native-content::-webkit-scrollbar{display:none}
+.frontier-native-page{padding:16px 12px 18px}
+.frontier-native-kicker{margin-bottom:9px;color:#6fc8df;font:8px var(--font-mono,monospace);letter-spacing:.16em}
+.frontier-native-page h1{margin:0 0 17px;color:#eaf5ff;font-family:var(--font-display,monospace);font-size:20px;font-weight:800;line-height:1.08;letter-spacing:.07em}
+.frontier-native-page h1 span{color:#59e2f8}
+.frontier-native-game-card{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid rgba(83,214,240,.2);border-radius:10px;background:linear-gradient(130deg,rgba(35,163,195,.11),rgba(10,20,34,.8))}
+.frontier-native-game-icon{display:grid;place-items:center;width:37px;height:37px;flex:0 0 37px;border:1px solid rgba(90,221,249,.27);border-radius:8px;background:rgba(53,177,211,.12);color:#72e8ff}
+.frontier-native-game-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+.frontier-native-game-copy small,.frontier-native-game-copy span{overflow:hidden;color:#7893a8;font:7px var(--font-mono,monospace);letter-spacing:.08em;text-overflow:ellipsis;white-space:nowrap}
+.frontier-native-game-copy strong{overflow:hidden;color:#effaff;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.frontier-native-live-dot,.frontier-native-idle-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#69f6aa;box-shadow:0 0 10px rgba(105,246,170,.65)}
+.frontier-native-idle-dot{background:#718596;box-shadow:none}
+.frontier-native-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:9px}
+.frontier-native-metrics>div{min-width:0;padding:9px 6px;border:1px solid rgba(135,167,193,.14);border-radius:8px;background:rgba(255,255,255,.025)}
+.frontier-native-metrics span,.frontier-native-metrics small{display:block;color:#6e879a;font:6px var(--font-mono,monospace);letter-spacing:.06em}
+.frontier-native-metrics strong{display:block;margin:5px 0;color:#e5f2ff;font:17px var(--font-mono,monospace)}
+.frontier-native-info{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:10px;border:1px solid rgba(83,194,224,.17);border-radius:8px;background:rgba(45,158,196,.06);color:#65dff4}
+.frontier-native-info p{margin:0;color:#9bb3c5;font-size:9px;line-height:1.5}
+.frontier-native-mode-list,.frontier-native-tool-list{display:flex;flex-direction:column;gap:7px}
+.frontier-native-mode{display:flex;align-items:center;gap:9px;min-width:0;padding:10px;border:1px solid rgba(132,167,192,.16);border-radius:9px;background:rgba(255,255,255,.025);color:#dcecf8;text-align:left}
+.frontier-native-mode.is-active{border-color:rgba(76,224,255,.42);background:rgba(43,177,210,.12)}
+.frontier-native-mode-indicator{width:7px;height:7px;flex:0 0 7px;transform:rotate(45deg);background:#8495a6}
+.frontier-native-mode.accent-lime .frontier-native-mode-indicator{background:#91f2a2}
+.frontier-native-mode.accent-cyan .frontier-native-mode-indicator{background:#58e4ff}
+.frontier-native-mode.accent-magenta .frontier-native-mode-indicator{background:#e08cff}
+.frontier-native-mode.accent-gold .frontier-native-mode-indicator{background:#ffc66c}
+.frontier-native-mode-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+.frontier-native-mode-copy strong{font:9px var(--font-display,monospace);letter-spacing:.08em}
+.frontier-native-mode-copy small{color:#7f96a8;font-size:8px}
+.frontier-native-mode-state{color:#6ddff2;font:6px var(--font-mono,monospace);letter-spacing:.08em}
+.frontier-native-tool-list>div{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid rgba(132,167,192,.14);border-radius:8px;background:rgba(255,255,255,.025);color:#72dff4}
+.frontier-native-tool-list span{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+.frontier-native-tool-list strong{color:#dfedf8;font:8px var(--font-display,monospace);letter-spacing:.06em}
+.frontier-native-tool-list small{color:#7890a5;font-size:8px}
+.frontier-native-tool-list em{color:#e8b76e;font:6px var(--font-mono,monospace);font-style:normal;text-align:right}
+.frontier-native-voice-core{display:flex;align-items:center;flex-direction:column;gap:9px;padding:22px 12px;border:1px solid rgba(216,128,255,.22);border-radius:12px;background:radial-gradient(circle at center,rgba(188,98,230,.17),rgba(255,255,255,.015) 68%);color:#db9eff}
+.frontier-native-voice-core span{color:#a6b8c7;font:8px var(--font-mono,monospace);letter-spacing:.14em}
+.frontier-native-voice-core strong{font:8px var(--font-mono,monospace);letter-spacing:.1em}
+.frontier-native-body-copy{color:#9db2c3;font-size:9px;line-height:1.55}
+.frontier-native-setting-row{display:flex;align-items:center;justify-content:space-between;gap:7px;margin:8px 0;padding:10px;border:1px solid rgba(132,167,192,.14);border-radius:8px;color:#91a8b8;font:7px var(--font-mono,monospace);letter-spacing:.08em}
+.frontier-native-setting-row strong{color:#72e6f9;font:8px var(--font-display,monospace)}
+.frontier-native-action{display:flex;width:100%;align-items:center;justify-content:space-between;margin-top:9px;padding:11px;border:1px solid rgba(75,219,244,.3);border-radius:8px;background:rgba(57,175,209,.09);color:#82ebfa;font:8px var(--font-mono,monospace);letter-spacing:.08em}
+.frontier-native-action.is-danger{border-color:rgba(255,97,128,.28);background:rgba(217,72,104,.08);color:#ff9bad}
+.frontier-native-footer{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;padding:8px 10px;border-top:1px solid rgba(88,190,217,.13);color:#627e93;font:6px var(--font-mono,monospace);letter-spacing:.1em}
+@media(prefers-reduced-motion:reduce){.frontier-native-overlay *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}

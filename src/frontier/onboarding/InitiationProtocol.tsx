@@ -2,6 +2,7 @@ import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Gamepad2, Search, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { GAME_CATALOG, type GameCatalogItem } from "./catalog";
+import type { GameDiscoveryResult } from "../platform/contracts";
 import { GameArtwork, ReactorArtwork } from "../components/Artwork";
 import { completeOnboarding, ONBOARDING_STEPS, type OnboardingState, type OnboardingStep } from "./model";
 import { getPlatformAdapter, SYSTEM_PERMISSION_IDS, type PermissionStatus, type PlatformAdapter, type SystemPermissionId } from "../platform";
@@ -35,9 +36,9 @@ function PermissionCard({ item, status, onCheck }: { item: (typeof PERMISSION_IN
     </div>
   </article>;
 }
-function GameCard({ game, selected, onToggle }: { game: GameCatalogItem; selected: boolean; onToggle: () => void }) {
+function GameCard({ game, selected, installed, onToggle }: { game: GameCatalogItem; selected: boolean; installed: boolean; onToggle: () => void }) {
   return <button type="button" className={"frontier-init-game" + (selected ? " is-selected" : "")} aria-pressed={selected} onClick={onToggle}>
-    <span className="frontier-init-game-art"><GameArtwork gameId={game.id} /></span><span className="frontier-init-game-copy"><strong>{game.name}</strong><small>{game.category}</small></span>
+    <span className="frontier-init-game-art"><GameArtwork gameId={game.id} /></span><span className="frontier-init-game-copy"><strong>{game.name}</strong><small>{game.category}{installed ? " · INSTALLED" : ""}</small></span>
     <span className="frontier-init-game-check">{selected ? <Check size={14} /> : "+"}</span>
   </button>;
 }
@@ -46,10 +47,15 @@ export function InitiationProtocol({ initialState, onStateChange, onComplete, ad
   const [permissionStatuses, setPermissionStatuses] = useState<Record<SystemPermissionId, PermissionStatus>>({ overlay: "unknown", "usage-access": "unknown", "notification-access": "unknown" });
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
+  const [gameDiscovery, setGameDiscovery] = useState<GameDiscoveryResult>({ availability: "unsupported", games: [] });
   useEffect(() => {
     let active = true;
     const refresh = async () => {
-      const entries = await Promise.all(SYSTEM_PERMISSION_IDS.map(async (id) => ({ id, status: await adapter.getPermissionStatus(id) })));
+      const [entries, discovery] = await Promise.all([
+        Promise.all(SYSTEM_PERMISSION_IDS.map(async (id) => ({ id, status: await adapter.getPermissionStatus(id) }))),
+        adapter.getInstalledGames(),
+      ]);
+      if (active) setGameDiscovery(discovery);
       if (active) setPermissionStatuses((current) => {
         const next = { ...current };
         entries.forEach(({ id, status }) => { next[id] = status; });
@@ -101,8 +107,8 @@ export function InitiationProtocol({ initialState, onStateChange, onComplete, ad
               <div className="frontier-init-heading-row"><div><h1>CHOOSE YOUR<br /><span>ARENA.</span></h1><p className="frontier-init-lead">Select the games you want FRONTIER to organize. You can change this later in Settings.</p></div><div className="frontier-init-selected-count"><strong>{state.selectedGameIds.length.toString().padStart(2, "0")}</strong><small>SELECTED</small></div></div>
               <label className="frontier-init-search"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search your games..." aria-label="Search games" />{search && <button type="button" onClick={() => setSearch("")} aria-label="Clear search">×</button>}</label>
               <div className="frontier-init-categories" aria-label="Filter games by category">{CATEGORIES.map((item) => <button type="button" key={item} className={category === item ? "is-active" : ""} onClick={() => setCategory(item)}>{item}</button>)}</div>
-              <div className="frontier-init-game-grid">{filteredGames.map((game) => <GameCard key={game.id} game={game} selected={state.selectedGameIds.includes(game.id)} onToggle={() => toggleGame(game.id)} />)}{filteredGames.length === 0 && <div className="frontier-init-empty">NO MATCHING GAMES FOUND</div>}</div>
-              <div className="frontier-init-note"><span className="frontier-init-note-dot" />{adapter.kind === "browser" ? "DEMO CATALOG — The browser cannot inspect installed Android apps. Device game discovery is reserved for the Android adapter." : "Installed games are supplied by the connected Android platform adapter."}</div>
+              <div className="frontier-init-game-grid">{filteredGames.map((game) => <GameCard key={game.id} game={game} selected={state.selectedGameIds.includes(game.id)} installed={gameDiscovery.games.some((installedGame) => installedGame.id === game.id)} onToggle={() => toggleGame(game.id)} />)}{filteredGames.length === 0 && <div className="frontier-init-empty">NO MATCHING GAMES FOUND</div>}</div>
+              <div className="frontier-init-note"><span className="frontier-init-note-dot" />{adapter.kind === "browser" ? "DEMO CATALOG — The browser cannot inspect installed Android apps. Device game discovery is reserved for the Android adapter." : gameDiscovery.availability === "permission-required" ? "USAGE ACCESS REQUIRED — enable access to mark installed supported games. Manual selection remains available." : gameDiscovery.availability === "available" ? `${gameDiscovery.games.length} SUPPORTED GAMES FOUND — installed titles are marked in the catalog.` : "DEVICE GAME DISCOVERY UNAVAILABLE — manual selection remains available."}</div>
             </div>}
             {state.currentStep === "review" && <div className="frontier-init-content">
               <div className="frontier-init-eyebrow"><span /> CONFIGURATION REVIEW / 04</div><h1>VERIFY YOUR<br /><span>CONFIGURATION.</span></h1><p className="frontier-init-lead">Check the selections and device capabilities before activation.</p>

@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check:assets": "node .github/scripts/check-frontier-assets.mjs"
+    "check:assets": "node .github/scripts/check-frontier-assets.mjs",
+    "build:android": "vite build --config vite.android.config.ts"
   },
   "overrides": {
     "rolldown": "1.2.1",

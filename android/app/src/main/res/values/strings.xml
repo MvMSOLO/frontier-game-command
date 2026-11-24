@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">FRONTIER</string>
+    <string name="notification_listener_label">FRONTIER notification access</string>
+    <string name="overlay_channel_name">FRONTIER overlay</string>
+    <string name="overlay_notification_title">FRONTIER is active</string>
+    <string name="overlay_notification_text">Left-edge game controls are available.</string>
+</resources>
