@@ -17,6 +17,9 @@ export interface FrontierAndroidBridge {
   getDetectorStatus?(): string;
   launchGame?(gameId: string): string;
   openSetup?(): void;
+  getNotificationSuppressionEnabled?(): boolean;
+  setNotificationSuppression?(enabled: boolean): boolean;
+  getDeviceSnapshot?(): string;
 }
 
 declare global {
