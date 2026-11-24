@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { sfx, haptic } from "./audio";
+import { haptic, playSfx } from "./audio";
 
 export function Src({ k }: { k: "live" | "sim" | "native" }) {
   const map = { live: ["LIVE", "text-lime"], sim: ["SIM", "text-gold"], native: ["NATIVE", "text-crimson"] } as const;
@@ -12,7 +12,7 @@ export function Label({ children, right }: { children: ReactNode; right?: ReactN
 }
 export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <button aria-label={label} aria-pressed={on} onClick={() => { (on ? sfx.toggleOff : sfx.toggleOn)(); haptic(); onChange(!on); }}
+    <button aria-label={label} aria-pressed={on} onClick={() => { playSfx(on ? "toggle-off" : "toggle-on"); haptic(); onChange(!on); }}
       className={cn("frontier-toggle relative h-5 w-10 shrink-0 chamfer-sm transition-colors", on ? "bg-fx/25" : "bg-foreground/10")}>
       <motion.span layout transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={cn("absolute top-1 h-3 w-4 chamfer-sm", on ? "right-1 bg-fx shadow-[0_0_10px_var(--accent-fx)]" : "left-1 bg-muted-foreground")} />
@@ -37,7 +37,7 @@ export function Seg<T extends string | number>({ options, value, onChange, label
   return (
     <div role="radiogroup" aria-label={label} className="flex gap-1">
       {options.map((o) => (
-        <button key={String(o.v)} role="radio" aria-checked={value === o.v} onClick={() => { sfx.nav(); haptic(5); onChange(o.v); }}
+        <button key={String(o.v)} role="radio" aria-checked={value === o.v} onClick={() => { playSfx("navigation"); haptic(5); onChange(o.v); }}
           className={cn("tnum flex-1 chamfer-sm py-1.5 text-[11px] transition-colors", value === o.v ? "bg-fx text-obsidian font-bold" : "bg-foreground/5 text-muted-foreground hover:text-foreground")}>{o.l}</button>
       ))}
     </div>
