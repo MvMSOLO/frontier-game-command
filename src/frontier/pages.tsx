@@ -8,8 +8,8 @@ import { Label, Ring, Seg, Slider, Src, Toggle } from "./ui";
 import * as Ic from "./icons";
 import { PRESETS, VoiceEngine, type VoiceParams, type VoicePreset } from "./voice";
 
-export const item = { hidden: { opacity: 0, x: -14 }, show: { opacity: 1, x: 0, transition: { type: "spring" as const, stiffness: 380, damping: 28 } } };
-export const list = { hidden: {}, show: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } } };
+export const item = { hidden: { opacity: 0, y: 11, scale: 0.985 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 360, damping: 27, mass: 0.72 } } };
+export const list = { hidden: {}, show: { transition: { staggerChildren: 0.045, delayChildren: 0.035 } } };
 
 export const MODES: Record<Mode, { name: string; tag: string; color: string; icon: typeof Ic.IHome; target: string; bullets: string[] }> = {
   stealth: { name: "Stealth", tag: "Thermal guard", color: "var(--lime)", icon: Ic.IStealth, target: "45–60", bullets: ["Battery preservation", "Thermal-conscious clocks", "Background activity reduced"] },
@@ -25,14 +25,29 @@ function Wave({ data, color }: { data: number[]; color: string }) {
     <svg viewBox={`0 0 ${w} ${h}`} className="h-[54px] w-full" preserveAspectRatio="none">
       {[0.25, 0.5, 0.75].map((y) => <line key={y} x1="0" x2={w} y1={h * y} y2={h * y} stroke="var(--line)" strokeDasharray="2 4" />)}
       <polyline points={`0,${h} ${pts} ${w},${h}`} fill={color} opacity=".08" />
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.4" style={{ filter: `drop-shadow(0 0 3px ${color})` }} />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.4" style={{ filter: `drop-shadow(0 0 3px ${color})`, transition: "points 180ms ease" }} />
     </svg>
   );
 }
 
-function useCount(v: number, ms = 900) {
-  const [n, setN] = useState(0); const start = useRef<number | null>(null); const done = useRef(false);
-  useEffect(() => { if (done.current) { setN(v); return; } let raf = 0; const tick = (ts: number) => { start.current ??= ts; const k = Math.min(1, (ts - start.current) / ms); setN(Math.round(v * (1 - Math.pow(1 - k, 3)))); if (k < 1) raf = requestAnimationFrame(tick); else done.current = true; }; raf = requestAnimationFrame(tick); return () => cancelAnimationFrame(raf); }, [v, ms]);
+function useCount(v: number, ms = 280) {
+  const [n, setN] = useState(v);
+  const displayed = useRef(v);
+  useEffect(() => {
+    const from = displayed.current;
+    const startedAt = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const progress = ms <= 0 ? 1 : Math.min(1, (now - startedAt) / ms);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const next = from + (v - from) * eased;
+      displayed.current = next;
+      setN(Math.round(next));
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [v, ms]);
   return n;
 }
 function Card({ children, className, glow = "var(--accent-fx)" }: { children: React.ReactNode; className?: string; glow?: string }) {
@@ -48,7 +63,7 @@ function BigRing({ value, label, color, unit = "%", max = 100 }: { value: number
     <div className="frontier-hud-ring relative flex flex-col items-center" style={{ width: size }}>
       <svg width={size} height={size} className="rotate-[130deg]">
         <circle cx={35} cy={35} r={r} stroke="var(--line)" strokeWidth="5" fill="none" strokeDasharray={`${c * arc} ${c}`} />
-        <circle cx={35} cy={35} r={r} stroke={color} strokeWidth="5" fill="none" strokeDasharray={`${c * arc * pct} ${c}`} style={{ filter: `drop-shadow(0 0 5px ${color})` }} />
+        <circle cx={35} cy={35} r={r} stroke={color} strokeWidth="5" fill="none" strokeDasharray={`${c * arc * pct} ${c}`} style={{ filter: `drop-shadow(0 0 5px ${color})`, transition: "stroke-dasharray 260ms ease" }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-1"><span className="tnum text-[17px] font-bold leading-none">{v}<span className="text-[10px]">{unit}</span></span><span className="mt-0.5 text-[9px] font-semibold tracking-wider" style={{ color }}>{label}</span></div>
     </div>
@@ -67,7 +82,7 @@ function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon:
 const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(--cyan)", hyper: "var(--magenta)", overdrive: "var(--gold)" };
 
 export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void }) {
-  const fps = useCount(t.fps, 700);
+  const fps = useCount(t.fps, 260);
   const [purged, setPurged] = useState(false);
   const tog = (k: keyof ToolState) => () => { (ts[k] ? sfx.toggleOff : sfx.toggleOn)(); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   const purge = () => { sfx.exec(); haptic(20); setPurged(true); setTimeout(() => setPurged(false), 1600); };
