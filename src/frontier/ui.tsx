@@ -42,7 +42,7 @@ export function Slider({ value, min, max, step = 1, onChange, label, unit = "" }
 export function Seg<T extends string | number>({ options, value, onChange, label }: { options: { v: T; l: string }[]; value: T; onChange: (v: T) => void; label: string }) {
   const t = useText();
   return (
-    <div role="radiogroup" aria-label={label} className="flex gap-1">
+    <div role="radiogroup" aria-label={t(label)} className="flex gap-1">
       {options.map((o) => (
         <button key={String(o.v)} role="radio" aria-checked={value === o.v} onClick={() => { playSfx("navigation"); haptic(5); onChange(o.v); }}
           className={cn("tnum flex-1 chamfer-sm py-1.5 text-[11px] transition-colors", value === o.v ? "bg-fx text-obsidian font-bold" : "bg-foreground/5 text-muted-foreground hover:text-foreground")}>{t(o.l)}</button>
