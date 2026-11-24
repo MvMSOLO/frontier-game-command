@@ -50,7 +50,7 @@ const RU: Record<string, string> = {
   "No games selected yet. You can add games later in Settings.": "Игры пока не выбраны. Их можно добавить позже в настройках.",
   "CHECK": "ПРОВЕРИТЬ", "CONTINUE": "ПРОДОЛЖИТЬ", "BACK": "НАЗАД", "EDIT": "ИЗМЕНИТЬ",
   "ACTIVATE FRONTIER": "АКТИВИРОВАТЬ FRONTIER", "INITIALIZE SYSTEM": "ЗАПУСТИТЬ СИСТЕМУ",
-  "ENTER FRONTIER": "ВОЙТИ В FRONTIER", "SELECTED": "ВЫБРАНО", "INSTALLED": "УСТАНОВЛЕНО"
+  "ENTER FRONTIER": "ВОЙТИ В FRONTIER", "SELECTED": "ВЫБРАНО", "INSTALLED": "УСТАНОВЛЕНО", "USAGE ACCESS REQUIRED": "ТРЕБУЕТСЯ ДОСТУП", "AVAILABLE FOR INSTALLED TITLES": "ДОСТУПНО ДЛЯ УСТАНОВЛЕННЫХ ИГР", "System memory / thermal": "Память / температура системы", "Notification filter": "Фильтр уведомлений", "OPT-IN · NOTIFICATION ACCESS": "ПО ВЫБОРУ · ДОСТУП К УВЕДОМЛЕНИЯМ", "NOT EXPOSED BY ANDROID": "ANDROID НЕ ПРЕДОСТАВЛЯЕТ API"
 };
 
 export function tr(language: FrontierLanguage, value: string): string {
