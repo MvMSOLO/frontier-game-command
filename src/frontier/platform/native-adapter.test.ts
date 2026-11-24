@@ -9,7 +9,9 @@ function createBridge(overrides: Partial<FrontierAndroidBridge> = {}): FrontierA
       availability: "available",
       games: [{ id: "efootball", name: "eFootball", packageName: "com.konami.pesam" }],
     })),
-    getForegroundGame: vi.fn(() => "efootball"),
+    getForegroundGame: vi.fn(() => JSON.stringify({
+      id: "efootball", name: "eFootball", packageName: "com.konami.pesam",
+    })),
     ...overrides,
   };
 }
@@ -45,7 +47,7 @@ describe("FRONTIER Android platform adapter", () => {
     });
     const invalidBridge = createBridge({
       getInstalledGames: vi.fn(() => "{broken"),
-      getForegroundGame: vi.fn(() => "not-a-catalog-id"),
+      getForegroundGame: vi.fn(() => "not-json"),
     });
 
     await expect(createAndroidPlatformAdapter(permissionBridge).getInstalledGames()).resolves.toEqual({
