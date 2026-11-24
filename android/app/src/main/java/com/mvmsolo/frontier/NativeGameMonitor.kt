@@ -12,7 +12,6 @@ class NativeGameMonitor(context: Context, private val onGameChanged: (NativeGame
     private var handler: Handler? = null
     private var lastEventTime = System.currentTimeMillis() - INITIAL_LOOKBACK_MS
     private var foregroundPackage: String? = null
-    private var lastReportedId: String? = null
     @Volatile private var running = false
 
     fun start(): NativeGameMonitor {
@@ -77,8 +76,6 @@ class NativeGameMonitor(context: Context, private val onGameChanged: (NativeGame
     }
 
     private fun publish(game: NativeGame?) {
-        if (game?.id == lastReportedId) return
-        lastReportedId = game?.id
         currentGame = game
         onGameChanged(game)
     }

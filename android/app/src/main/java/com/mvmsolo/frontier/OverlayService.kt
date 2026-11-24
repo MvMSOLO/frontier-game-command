@@ -35,7 +35,7 @@ class OverlayService : Service(), FrontierBridgeHost {
         createNotificationChannel()
         startAsForegroundService()
         createPersistentWebView()
-        attachOverlay(expanded = false)
+        attachOverlay(expanded = true)
         gameMonitor = NativeGameMonitor(this) { game ->
             mainHandler.post {
                 if (game == null) {
@@ -56,6 +56,7 @@ class OverlayService : Service(), FrontierBridgeHost {
             ACTION_MINIMIZE -> setExpanded(false)
             ACTION_EXPAND -> setExpanded(true)
             ACTION_STOP -> stopSelf()
+            else -> setExpanded(true)
         }
         return START_NOT_STICKY
     }
