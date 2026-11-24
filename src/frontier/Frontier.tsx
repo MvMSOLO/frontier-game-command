@@ -94,8 +94,9 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
           setDetectorStatus(status);
         }
       }
-      const activeGame = nativeAdapter.getForegroundGame();
-      setActiveGameName(activeGame?.name ?? null);
+      void nativeAdapter.getForegroundGame().then((activeGame) => {
+        setActiveGameName(activeGame?.name ?? null);
+      });
     }
     return subscribeNativeEvents((event) => {
       if (event.type === "game-library") setInstalledGameCount(event.payload.games.length);
