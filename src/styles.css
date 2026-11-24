@@ -455,3 +455,30 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
   .frontier-wing-header { padding-inline: 8px; }
   .frontier-page-scroll, .frontier-nexus-content { padding-inline: 8px; }
 }
+
+.frontier-page {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+}
+.frontier-page::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -6px -4px;
+  pointer-events: none;
+  opacity: .72;
+  background: radial-gradient(ellipse at 20% 0%, rgba(98,231,255,.08), transparent 48%);
+}
+.frontier-page-performance::before { background: radial-gradient(ellipse at 85% 0%, rgba(255,209,123,.09), transparent 48%); }
+.frontier-page-tools::before { background: radial-gradient(ellipse at 15% 0%, rgba(154,245,181,.07), transparent 46%); }
+.frontier-page-voice::before { background: radial-gradient(ellipse at 50% 0%, rgba(219,131,255,.1), transparent 52%); }
+.frontier-page-settings::before { background: radial-gradient(ellipse at 90% 0%, rgba(98,231,255,.075), transparent 48%); }
+.frontier-mode-grid > button { min-height: 66px; }
+.frontier-quick-tools-grid > button { min-height: 70px; }
+.frontier-page-home .frontier-hud-card:nth-child(3) .frontier-hud-card-surface { padding: 12px; }
+.frontier-page-home .frontier-hud-card:nth-child(4) .frontier-hud-card-surface { padding: 12px; }
+@media (max-height: 500px) {
+  .frontier-mode-grid > button { min-height: 56px; }
+  .frontier-quick-tools-grid > button { min-height: 56px; }
+}
