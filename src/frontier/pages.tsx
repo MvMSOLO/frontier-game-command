@@ -8,6 +8,8 @@ import { Label, Ring, Seg, Slider, Src, Toggle } from "./ui";
 import * as Ic from "./icons";
 import { PerformanceArtwork } from "./components/Artwork";
 import { PRESETS, VoiceEngine, type VoiceParams, type VoicePreset } from "./voice";
+import { GAME_CATALOG } from "./onboarding/catalog";
+import { LocalizedTree, tr, type FrontierLanguage } from "./i18n";
 
 export const item = { hidden: { opacity: 0, y: 11, scale: 0.985 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 360, damping: 27, mass: 0.72 } } };
 export const list = { hidden: {}, show: { transition: { staggerChildren: 0.045, delayChildren: 0.035 } } };
@@ -82,36 +84,32 @@ function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon:
 }
 const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(--cyan)", hyper: "var(--magenta)", overdrive: "var(--gold)" };
 
-export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void }) {
+export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, androidOverlay = false, language = "en" }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void; androidOverlay?: boolean; language?: FrontierLanguage }) {
   const fps = useCount(t.fps, 260);
   const [purged, setPurged] = useState(false);
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   const purge = () => { playSfx("tool-start"); haptic(20); setPurged(true); setTimeout(() => { setPurged(false); playSfx("tool-complete"); }, 1600); };
   return (
+    <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-home">
       <Card>
         <div className="flex items-center gap-2">
           <div className="shrink-0 leading-none">
-            <div className="tnum text-[40px] font-bold leading-[0.9] text-cyan [text-shadow:0_0_18px_var(--cyan)]">{fps}</div>
-            <div className="mt-0.5 flex items-center gap-1 font-display text-[11px] text-cyan">FPS <Src k="live" /></div>
+            <div className="tnum text-[40px] font-bold leading-[0.9] text-cyan [text-shadow:0_0_18px_var(--cyan)]">{androidOverlay ? "—" : fps}</div>
+            <div className="mt-0.5 flex items-center gap-1 font-display text-[11px] text-cyan">{androidOverlay ? "GAME FPS · NATIVE REQUIRED" : <>FPS <Src k="live" /></>}</div>
           </div>
-          <div className="min-w-0 flex-1"><Wave data={t.history} color="var(--cyan)" /></div>
+          {!androidOverlay && <div className="min-w-0 flex-1"><Wave data={t.history} color="var(--cyan)" /></div>}
         </div>
         <div className="mt-1 grid grid-cols-2 divide-x divide-line text-center">
-          <div><div className="tnum text-[14px] font-bold text-cyan">{t.frameTime}<span className="text-[10px]">ms</span></div><div className="text-[9px] text-muted-foreground">Frame Time</div></div>
-          <div><div className="tnum text-[14px] font-bold text-cyan">{t.stability}%</div><div className="text-[9px] text-muted-foreground">Stability</div></div>
+          <div><div className="tnum text-[14px] font-bold text-cyan">{androidOverlay ? "—" : <>{t.frameTime}<span className="text-[10px]">ms</span></>}</div><div className="text-[9px] text-muted-foreground">{androidOverlay ? "GAME FRAME TIME · UNAVAILABLE" : "Frame Time"}</div></div>
+          <div><div className="tnum text-[14px] font-bold text-cyan">{androidOverlay ? "—" : <>{t.stability}%</>}</div><div className="text-[9px] text-muted-foreground">{androidOverlay ? "GAME STABILITY · UNAVAILABLE" : "Stability"}</div></div>
         </div>
       </Card>
       <Card glow="var(--magenta)">
-        <div className="flex items-center justify-around">
-          <BigRing value={t.cpu} label="CPU" color="var(--cyan)" />
-          <BigRing value={t.gpu} label="GPU" color="var(--crimson)" />
-          <BigRing value={Math.round(t.temp)} label="TEMP" unit="°C" max={55} color={t.temp > 43 ? "var(--gold)" : "var(--lime)"} />
-        </div>
-        <div className="absolute right-2 top-1.5"><Src k="sim" /></div>
+        {androidOverlay ? <div className="grid grid-cols-3 gap-2 py-3 text-center">{["CPU", "GPU", "THERMAL"].map((label) => <div key={label}><div className="tnum text-[22px] font-bold text-muted-foreground">—</div><div className="text-[8px] tracking-wider text-muted-foreground">{label}</div><div className="text-[7px] text-gold">NATIVE DATA REQUIRED</div></div>)}</div> : <><div className="flex items-center justify-around"><BigRing value={t.cpu} label="CPU" color="var(--cyan)" /><BigRing value={t.gpu} label="GPU" color="var(--crimson)" /><BigRing value={Math.round(t.temp)} label="TEMP" unit="°C" max={55} color={t.temp > 43 ? "var(--gold)" : "var(--lime)"} /></div><div className="absolute right-2 top-1.5"><Src k="sim" /></div></>}
       </Card>
       <Card>
-        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>Performance Mode</div>
+        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>{tr(language, "Performance Mode")}</div>
         <div className="frontier-mode-grid grid grid-cols-2 gap-1.5">
           {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const c = MODE_COL[k]; const od = k === "overdrive"; return (
             <motion.button key={k} whileTap={{ scale: 0.92 }} aria-label={M.name} aria-pressed={on} onClick={() => setMode(k)}
@@ -125,31 +123,26 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
         </div>
       </Card>
       <Card glow="var(--magenta)">
-        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>Quick Tools<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">6 ›</button></div>
-        <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5">
-          <QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} />
-          <QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} />
-          <QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} />
-          <QT icon={Ic.ICross} label="Crosshair" on={ts.crosshair} onClick={tog("crosshair")} color="var(--crimson)" />
-          <QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" />
-          <QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot />
-        </motion.div>
+        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>{androidOverlay ? "NATIVE CAPABILITIES" : "Quick Tools"}<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">{androidOverlay ? "DETAILS" : "6 ›"}</button></div>
+        {androidOverlay ? <div className="space-y-2 text-[9px]"><div className="flex justify-between"><span>{tr(language, "Foreground game detector")}</span><span className="text-gold">{tr(language, "USAGE ACCESS REQUIRED")}</span></div><div className="flex justify-between"><span>{tr(language, "Launch selected game")}</span><span className="text-lime">{tr(language, "AVAILABLE FOR INSTALLED TITLES")}</span></div><div className="flex justify-between"><span>{tr(language, "System memory / thermal")}</span><span className="text-gold">{tr(language, "DIAGNOSTICS")}</span></div><div className="flex justify-between"><span>{tr(language, "Notification filter")}</span><span className="text-gold">{tr(language, "OPT-IN · NOTIFICATION ACCESS")}</span></div><div className="flex justify-between"><span>{tr(language, "Game FPS / GPU tuning")}</span><span className="text-gold">{tr(language, "NOT EXPOSED BY ANDROID")}</span></div></div> : <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5"><QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} /><QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} /><QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} /><QT icon={Ic.ICross} label="Crosshair" on={ts.crosshair} onClick={tog("crosshair")} color="var(--crimson)" /><QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" /><QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot /></motion.div>}
       </Card>
-      <Card glow="var(--lime)">
+      {!androidOverlay && <Card glow="var(--lime)">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-lime text-[14px] font-bold text-obsidian shadow-[0_0_12px_var(--lime)]">✓</span>
-          <div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold text-gold">Performance Optimized!</div><div className="truncate text-[9px] text-muted-foreground">Enjoy smoother gameplay</div></div>
+          <div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold text-gold">{tr(language, "Performance Optimized!")}</div><div className="truncate text-[9px] text-muted-foreground">{tr(language, "Enjoy smoother gameplay")}</div></div>
           <span className="fx-pulse flex gap-0.5">{[0, 1, 2].map((i) => <span key={i} className="h-3 w-1.5 -skew-x-[25deg] bg-cyan" />)}</span>
         </div>
-      </Card>
+      </Card>}
     </motion.div>
+    </LocalizedTree>
   );
 }
 
-export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setMode: (m: Mode) => void; t: Telemetry; s: Settings; upd: (p: Partial<Settings>) => void }) {
+export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = false }: { mode: Mode; setMode: (m: Mode) => void; t: Telemetry; s: Settings; upd: (p: Partial<Settings>) => void; androidOverlay?: boolean }) {
   return (
+    <LocalizedTree language={s.language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-performance">
-      <motion.div variants={item}><Label right={<Src k="native" />}>Engine profile</Label></motion.div>
+      <motion.div variants={item}><Label right={<Src k="native" />}>{tr(s.language, "Engine profile")}</Label></motion.div>
       <div className="space-y-1.5">
         {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const od = k === "overdrive"; return (
           <motion.button variants={item} key={k} onClick={() => setMode(k)} whileTap={{ scale: 0.98 }}
@@ -161,28 +154,30 @@ export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setM
               <span className="flex h-9 w-9 items-center justify-center chamfer-sm" style={{ color: M.color, background: `color-mix(in oklab, ${M.color} ${on ? 18 : 6}%, transparent)` }}><M.icon /></span>
               <div className="flex-1">
                 <div className={cn("text-[13px] font-semibold", od && "font-display text-[11px] tracking-widest")} style={{ color: on ? M.color : undefined }}>{od ? "FRONTIER OVERDRIVE" : M.name}</div>
-                <div className="text-[10px] text-muted-foreground">{M.tag} · target <span className="tnum">{M.target}</span> fps</div>
+                <div className="text-[10px] text-muted-foreground">{androidOverlay ? "FRONTIER overlay presentation profile · no game tuning" : <>{M.tag} · target <span className="tnum">{M.target}</span> fps</>}</div>
               </div>
               <span className={cn("h-2 w-2 rotate-45", on ? "fx-pulse" : "opacity-20")} style={{ background: od && on ? "var(--gold)" : M.color }} />
             </div>
-            <AnimatePresence>{on && (
-              <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-12 text-[10px] text-muted-foreground">
+            {!androidOverlay && <AnimatePresence>{on && (
+              <motion.ul initial={{ height: 0, opacity: 1 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-12 text-[10px] text-muted-foreground">
                 {M.bullets.map((b) => <li key={b} className="pt-1">› {b}</li>)}
-              </motion.ul>)}</AnimatePresence>
+              </motion.ul>)}</AnimatePresence>}
           </motion.button>); })}
       </div>
-      <motion.div variants={item} className="space-y-3">
-        <Label right={<Src k="native" />}>Display</Label>
-        <Seg label="Refresh rate" value={s.refresh} onChange={(v) => upd({ refresh: v })} options={[60, 90, 120, 144].map((v) => ({ v, l: `${v}Hz` }))} />
-        <div className="flex items-center justify-between text-[12px]"><span>Frame pacing lock</span><Toggle label="Frame pacing" on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
-      </motion.div>
-      <motion.div variants={item}>
-        <Label right={<Src k="sim" />}>Thermal envelope</Label>
+{!androidOverlay ? <motion.div variants={item} className="space-y-3">
+        <Label right={<Src k="native" />}>{tr(s.language, "Display")}</Label>
+        <Seg label={tr(s.language, "Refresh rate")} value={s.refresh} onChange={(v) => upd({ refresh: v })} options={[60, 90, 120, 144].map((v) => ({ v, l: `${v}Hz` }))} />
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Frame pacing lock")}</span><Toggle label={tr(s.language, "Frame pacing")} on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
+      </motion.div> : <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">Android overlay profiles only affect FRONTIER presentation. Display refresh-rate and game frame-pacing controls require OEM or privileged APIs and are not exposed as active toggles.</motion.div>}
+      {!androidOverlay && <motion.div variants={item}>
+        <Label right={<Src k="sim" />}>{tr(s.language, "Thermal envelope")}</Label>
         <div className="relative h-2 bg-gradient-to-r from-lime via-gold to-crimson opacity-80 chamfer-sm" />
         <div className="relative h-3"><motion.span animate={{ left: `${Math.min(100, ((t.temp - 25) / 30) * 100)}%` }} className="absolute top-0 h-3 w-[2px] bg-foreground" /></div>
         <div className="tnum flex justify-between text-[9px] text-muted-foreground"><span>25°</span><span>{t.temp}°C</span><span>55°</span></div>
-      </motion.div>
+      </motion.div>}
+      {androidOverlay && <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">FRONTIER profiles adjust the overlay experience only. Game FPS, GPU clocks and per-game thermal readings require OEM or privileged integrations.</motion.div>}
     </motion.div>
+    </LocalizedTree>
   );
 }
 
@@ -204,11 +199,21 @@ function Tile({ icon: I, name, on, onClick, src, children, color = "var(--accent
   )
 }
 
-export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recErr, goVoice }: { ts: ToolState; setTs: (p: Partial<ToolState>) => void; blocked: number; onRecord: () => void; onReplay: () => void; onClip: () => void; recErr: string | null; goVoice: () => void }) {
+export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recErr, goVoice, androidOverlay = false, language = "en" }: { ts: ToolState; setTs: (p: Partial<ToolState>) => void; blocked: number; onRecord: () => void; onReplay: () => void; onClip: () => void; recErr: string | null; goVoice: () => void; androidOverlay?: boolean; language?: FrontierLanguage }) {
   const [purge, setPurge] = useState<"idle" | "run" | "done">("idle"); const [freed, setFreed] = useState(0);
   const runPurge = () => { if (purge === "run") return; playSfx("tool-start"); haptic(20); setPurge("run"); setTimeout(() => { setFreed(Math.round(300 + Math.random() * 900)); setPurge("done"); playSfx("tool-complete"); }, 1400); };
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
+  if (androidOverlay) return (
+    <LocalizedTree language={language}>
+    <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-tools">
+      <Label>{tr(language, "Android capability status")}</Label>
+      {[["Foreground game detection", "LIVE · USAGE ACCESS"], ["Launch selected games", "LIVE · PACKAGE INTENT"], ["Memory diagnostics", "READ-ONLY · DEVICE API"], ["Thermal status", "ANDROID THERMAL API"], ["Touch Boost", "UNAVAILABLE · OEM API"], ["Game FPS / GPU tuning", "UNAVAILABLE · PRIVILEGED API"], ["In-game voice routing", "UNAVAILABLE · GAME INTEGRATION"], ["Screen recording / replay", "NATIVE CAPTURE CONSENT REQUIRED"], ["Crosshair over game", "DISABLED · TOUCH SAFETY"]].map(([name, status]) => <div key={name} className="flex items-center justify-between gap-2 border border-line bg-foreground/[0.03] px-3 py-3"><span className="text-[10px] font-semibold">{name}</span><span className="text-right text-[8px] tracking-wider text-gold">{status}</span></div>)}
+      <p className="text-[9px] leading-relaxed text-muted-foreground">{tr(language, "Only controls with a verified Android implementation are enabled. Unsupported game-level tuning is not simulated.")}</p>
+    </motion.div>
+    </LocalizedTree>
+  );
   return (
+    <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-1.5 frontier-page frontier-page-tools">
       <motion.div variants={item}><Label>Tactical tools</Label></motion.div>
       <Tile icon={Ic.IRam} name="RAM Purge" on={purge !== "idle"} onClick={runPurge} src="sim" color="var(--lime)">
@@ -235,11 +240,12 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
       {recErr && <div className="text-[10px] text-crimson">{recErr}</div>}
       <Tile icon={Ic.IVoice} name="Voice Changer" on={false} onClick={goVoice} src="live" />
     </motion.div>
+    </LocalizedTree>
   );
 }
 
 const PRESET_LIST: { v: VoicePreset; l: string }[] = [{ v: "off", l: "Natural" }, { v: "robot", l: "Robot" }, { v: "titan", l: "Titan" }, { v: "spectre", l: "Spectre" }, { v: "radio", l: "Comms" }, { v: "alien", l: "Xeno" }];
-export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngine | null> }) {
+export function VoicePage({ engine, androidOverlay = false, language = "en" }: { engine: React.MutableRefObject<VoiceEngine | null>; androidOverlay?: boolean; language?: FrontierLanguage }) {
   const [live, setLive] = useState(!!engine.current?.ctx); const [err, setErr] = useState<string | null>(null);
   const [p, setP] = useState<VoiceParams>({ preset: "robot", tone: 0, mod: 50, echo: 15, monitor: false, gain: 50 });
   const bars = useRef<HTMLDivElement>(null);
@@ -248,59 +254,122 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
     const loop = () => { hist.shift(); hist.push(engine.current?.level() ?? 0); if (bars.current) Array.from(bars.current.children).forEach((c, i) => ((c as HTMLElement).style.transform = `scaleY(${0.06 + (hist[i] ?? 0)})`)); r = requestAnimationFrame(loop); };
     loop(); return () => cancelAnimationFrame(r); }, [live, engine]);
   const toggle = async () => {
+    if (androidOverlay) { setErr("Android microphone permission and WebView audio capture are not yet integrated."); return; }
     if (live) { engine.current?.stop(); engine.current = null; setLive(false); playSfx("voice-stop"); return; }
     try { const e = new VoiceEngine(); await e.start(); engine.current = e; e.apply(p); setLive(true); setErr(null); playSfx("voice-start"); }
     catch { playSfx("tool-error"); setErr("Microphone access was blocked. Allow it in your browser to use the voice changer."); }
   };
   const pick = (v: VoicePreset) => setP((o) => ({ ...o, preset: v, ...(v === "off" ? {} : PRESETS[v]) }));
   return (
+    <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-voice">
       <motion.div variants={item} className="flex items-center gap-3">
-        <button onClick={toggle} aria-pressed={live} className={cn("relative flex h-14 w-14 items-center justify-center chamfer transition-colors", live ? "bg-crimson/25 text-crimson" : "bg-foreground/5 text-muted-foreground")}>
+        <button onClick={toggle} aria-pressed={live} disabled={androidOverlay} className={cn("relative flex h-14 w-14 items-center justify-center chamfer transition-colors", live ? "bg-crimson/25 text-crimson" : "bg-foreground/5 text-muted-foreground")}>
           <Ic.IVoice width={24} height={24} />{live && <span className="fx-pulse absolute right-1.5 top-1.5 h-1.5 w-1.5 bg-crimson" />}
         </button>
         <div className="flex-1">
-          <div className="text-[13px] font-semibold">{live ? "Voice engine live" : "Engine offline"}</div>
-          <div className="tnum text-[10px] text-muted-foreground">{live ? `Output latency ${engine.current?.latency ?? 0}ms` : "Tap to arm microphone"} <Src k="live" /></div>
+          <div className="text-[13px] font-semibold">{androidOverlay ? "Local preview unavailable on Android" : live ? "Voice engine live" : "Engine offline"}</div>
+          <div className="tnum text-[10px] text-muted-foreground">{androidOverlay ? "Native microphone bridge required" : live ? `Output latency ${engine.current?.latency ?? 0}ms` : "Tap to arm microphone"} <Src k="live" /></div>
         </div>
       </motion.div>
       {err && <div className="text-[10px] text-crimson">{err}</div>}
       <motion.div variants={item} ref={bars} className="frontier-voice-wave flex h-12 items-center gap-[3px]">
         {Array.from({ length: 24 }).map((_, i) => <span key={i} className="h-full flex-1 origin-center bg-fx" style={{ transform: "scaleY(.06)", opacity: 0.4 + (i / 24) * 0.6 }} />)}
       </motion.div>
-      <motion.div variants={item}><Label>Presets</Label>
+      <motion.div variants={item}><Label>{tr(language, "Presets")}</Label>
         <div className="grid grid-cols-3 gap-1">{PRESET_LIST.map((o) => (
           <button key={o.v} onClick={() => { playSfx("voice-preset"); pick(o.v); }} className={cn("chamfer-sm py-2 text-[11px] transition-colors", p.preset === o.v ? "bg-fx font-bold text-obsidian" : "bg-foreground/5 text-muted-foreground")}>{o.l}</button>))}
         </div>
       </motion.div>
-      <motion.div variants={item} className="space-y-3"><Label>Custom voice</Label>
-        <Slider label="Tone (dark ↔ bright)" min={-12} max={12} value={p.tone} onChange={(v) => setP({ ...p, tone: v })} />
-        <Slider label="Modulation" min={0} max={100} value={p.mod} onChange={(v) => setP({ ...p, mod: v })} unit="%" />
-        <Slider label="Echo" min={0} max={100} value={p.echo} onChange={(v) => setP({ ...p, echo: v })} unit="%" />
-        <Slider label="Input gain" min={0} max={100} value={p.gain} onChange={(v) => setP({ ...p, gain: v })} unit="%" />
-        <div className="flex items-center justify-between text-[12px]"><span>Monitor in headphones</span><Toggle label="Monitor" on={p.monitor} onChange={(v) => setP({ ...p, monitor: v })} /></div>
+      <motion.div variants={item} className="space-y-3"><Label>{tr(language, "Custom voice")}</Label>
+        <Slider label={tr(language, "Tone (dark ↔ bright)")} min={-12} max={12} value={p.tone} onChange={(v) => setP({ ...p, tone: v })} />
+        <Slider label={tr(language, "Modulation")} min={0} max={100} value={p.mod} onChange={(v) => setP({ ...p, mod: v })} unit="%" />
+        <Slider label={tr(language, "Echo")} min={0} max={100} value={p.echo} onChange={(v) => setP({ ...p, echo: v })} unit="%" />
+        <Slider label={tr(language, "Input gain")} min={0} max={100} value={p.gain} onChange={(v) => setP({ ...p, gain: v })} unit="%" />
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(language, "Monitor in headphones")}</span><Toggle label="Monitor" on={p.monitor} onChange={(v) => setP({ ...p, monitor: v })} /></div>
         <div className="text-[9px] text-muted-foreground">Routing into in-game voice chat requires the Android native bridge.</div>
       </motion.div>
     </motion.div>
+    </LocalizedTree>
   );
 }
 
+function DeviceDiagnostics({ language }: { language: FrontierLanguage }) {
+  const [snapshot, setSnapshot] = useState<{availableMemoryMb?:number;totalMemoryMb?:number;lowMemory?:boolean;batteryPercent?:number;thermalStatus?:string}|null>(null);
+  const [game, setGame] = useState<{name:string;packageName:string}|null>(null);
+  const [notificationAccess, setNotificationAccess] = useState("unknown");
+  useEffect(() => {
+    const readDevice = () => {
+      try { const encoded = window.FrontierAndroid?.getDeviceSnapshot?.(); if (encoded) setSnapshot(JSON.parse(encoded)); }
+      catch { setSnapshot(null); }
+    };
+    const readGameAndPermissions = () => {
+      try {
+        const foreground = window.FrontierAndroid?.getForegroundGame?.();
+        setGame(foreground ? JSON.parse(foreground) : null);
+        setNotificationAccess(window.FrontierAndroid?.getPermissionStatus("notification-access") ?? "unsupported");
+      } catch { setGame(null); }
+    };
+    readDevice(); readGameAndPermissions();
+    const deviceTimer = window.setInterval(readDevice, 15000);
+    const gameTimer = window.setInterval(readGameAndPermissions, 1800);
+    return () => { window.clearInterval(deviceTimer); window.clearInterval(gameTimer); };
+  }, []);
+  if (!snapshot) return <LocalizedTree language={language}><p className="text-[10px] text-muted-foreground">{tr(language, "Native device diagnostics are available in the Android overlay.")}</p></LocalizedTree>;
+  return <LocalizedTree language={language}><div className="grid grid-cols-2 gap-2 text-[10px]">
+    <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Available RAM")}</span><strong className="mt-1 block">{snapshot.availableMemoryMb ?? "—"} MB</strong></div>
+    <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Battery")}</span><strong className="mt-1 block">{snapshot.batteryPercent ?? "—"}%</strong></div>
+    <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Thermal status")}</span><strong className="mt-1 block">{tr(language, snapshot.thermalStatus ?? "—")}</strong></div>
+    <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Low memory")}</span><strong className="mt-1 block">{snapshot.lowMemory ? tr(language, "YES") : tr(language, "NO")}</strong></div>
+    <div className="col-span-2 border border-line p-2"><span className="text-muted-foreground">{tr(language, "Foreground game")}</span><strong className="mt-1 block">{game?.name ?? tr(language, "No supported game detected")}</strong><small className="mt-1 block text-muted-foreground">{game?.packageName ?? tr(language, "Usage access required for detection")}</small></div>
+    <div className="col-span-2 flex items-center justify-between border border-line p-2"><span className="text-muted-foreground">{tr(language, "Notification access")}</span><strong className="text-cyan">{tr(language, notificationAccess.toUpperCase())}</strong></div>
+  </div></LocalizedTree>;
+}
+
 export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void }) {
+  const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
+  const [launchFeedback, setLaunchFeedback] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("frontier.onboarding.v1") ?? "{}") as { selectedGameIds?: unknown };
+      if (Array.isArray(saved.selectedGameIds)) setSelectedGameIds(saved.selectedGameIds.filter((id): id is string => typeof id === "string"));
+    } catch { setSelectedGameIds([]); }
+  }, []);
+  const launchSelectedGame = (gameId: string) => {
+    const launched = window.FrontierAndroid?.launchGame?.(gameId) ?? false;
+    setLaunchFeedback(launched ? (s.language === "ru" ? "Игра запускается…" : "Launching game…") : (s.language === "ru" ? "Игра не установлена или запуск недоступен." : "Game is not installed or cannot be launched."));
+    playSfx(launched ? "tool-complete" : "tool-error");
+  };
   const accents = [["cyan", "var(--cyan)"], ["lime", "var(--lime)"], ["crimson", "var(--crimson)"], ["gold", "var(--gold)"]] as const;
   return (
+    <LocalizedTree language={s.language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-settings">
-      <motion.div variants={item}><Label>Lighting</Label>
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Language</Label>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" aria-pressed={s.language === "en"} onClick={() => { playSfx("setting-change"); upd({ language: "en" }); }} className={cn("chamfer-sm border px-3 py-2 text-[11px] font-semibold", s.language === "en" ? "border-cyan/60 bg-cyan/10 text-cyan" : "border-line bg-foreground/[0.03] text-muted-foreground")}>ENGLISH</button>
+          <button type="button" aria-pressed={s.language === "ru"} onClick={() => { playSfx("setting-change"); upd({ language: "ru" }); }} className={cn("chamfer-sm border px-3 py-2 text-[11px] font-semibold", s.language === "ru" ? "border-cyan/60 bg-cyan/10 text-cyan" : "border-line bg-foreground/[0.03] text-muted-foreground")}>РУССКИЙ</button>
+        </div>
+      </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3">
+        <Label>{tr(s.language, "Device diagnostics")}</Label>
+        <DeviceDiagnostics language={s.language} />
+      </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>{tr(s.language, "Game integration")}</Label>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Auto-detect selected games")}</span><Toggle label="Auto-detect games" on={s.autoDetect} onChange={(v) => { if (v && window.FrontierAndroid?.getPermissionStatus("usage-access") !== "granted") window.FrontierAndroid?.openPermissionSettings("usage-access"); upd({ autoDetect: v }); }} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Zero-Distraction during a game")}</span><Toggle label="Zero-Distraction" on={s.zeroDistraction} onChange={(v) => { if (v && window.FrontierAndroid?.getPermissionStatus("notification-access") !== "granted") window.FrontierAndroid?.openPermissionSettings("notification-access"); upd({ zeroDistraction: v }); }} /></div>
+      </motion.div>
+      <motion.div variants={item}><Label>{tr(s.language, "Lighting")}</Label>
         <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { playSfx("setting-change"); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
       </motion.div>
-      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Interface</Label>
-        <Slider label="Animation intensity" min={0} max={2} step={0.5} value={s.motion} onChange={(v) => upd({ motion: v })} unit="×" />
-        <Slider label="Panel opacity" min={0.6} max={1} step={0.05} value={s.opacity} onChange={(v) => upd({ opacity: v })} />
-        <div className="flex items-center justify-between text-[12px]"><span>Mini FPS when closed</span><Toggle label="Mini FPS" on={s.miniFps} onChange={(v) => upd({ miniFps: v })} /></div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>{tr(s.language, "Interface")}</Label>
+        <Slider label={tr(s.language, "Animation intensity")} min={0} max={2} step={0.5} value={s.motion} onChange={(v) => upd({ motion: v })} unit="×" />
+        <Slider label={tr(s.language, "Panel opacity")} min={0.6} max={1} step={0.05} value={s.opacity} onChange={(v) => upd({ opacity: v })} />
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Mini FPS when closed")}</span><Toggle label="Mini FPS" on={s.miniFps} onChange={(v) => upd({ miniFps: v })} /></div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group frontier-sound-settings space-y-3">
-        <Label>Sound & haptics</Label>
-        <div className="flex items-center justify-between text-[12px]"><span>Interface sounds</span><Toggle label="Sounds" on={s.sound} onChange={(v) => { setSound(v, s.volume); upd({ sound: v }); if (v) playSfx("toggle-on"); }} /></div>
-        <Slider label="Master volume" min={0} max={1} step={0.05} value={s.volume} onChange={(v) => { setSound(s.sound, v); upd({ volume: v }); }} />
+        <Label>{tr(s.language, "Sound & haptics")}</Label>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Interface sounds")}</span><Toggle label="Sounds" on={s.sound} onChange={(v) => { setSound(v, s.volume); upd({ sound: v }); if (v) playSfx("toggle-on"); }} /></div>
+        <Slider label={tr(s.language, "Master volume")} min={0} max={1} step={0.05} value={s.volume} onChange={(v) => { setSound(s.sound, v); upd({ volume: v }); }} />
         <div className="frontier-sound-preview">
           <div className="flex items-center justify-between gap-2">
             <span className="font-display text-[9px] tracking-[0.16em] text-muted-foreground">SONIC PREVIEW</span>
@@ -313,22 +382,29 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
           </div>
           {!s.sound || s.volume === 0 ? <p className="mt-1 text-[9px] text-muted-foreground">Enable interface sounds and raise the volume to preview FRONTIER SFX.</p> : null}
         </div>
-        <div className="flex items-center justify-between text-[12px]"><span>Haptic feedback</span><Toggle label="Haptics" on={s.haptics} onChange={(v) => upd({ haptics: v })} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Haptic feedback")}</span><Toggle label="Haptics" on={s.haptics} onChange={(v) => upd({ haptics: v })} /></div>
       </motion.div>
-      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Gestures & overlay</Label>
-        <Slider label="Edge swipe distance" min={20} max={90} step={5} value={s.edgeSensitivity} onChange={(v) => upd({ edgeSensitivity: v })} unit="px" />
-        <Seg label="Auto-hide" value={s.autoHide} onChange={(v) => upd({ autoHide: v })} options={[{ v: 0, l: "Never" }, { v: 5, l: "5s" }, { v: 10, l: "10s" }, { v: 20, l: "20s" }]} />
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>{tr(s.language, "Gestures & overlay")}</Label>
+        <Slider label={tr(s.language, "Edge swipe distance")} min={20} max={90} step={5} value={s.edgeSensitivity} onChange={(v) => upd({ edgeSensitivity: v })} unit="px" />
+        <Seg label={tr(s.language, "Auto-hide")} value={s.autoHide} onChange={(v) => upd({ autoHide: v })} options={[{ v: 0, l: "Never" }, { v: 5, l: "5s" }, { v: 10, l: "10s" }, { v: 20, l: "20s" }]} />
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3">
-        <Label>System setup</Label>
-        <p className="text-[10px] leading-relaxed text-muted-foreground">Manage the games selected during initiation and review platform access.</p>
+        <Label>{tr(s.language, "System setup")}</Label>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">{tr(s.language, "Manage the games selected during initiation and review platform access.")}</p>
         <button type="button" onClick={onManageSetup} className="frontier-setup-manage-button" disabled={!onManageSetup}>
-          <span>MANAGE GAMES & SETUP</span><span aria-hidden>↗</span>
+          <span>{tr(s.language, "MANAGE GAMES & SETUP")}</span><span aria-hidden>↗</span>
         </button>
       </motion.div>
-      <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>Performance preference</Label>
-        <Seg label="Launch profile" value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />
+      <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>{tr(s.language, "Performance preference")}</Label>
+        <Seg label={tr(s.language, "Launch profile")} value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />
+      </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3">
+        <Label>{tr(s.language, "Launch selected game")}</Label>
+        <div className="space-y-1.5">{GAME_CATALOG.filter((game) => selectedGameIds.includes(game.id)).map((game) => <button key={game.id} type="button" onClick={() => launchSelectedGame(game.id)} className="flex min-h-10 w-full items-center justify-between chamfer-sm border border-line bg-foreground/[0.03] px-3 text-left text-[11px] hover:border-cyan/50"><span>{game.name}</span><span className="font-display text-[8px] tracking-widest text-cyan">{tr(s.language, "LAUNCH")}</span></button>)}</div>
+        {selectedGameIds.length === 0 && <p className="text-[10px] text-muted-foreground">{tr(s.language, "No games selected yet.")}</p>}
+        {launchFeedback && <p role="status" className="text-[10px] text-muted-foreground">{launchFeedback}</p>}
       </motion.div>
     </motion.div>
+    </LocalizedTree>
   );
 }

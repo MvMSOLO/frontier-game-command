@@ -7,6 +7,13 @@ export interface FrontierAndroidBridge {
   getForegroundGame(): string;
   startOverlay?(): boolean;
   minimizeOverlay?(): void;
+  expandOverlay?(): void;
+  setLanguage?(language: string): void;
+  setSelectedGames?(ids: string): void;
+  setAutoDetectEnabled?(enabled: boolean): void;
+  launchGame?(gameId: string): boolean;
+  getDeviceSnapshot?(): string;
+  setZeroDistractionEnabled?(enabled: boolean): void;
   stopOverlay?(): void;
 }
 

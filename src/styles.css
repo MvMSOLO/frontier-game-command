@@ -724,3 +724,52 @@ html.frontier-android-overlay,html.frontier-android-overlay body,html.frontier-a
 .frontier-native-action.is-danger{border-color:rgba(255,97,128,.28);background:rgba(217,72,104,.08);color:#ff9bad}
 .frontier-native-footer{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;padding:8px 10px;border-top:1px solid rgba(88,190,217,.13);color:#627e93;font:6px var(--font-mono,monospace);letter-spacing:.1em}
 @media(prefers-reduced-motion:reduce){.frontier-native-overlay *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+
+/* Original FRONTIER composition, adapted to the bounded native left overlay. */
+.frontier-android-overlay, .frontier-android-overlay body, .frontier-android-overlay #root {
+  width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; overflow: hidden;
+  background: transparent !important; overscroll-behavior: none;
+}
+.frontier-app[data-android-overlay="true"] {
+  position: relative !important; inset: auto !important; width: 100%; height: 100%;
+  min-width: 0; min-height: 0; background: transparent; overflow: hidden;
+}
+.frontier-app[data-android-overlay="true"] .frontier-twin-overlay {
+  position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden;
+}
+.frontier-app[data-android-overlay="true"] .frontier-command-dock {
+  left: 0; right: 0; top: 0; transform: none; width: 100%; max-width: none;
+  min-width: 0; justify-content: space-between; gap: 2px; padding: 4px;
+  border-radius: 0 0 10px 2px; z-index: 50;
+}
+.frontier-app[data-android-overlay="true"] .frontier-dock-brand { padding-inline: 4px; gap: 4px; }
+.frontier-app[data-android-overlay="true"] .frontier-dock-brand .font-display { display: none; }
+.frontier-app[data-android-overlay="true"] .frontier-dock-item {
+  min-width: 0; min-height: 42px; flex: 1 1 0; justify-content: center; padding-inline: 3px;
+}
+.frontier-app[data-android-overlay="true"] .frontier-dock-item span { display: none; }
+.frontier-app[data-android-overlay="true"] .frontier-dock-fps,
+.frontier-app[data-android-overlay="true"] .frontier-wing-switch,
+.frontier-app[data-android-overlay="true"] .frontier-wing-right,
+.frontier-app[data-android-overlay="true"] .frontier-edge-right,
+.frontier-app[data-android-overlay="true"] .frontier-preview-badge { display: none !important; }
+.frontier-app[data-android-overlay="true"] .frontier-wing-left {
+  left: 0 !important; right: 0 !important; top: 51px !important; bottom: 0 !important;
+  width: 100% !important; max-width: none; border-radius: 0 0 12px 0;
+}
+.frontier-app[data-android-overlay="true"] .frontier-wing-left .frontier-wing-header { min-height: 42px; padding: 7px 10px; }
+.frontier-app[data-android-overlay="true"] .frontier-page-scroll { padding: 10px; }
+.frontier-app[data-android-overlay="true"] .frontier-telemetry { margin-inline: 10px; }
+.frontier-app[data-android-overlay="true"] .frontier-edge-left { z-index: 60; width: 38px; }
+.frontier-app[data-android-overlay="true"] .frontier-edge-handle { width: 34px; height: 120px; }
+.frontier-app[data-android-overlay="true"][data-panel-open="true"] .frontier-edge-left { display: none; }
+.frontier-app[data-android-overlay="true"] .frontier-twin-overlay > * { pointer-events: auto; }
+@media (max-width: 360px) {
+  .frontier-app[data-android-overlay="true"] .frontier-dock-brand { display: none; }
+  .frontier-app[data-android-overlay="true"] .frontier-dock-item { min-height: 40px; }
+}
+@media (max-height: 420px) {
+  .frontier-app[data-android-overlay="true"] .frontier-wing-left { top: 46px !important; }
+  .frontier-app[data-android-overlay="true"] .frontier-dock-item { min-height: 36px; }
+}
