@@ -74,6 +74,7 @@ class OverlayService : Service(), FrontierBridgeHost {
         }
     }
     override fun stopOverlay() { mainHandler.post { stopSelf() } }
+    override fun updateLanguage() { mainHandler.post { createNotificationChannel() } }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)

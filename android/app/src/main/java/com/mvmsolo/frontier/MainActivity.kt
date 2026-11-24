@@ -1,6 +1,7 @@
 package com.mvmsolo.frontier
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
@@ -124,6 +125,7 @@ class MainActivity : Activity(), FrontierBridgeHost {
     }
 
     override fun expandOverlay() { startOverlay() }
+    override fun updateLanguage() { runOnUiThread { applyNativeLanguage(); refreshPermissionLabel() } }
 
     override fun minimizeOverlay() {
         startService(Intent(this, OverlayService::class.java).setAction(OverlayService.ACTION_MINIMIZE))

@@ -13,6 +13,7 @@ interface FrontierBridgeHost {
     fun minimizeOverlay()
     fun expandOverlay()
     fun stopOverlay()
+    fun updateLanguage()
 }
 
 class FrontierJavascriptBridge(private val context: Context, private val host: FrontierBridgeHost) {
@@ -41,7 +42,7 @@ class FrontierJavascriptBridge(private val context: Context, private val host: F
         val safeLanguage = if (language == "ru") "ru" else "en"
         context.getSharedPreferences(OverlayService.PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putString(OverlayService.KEY_LANGUAGE, safeLanguage).apply()
-        try { context.startService(android.content.Intent(context, OverlayService::class.java).setAction(OverlayService.ACTION_UPDATE_LANGUAGE)) } catch (_: Exception) { }
+        host.updateLanguage()
     }
 
     @JavascriptInterface
