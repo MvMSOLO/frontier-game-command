@@ -84,7 +84,7 @@ function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon:
 }
 const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(--cyan)", hyper: "var(--magenta)", overdrive: "var(--gold)" };
 
-export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void }) {
+export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, androidOverlay = false }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void; androidOverlay?: boolean }) {
   const fps = useCount(t.fps, 260);
   const [purged, setPurged] = useState(false);
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
@@ -94,23 +94,18 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
       <Card>
         <div className="flex items-center gap-2">
           <div className="shrink-0 leading-none">
-            <div className="tnum text-[40px] font-bold leading-[0.9] text-cyan [text-shadow:0_0_18px_var(--cyan)]">{fps}</div>
-            <div className="mt-0.5 flex items-center gap-1 font-display text-[11px] text-cyan">FPS <Src k="live" /></div>
+            <div className="tnum text-[40px] font-bold leading-[0.9] text-cyan [text-shadow:0_0_18px_var(--cyan)]">{androidOverlay ? "—" : fps}</div>
+            <div className="mt-0.5 flex items-center gap-1 font-display text-[11px] text-cyan">{androidOverlay ? "GAME FPS · NATIVE REQUIRED" : <>FPS <Src k="live" /></>}</div>
           </div>
           <div className="min-w-0 flex-1"><Wave data={t.history} color="var(--cyan)" /></div>
         </div>
         <div className="mt-1 grid grid-cols-2 divide-x divide-line text-center">
-          <div><div className="tnum text-[14px] font-bold text-cyan">{t.frameTime}<span className="text-[10px]">ms</span></div><div className="text-[9px] text-muted-foreground">Frame Time</div></div>
-          <div><div className="tnum text-[14px] font-bold text-cyan">{t.stability}%</div><div className="text-[9px] text-muted-foreground">Stability</div></div>
+          <div><div className="tnum text-[14px] font-bold text-cyan">{androidOverlay ? "—" : <>{t.frameTime}<span className="text-[10px]">ms</span></>}</div><div className="text-[9px] text-muted-foreground">{androidOverlay ? "GAME FRAME TIME · UNAVAILABLE" : "Frame Time"}</div></div>
+          <div><div className="tnum text-[14px] font-bold text-cyan">{androidOverlay ? "—" : <>{t.stability}%</>}</div><div className="text-[9px] text-muted-foreground">{androidOverlay ? "GAME STABILITY · UNAVAILABLE" : "Stability"}</div></div>
         </div>
       </Card>
       <Card glow="var(--magenta)">
-        <div className="flex items-center justify-around">
-          <BigRing value={t.cpu} label="CPU" color="var(--cyan)" />
-          <BigRing value={t.gpu} label="GPU" color="var(--crimson)" />
-          <BigRing value={Math.round(t.temp)} label="TEMP" unit="°C" max={55} color={t.temp > 43 ? "var(--gold)" : "var(--lime)"} />
-        </div>
-        <div className="absolute right-2 top-1.5"><Src k="sim" /></div>
+        {androidOverlay ? <div className="grid grid-cols-3 gap-2 py-3 text-center">{["CPU", "GPU", "THERMAL"].map((label) => <div key={label}><div className="tnum text-[22px] font-bold text-muted-foreground">—</div><div className="text-[8px] tracking-wider text-muted-foreground">{label}</div><div className="text-[7px] text-gold">NATIVE DATA REQUIRED</div></div>)}</div> : <><div className="flex items-center justify-around"><BigRing value={t.cpu} label="CPU" color="var(--cyan)" /><BigRing value={t.gpu} label="GPU" color="var(--crimson)" /><BigRing value={Math.round(t.temp)} label="TEMP" unit="°C" max={55} color={t.temp > 43 ? "var(--gold)" : "var(--lime)"} /></div><div className="absolute right-2 top-1.5"><Src k="sim" /></div></>}
       </Card>
       <Card>
         <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>Performance Mode</div>
@@ -127,28 +122,21 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
         </div>
       </Card>
       <Card glow="var(--magenta)">
-        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>Quick Tools<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">6 ›</button></div>
-        <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5">
-          <QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} />
-          <QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} />
-          <QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} />
-          <QT icon={Ic.ICross} label="Crosshair" on={ts.crosshair} onClick={tog("crosshair")} color="var(--crimson)" />
-          <QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" />
-          <QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot />
-        </motion.div>
+        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>{androidOverlay ? "NATIVE CAPABILITIES" : "Quick Tools"}<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">{androidOverlay ? "DETAILS" : "6 ›"}</button></div>
+        {androidOverlay ? <div className="space-y-2 text-[9px]"><div className="flex justify-between"><span>Foreground game detector</span><span className="text-lime">AVAILABLE</span></div><div className="flex justify-between"><span>Launch selected game</span><span className="text-lime">AVAILABLE</span></div><div className="flex justify-between"><span>System memory / thermal</span><span className="text-gold">DIAGNOSTICS</span></div><div className="flex justify-between"><span>Game FPS / GPU tuning</span><span className="text-gold">NOT EXPOSED BY ANDROID</span></div></div> : <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5"><QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} /><QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} /><QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} /><QT icon={Ic.ICross} label="Crosshair" on={ts.crosshair} onClick={tog("crosshair")} color="var(--crimson)" /><QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" /><QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot /></motion.div>}
       </Card>
-      <Card glow="var(--lime)">
+      {!androidOverlay && <Card glow="var(--lime)">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-lime text-[14px] font-bold text-obsidian shadow-[0_0_12px_var(--lime)]">✓</span>
           <div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold text-gold">Performance Optimized!</div><div className="truncate text-[9px] text-muted-foreground">Enjoy smoother gameplay</div></div>
           <span className="fx-pulse flex gap-0.5">{[0, 1, 2].map((i) => <span key={i} className="h-3 w-1.5 -skew-x-[25deg] bg-cyan" />)}</span>
         </div>
-      </Card>
+      </Card>}
     </motion.div>
   );
 }
 
-export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setMode: (m: Mode) => void; t: Telemetry; s: Settings; upd: (p: Partial<Settings>) => void }) {
+export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = false }: { mode: Mode; setMode: (m: Mode) => void; t: Telemetry; s: Settings; upd: (p: Partial<Settings>) => void; androidOverlay?: boolean }) {
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-performance">
       <motion.div variants={item}><Label right={<Src k="native" />}>Engine profile</Label></motion.div>
@@ -178,12 +166,13 @@ export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setM
         <Seg label="Refresh rate" value={s.refresh} onChange={(v) => upd({ refresh: v })} options={[60, 90, 120, 144].map((v) => ({ v, l: `${v}Hz` }))} />
         <div className="flex items-center justify-between text-[12px]"><span>Frame pacing lock</span><Toggle label="Frame pacing" on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
       </motion.div>
-      <motion.div variants={item}>
+      {!androidOverlay && <motion.div variants={item}>
         <Label right={<Src k="sim" />}>Thermal envelope</Label>
         <div className="relative h-2 bg-gradient-to-r from-lime via-gold to-crimson opacity-80 chamfer-sm" />
         <div className="relative h-3"><motion.span animate={{ left: `${Math.min(100, ((t.temp - 25) / 30) * 100)}%` }} className="absolute top-0 h-3 w-[2px] bg-foreground" /></div>
         <div className="tnum flex justify-between text-[9px] text-muted-foreground"><span>25°</span><span>{t.temp}°C</span><span>55°</span></div>
-      </motion.div>
+      </motion.div>}
+      {androidOverlay && <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">FRONTIER profiles adjust the overlay experience only. Game FPS, GPU clocks and per-game thermal readings require OEM or privileged integrations.</motion.div>}
     </motion.div>
   );
 }
@@ -206,10 +195,17 @@ function Tile({ icon: I, name, on, onClick, src, children, color = "var(--accent
   )
 }
 
-export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recErr, goVoice }: { ts: ToolState; setTs: (p: Partial<ToolState>) => void; blocked: number; onRecord: () => void; onReplay: () => void; onClip: () => void; recErr: string | null; goVoice: () => void }) {
+export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recErr, goVoice, androidOverlay = false }: { ts: ToolState; setTs: (p: Partial<ToolState>) => void; blocked: number; onRecord: () => void; onReplay: () => void; onClip: () => void; recErr: string | null; goVoice: () => void; androidOverlay?: boolean }) {
   const [purge, setPurge] = useState<"idle" | "run" | "done">("idle"); const [freed, setFreed] = useState(0);
   const runPurge = () => { if (purge === "run") return; playSfx("tool-start"); haptic(20); setPurge("run"); setTimeout(() => { setFreed(Math.round(300 + Math.random() * 900)); setPurge("done"); playSfx("tool-complete"); }, 1400); };
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
+  if (androidOverlay) return (
+    <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-tools">
+      <Label>Android capability status</Label>
+      {[["Foreground game detection", "LIVE · USAGE ACCESS"], ["Launch selected games", "LIVE · PACKAGE INTENT"], ["Memory diagnostics", "READ-ONLY · DEVICE API"], ["Thermal status", "ANDROID THERMAL API"], ["Touch Boost", "UNAVAILABLE · OEM API"], ["Game FPS / GPU tuning", "UNAVAILABLE · PRIVILEGED API"], ["In-game voice routing", "UNAVAILABLE · GAME INTEGRATION"], ["Screen recording / replay", "NATIVE CAPTURE CONSENT REQUIRED"], ["Crosshair over game", "DISABLED · TOUCH SAFETY"]].map(([name, status]) => <div key={name} className="flex items-center justify-between gap-2 border border-line bg-foreground/[0.03] px-3 py-3"><span className="text-[10px] font-semibold">{name}</span><span className="text-right text-[8px] tracking-wider text-gold">{status}</span></div>)}
+      <p className="text-[9px] leading-relaxed text-muted-foreground">Only controls with a verified Android implementation are enabled. Unsupported game-level tuning is not simulated.</p>
+    </motion.div>
+  );
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-1.5 frontier-page frontier-page-tools">
       <motion.div variants={item}><Label>Tactical tools</Label></motion.div>
@@ -241,7 +237,7 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
 }
 
 const PRESET_LIST: { v: VoicePreset; l: string }[] = [{ v: "off", l: "Natural" }, { v: "robot", l: "Robot" }, { v: "titan", l: "Titan" }, { v: "spectre", l: "Spectre" }, { v: "radio", l: "Comms" }, { v: "alien", l: "Xeno" }];
-export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngine | null> }) {
+export function VoicePage({ engine, androidOverlay = false }: { engine: React.MutableRefObject<VoiceEngine | null>; androidOverlay?: boolean }) {
   const [live, setLive] = useState(!!engine.current?.ctx); const [err, setErr] = useState<string | null>(null);
   const [p, setP] = useState<VoiceParams>({ preset: "robot", tone: 0, mod: 50, echo: 15, monitor: false, gain: 50 });
   const bars = useRef<HTMLDivElement>(null);
@@ -250,6 +246,7 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
     const loop = () => { hist.shift(); hist.push(engine.current?.level() ?? 0); if (bars.current) Array.from(bars.current.children).forEach((c, i) => ((c as HTMLElement).style.transform = `scaleY(${0.06 + (hist[i] ?? 0)})`)); r = requestAnimationFrame(loop); };
     loop(); return () => cancelAnimationFrame(r); }, [live, engine]);
   const toggle = async () => {
+    if (androidOverlay) { setErr("Android microphone permission and WebView audio capture are not yet integrated."); return; }
     if (live) { engine.current?.stop(); engine.current = null; setLive(false); playSfx("voice-stop"); return; }
     try { const e = new VoiceEngine(); await e.start(); engine.current = e; e.apply(p); setLive(true); setErr(null); playSfx("voice-start"); }
     catch { playSfx("tool-error"); setErr("Microphone access was blocked. Allow it in your browser to use the voice changer."); }
@@ -258,12 +255,12 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-voice">
       <motion.div variants={item} className="flex items-center gap-3">
-        <button onClick={toggle} aria-pressed={live} className={cn("relative flex h-14 w-14 items-center justify-center chamfer transition-colors", live ? "bg-crimson/25 text-crimson" : "bg-foreground/5 text-muted-foreground")}>
+        <button onClick={toggle} aria-pressed={live} disabled={androidOverlay} className={cn("relative flex h-14 w-14 items-center justify-center chamfer transition-colors", live ? "bg-crimson/25 text-crimson" : "bg-foreground/5 text-muted-foreground")}>
           <Ic.IVoice width={24} height={24} />{live && <span className="fx-pulse absolute right-1.5 top-1.5 h-1.5 w-1.5 bg-crimson" />}
         </button>
         <div className="flex-1">
-          <div className="text-[13px] font-semibold">{live ? "Voice engine live" : "Engine offline"}</div>
-          <div className="tnum text-[10px] text-muted-foreground">{live ? `Output latency ${engine.current?.latency ?? 0}ms` : "Tap to arm microphone"} <Src k="live" /></div>
+          <div className="text-[13px] font-semibold">{androidOverlay ? "Local preview unavailable on Android" : live ? "Voice engine live" : "Engine offline"}</div>
+          <div className="tnum text-[10px] text-muted-foreground">{androidOverlay ? "Native microphone bridge required" : live ? `Output latency ${engine.current?.latency ?? 0}ms` : "Tap to arm microphone"} <Src k="live" /></div>
         </div>
       </motion.div>
       {err && <div className="text-[10px] text-crimson">{err}</div>}
