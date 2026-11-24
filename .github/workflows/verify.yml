@@ -32,11 +32,11 @@ jobs:
 
       - name: Format changed UI files
         run: |
-          bun x prettier --write src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/styles.css
-          bun x prettier --check src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/styles.css
+          bun x prettier --write src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/frontier/audio.ts src/frontier/audio.test.ts src/styles.css
+          bun x prettier --check src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/frontier/audio.ts src/frontier/audio.test.ts src/styles.css
 
       - name: Lint changed UI components
-        run: bun x eslint src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx
+        run: bun x eslint src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/frontier/audio.ts src/frontier/audio.test.ts
 
       - name: Unit tests
         run: bun run test
