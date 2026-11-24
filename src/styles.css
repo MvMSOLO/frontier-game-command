@@ -446,3 +446,12 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
   .frontier-mode-card[aria-pressed="true"]::after,
   .frontier-page-voice .frontier-voice-wave { animation: none !important; }
 }
+
+@media (max-width: 760px) and (orientation: landscape) {
+  .frontier-wing { width: clamp(168px, 27vw, 230px); }
+}
+@media (max-width: 560px) and (orientation: landscape) {
+  .frontier-wing { width: clamp(150px, 29vw, 190px); }
+  .frontier-wing-header { padding-inline: 8px; }
+  .frontier-page-scroll, .frontier-nexus-content { padding-inline: 8px; }
+}
