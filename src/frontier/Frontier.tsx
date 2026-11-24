@@ -151,7 +151,7 @@ export function Frontier() {
                 </motion.button>
                 {s.miniFps && <div className="tnum pointer-events-none absolute left-2 top-3 bg-obsidian/70 px-2 py-1 text-[10px]" style={{ color: M.color }}>{t.fps} FPS</div>}
               </motion.div>
-              <motion.button key="right-edge" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} onTap={doOpen} onClick={doOpen} aria-label="Open FRONTIER from right" className="frontier-edge-right absolute inset-y-0 right-0 z-20 flex w-8 items-center justify-end">
+              <motion.button key="right-edge" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} onClick={doOpen} aria-label="Open FRONTIER from right" className="frontier-edge-right absolute inset-y-0 right-0 z-20 flex w-8 items-center justify-end">
                 <span className="frontier-edge-right-line block h-28 w-[3px] bg-magenta shadow-[0_0_16px_var(--magenta)]" />
               </motion.button>
             </>
