@@ -87,8 +87,6 @@ export function Frontier() {
   }, 9000); return () => clearInterval(iv); }, []);
   useEffect(() => { if (ts.shield) setNotes([]); }, [ts.shield]);
   // Auto-hide
-  useEffect(() => { if (!open || !s.autoHide) return; const iv = setInterval(() => { if (Date.now() - lastTouch.current > s.autoHide * 1000) closePanel(); }, 500); return () => clearInterval(iv); }, [open, s.autoHide]);
-
   const doOpen = useCallback(() => {
     if (!openRef.current) {
       openRef.current = true;
@@ -106,6 +104,7 @@ export function Frontier() {
     haptic(10);
   }, []);
   const doClose = closePanel;
+  useEffect(() => { if (!open || !s.autoHide) return; const iv = setInterval(() => { if (Date.now() - lastTouch.current > s.autoHide * 1000) closePanel(); }, 500); return () => clearInterval(iv); }, [open, s.autoHide, closePanel]);
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -122,11 +121,11 @@ export function Frontier() {
     if (m === "overdrive") { setActivating(true); setTimeout(() => setActivating(false), 1300); }
   };
 
-  const stopRec = () => { const r = rec.current; if (!r) return; playSfx("capture-stop"); r.mr.stop(); r.stream.getTracks().forEach((x) => x.stop()); rec.current = null; setTs({ recording: false, replay: false }); };
+  const stopRec = () => { const r = rec.current; if (!r) return; playSfx("capture-stop"); if (r.mr.state !== "inactive") r.mr.stop(); r.stream.getTracks().forEach((x) => x.stop()); rec.current = null; setTs({ recording: false, replay: false }); };
   const download = (chunks: Blob[], name: string) => { const url = URL.createObjectURL(new Blob(chunks, { type: "video/webm" })); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000); };
   const startCapture = async (kind: "rec" | "replay") => {
     setRecErr(null);
-    if (!navigator.mediaDevices?.getDisplayMedia) { setRecErr("Screen capture isn't available in this browser. Support depends on the browser and device."); return; }
+    if (!navigator.mediaDevices?.getDisplayMedia) { playSfx("tool-error"); setRecErr("Screen capture isn't available in this browser. Support depends on the browser and device."); return; }
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 60 }, audio: true });
       const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm" });
