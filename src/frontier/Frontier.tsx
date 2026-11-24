@@ -102,7 +102,7 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
   }, [androidOverlay]);
   const closePanel = useCallback(() => {
     if (!openRef.current) return;
-    if (androidOverlay) window.FrontierAndroid?.minimizeOverlay?.();
+    if (androidOverlay) window.setTimeout(() => window.FrontierAndroid?.minimizeOverlay?.(), 220);
     openRef.current = false;
     setOpen(false);
     playSfx("panel-close");
