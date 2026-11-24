@@ -30,3 +30,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated Android web bundle and Gradle outputs
+/dist-android/
+/android/app/build/
+/android/app/src/main/assets/web/
