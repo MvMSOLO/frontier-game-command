@@ -286,20 +286,30 @@ export function VoicePage({ engine, androidOverlay = false, language = "en" }: {
 
 function DeviceDiagnostics({ language }: { language: FrontierLanguage }) {
   const [snapshot, setSnapshot] = useState<{availableMemoryMb?:number;totalMemoryMb?:number;lowMemory?:boolean;batteryPercent?:number;thermalStatus?:string}|null>(null);
+  const [game, setGame] = useState<{name:string;packageName:string}|null>(null);
+  const [notificationAccess, setNotificationAccess] = useState("unknown");
   useEffect(() => {
     const read = () => {
-      try { const encoded = window.FrontierAndroid?.getDeviceSnapshot?.(); if (encoded) setSnapshot(JSON.parse(encoded)); } catch { setSnapshot(null); }
+      try {
+        const encoded = window.FrontierAndroid?.getDeviceSnapshot?.();
+        if (encoded) setSnapshot(JSON.parse(encoded));
+        const foreground = window.FrontierAndroid?.getForegroundGame?.();
+        setGame(foreground ? JSON.parse(foreground) : null);
+        setNotificationAccess(window.FrontierAndroid?.getPermissionStatus("notification-access") ?? "unsupported");
+      } catch { setSnapshot(null); setGame(null); }
     };
     read();
-    const timer = window.setInterval(read, 15000);
+    const timer = window.setInterval(read, 2000);
     return () => window.clearInterval(timer);
   }, []);
-  if (!snapshot) return <p className="text-[10px] text-muted-foreground">Native device diagnostics are available in the Android overlay.</p>;
+  if (!snapshot) return <p className="text-[10px] text-muted-foreground">{tr(language, "Native device diagnostics are available in the Android overlay.")}</p>;
   return <div className="grid grid-cols-2 gap-2 text-[10px]">
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Available RAM")}</span><strong className="mt-1 block">{snapshot.availableMemoryMb ?? "—"} MB</strong></div>
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Battery")}</span><strong className="mt-1 block">{snapshot.batteryPercent ?? "—"}%</strong></div>
-    <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Thermal status")}</span><strong className="mt-1 block">{snapshot.thermalStatus ?? "—"}</strong></div>
-    <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Low memory")}</span><strong className="mt-1 block">{snapshot.lowMemory ? "YES" : "NO"}</strong></div>
+    <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Thermal status")}</span><strong className="mt-1 block">{tr(language, snapshot.thermalStatus ?? "—")}</strong></div>
+    <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Low memory")}</span><strong className="mt-1 block">{snapshot.lowMemory ? tr(language, "YES") : tr(language, "NO")}</strong></div>
+    <div className="col-span-2 border border-line p-2"><span className="text-muted-foreground">{tr(language, "Foreground game")}</span><strong className="mt-1 block">{game?.name ?? tr(language, "No supported game detected")}</strong><small className="mt-1 block text-muted-foreground">{game?.packageName ?? tr(language, "Usage access required for detection")}</small></div>
+    <div className="col-span-2 flex items-center justify-between border border-line p-2"><span className="text-muted-foreground">{tr(language, "Notification access")}</span><strong className="text-cyan">{tr(language, notificationAccess.toUpperCase())}</strong></div>
   </div>;
 }
 

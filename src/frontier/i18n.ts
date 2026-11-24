@@ -25,7 +25,7 @@ const RU: Record<string, string> = {
   "Performance Mode": "Режим производительности", "Quick Tools": "Быстрые инструменты", "Frame Time": "Время кадра",
   "Stability": "Стабильность", "Performance Optimized!": "Производительность оптимизирована!",
   "Enjoy smoother gameplay": "Играйте плавнее", "Purging…": "Очистка…", "Crosshair": "Прицел",
-  "No Disturb": "Не беспокоить", "Frame pacing": "Синхронизация кадров"
+  "No Disturb": "Не беспокоить", "Frame pacing": "Синхронизация кадров", "Foreground game": "Игра на переднем плане", "No supported game detected": "Поддерживаемая игра не обнаружена", "Usage access required for detection": "Для обнаружения нужен доступ к статистике использования", "Notification access": "Доступ к уведомлениям", "Native device diagnostics are available in the Android overlay.": "Диагностика устройства доступна в Android-оверлее.", "YES": "ДА", "NO": "НЕТ", "NORMAL": "НОРМА", "LIGHT": "ЛЁГКИЙ", "MODERATE": "УМЕРЕННЫЙ", "SEVERE": "СЕРЬЁЗНЫЙ", "CRITICAL": "КРИТИЧЕСКИЙ", "EMERGENCY": "АВАРИЙНЫЙ", "UNSUPPORTED": "НЕ ПОДДЕРЖИВАЕТСЯ", "GRANTED": "РАЗРЕШЕНО", "DENIED": "ЗАПРЕЩЕНО", "UNKNOWN": "НЕИЗВЕСТНО"
 };
 
 export function tr(language: FrontierLanguage, value: string): string {
