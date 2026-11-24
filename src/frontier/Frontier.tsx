@@ -141,36 +141,37 @@ export function Frontier() {
           <motion.div key="panel" onPointerDown={() => (lastTouch.current = Date.now())} className="absolute bottom-2 left-0 top-2 z-30 flex max-w-[calc(100vw-1rem)]" initial="closed" animate="open" exit="closed">
             {/* Rail */}
             <motion.nav aria-label="FRONTIER navigation" variants={{ closed: { x: -90 }, open: { x: 0, transition: { ...SPRING, staggerChildren: 0.05, delayChildren: 0.1 } } }}
-              className="relative flex w-[60px] flex-col items-center gap-1 border-r border-line bg-glass-strong py-2 [clip-path:polygon(0_0,100%_3%,100%_97%,0_100%)]" style={{ opacity: s.opacity + 0.05 }}>
-              <motion.div variants={{ closed: { opacity: 0 }, open: { opacity: 1 } }} className="mb-2 mt-2" style={{ color: od ? "var(--gold)" : "var(--accent-fx)" }}><Ic.ILogo width={26} height={26} /></motion.div>
+              className="relative flex w-[68px] flex-col items-center gap-1 border-r-2 border-magenta/70 bg-glass-strong py-2 shadow-[4px_0_18px_color-mix(in_oklab,var(--magenta)_40%,transparent)] [clip-path:polygon(0_0,100%_3%,100%_97%,0_100%)]" style={{ opacity: s.opacity + 0.05 }}>
+              <motion.div variants={{ closed: { opacity: 0, rotate: -90, scale: 0.4 }, open: { opacity: 1, rotate: 0, scale: 1 } }} className="mb-2 mt-1 flex h-11 w-11 items-center justify-center chamfer-sm border border-magenta/60 bg-magenta/10 shadow-[0_0_14px_var(--magenta)]" style={{ color: od ? "var(--gold)" : "var(--magenta)" }}><Ic.ILogo width={24} height={24} /></motion.div>
               {NAV.map((n) => { const on = tab === n.id; return (
                 <motion.button key={n.id} variants={{ closed: { opacity: 0, x: -10 }, open: { opacity: 1, x: 0 } }} aria-label={n.label} aria-current={on ? "page" : undefined}
                   onClick={() => { if (n.id !== tab) { setTab(n.id); sfx.nav(); haptic(5); } }} whileTap={{ scale: 0.9 }}
-                  className={cn("relative flex h-12 w-12 flex-col items-center justify-center gap-0.5 transition-colors", on ? "text-fx" : "text-muted-foreground hover:text-foreground")}>
-                  {on && <motion.span layoutId="railActive" className="absolute inset-0 chamfer-sm bg-fx/10" />}
+                  className={cn("relative flex h-14 w-14 flex-col items-center justify-center gap-0.5 transition-colors", on ? "text-fx" : "text-muted-foreground hover:text-foreground")}>
+                  {on && <motion.span layoutId="railActive" className="absolute inset-0 chamfer-sm border border-cyan/70 bg-cyan/15 shadow-[inset_0_0_14px_color-mix(in_oklab,var(--cyan)_45%,transparent)]" />}
                   {on && <motion.span layoutId="railBar" className="absolute -left-[6px] top-2 h-8 w-[3px] bg-fx shadow-[0_0_10px_var(--accent-fx)]" />}
-                  <n.icon width={20} height={20} className="relative" /><span className="relative text-[7px] uppercase tracking-wider">{n.id === "perf" ? "Perf" : n.label}</span>
+                  <n.icon width={20} height={20} className="relative" /><span className="relative text-[8px] font-semibold">{n.id === "perf" ? "Perform" : n.label}</span>
                 </motion.button>); })}
               <div className="flex-1" />
               <motion.button variants={{ closed: { opacity: 0 }, open: { opacity: 1 } }} onClick={doClose} aria-label="Minimize FRONTIER" whileTap={{ scale: 0.9 }} className="flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-crimson"><Ic.IMin /></motion.button>
             </motion.nav>
             {/* Panel */}
             <motion.section variants={{ closed: { opacity: 0, scaleX: 0.3, x: -40 }, open: { opacity: 1, scaleX: 1, x: 0, transition: { ...SPRING, delay: 0.08 } } }} style={{ transformOrigin: "left center" }}
-              className="relative ml-1.5 flex w-[min(300px,calc(100vw-80px))] flex-col overflow-hidden">
-              <div className="absolute inset-0 chamfer border border-line bg-glass" style={{ opacity: s.opacity }} />
+              className="relative ml-1.5 flex w-[min(330px,calc(100vw-84px))] flex-col overflow-hidden">
+              <div className="absolute inset-0 chamfer border border-cyan/40 bg-glass shadow-[inset_0_0_30px_color-mix(in_oklab,var(--cyan)_12%,transparent)]" style={{ opacity: s.opacity }} />
+              <motion.span key={`scan-${tab}`} initial={{ top: "0%", opacity: 1 }} animate={{ top: "100%", opacity: 0 }} transition={{ duration: 0.9, ease: "easeOut" }} className="pointer-events-none absolute inset-x-0 z-20 h-[2px] bg-cyan shadow-[0_0_16px_4px_var(--cyan)]" />
               <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-40" aria-hidden><path className="fx-circuit" d="M0 40 H40 L60 60 V300 L80 320 H300" stroke={od ? "var(--gold)" : "var(--accent-fx)"} strokeOpacity=".35" fill="none" /></svg>
               <span className="absolute left-0 right-8 top-0 h-px" style={{ background: `linear-gradient(90deg, ${od ? "var(--gold)" : "var(--accent-fx)"}, transparent)` }} />
               <header className="relative flex items-center gap-2 px-4 pb-2 pt-3">
                 <div className="flex-1">
-                  <div className={cn("font-display text-[13px] tracking-[0.3em]", od ? "text-gold" : "text-foreground")}>FRONTIER</div>
-                  <div className="text-[8px] tracking-[0.3em] text-muted-foreground">{NAV.find((n) => n.id === tab)?.label.toUpperCase()} · {M.name.toUpperCase()}</div>
+                  <div className="flex items-center gap-2"><span className={cn("font-display text-[16px] italic tracking-[0.15em]", od ? "text-gold" : "text-foreground")}>FRONT<span className="bg-gradient-to-r from-cyan to-magenta bg-clip-text text-transparent">IER</span></span><span className="fx-pulse h-2 w-2 rounded-full bg-lime shadow-[0_0_8px_var(--lime)]" /></div>
+                  <div className="text-[8px] font-semibold tracking-[0.25em] text-muted-foreground">{tab === "home" ? "GAME SPACE • PERFORMANCE • VICTORY" : `${NAV.find((n) => n.id === tab)?.label.toUpperCase()} · ${M.name.toUpperCase()}`}</div>
                 </div>
                 <span className="tnum text-[10px]" style={{ color: M.color }}>{t.fps}<span className="text-muted-foreground"> fps</span></span>
               </header>
               <div className="relative flex-1 overflow-y-auto overscroll-contain px-4 pb-4 [scrollbar-width:none]">
                 <AnimatePresence mode="wait">
                   <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8, transition: { duration: 0.12 } }}>
-                    {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} />}
+                    {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); sfx.nav(); }} />}
                     {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} />}
                     {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); sfx.nav(); }} />}
                     {tab === "voice" && <VoicePage engine={voice} />}

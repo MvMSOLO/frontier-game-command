@@ -30,51 +30,101 @@ function Wave({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-export function HomePage({ t, mode, setMode }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void }) {
-  const m = MODES[mode];
+function useCount(v: number, ms = 900) {
+  const [n, setN] = useState(0); const start = useRef<number | null>(null); const done = useRef(false);
+  useEffect(() => { if (done.current) { setN(v); return; } let raf = 0; const tick = (ts: number) => { start.current ??= ts; const k = Math.min(1, (ts - start.current) / ms); setN(Math.round(v * (1 - Math.pow(1 - k, 3)))); if (k < 1) raf = requestAnimationFrame(tick); else done.current = true; }; raf = requestAnimationFrame(tick); return () => cancelAnimationFrame(raf); }, [v, ms]);
+  return n;
+}
+function Card({ children, className, glow = "var(--accent-fx)" }: { children: React.ReactNode; className?: string; glow?: string }) {
   return (
-    <motion.div variants={list} initial="hidden" animate="show" className="space-y-4">
-      <motion.div variants={item} className="relative">
-        <div className="flex items-end gap-3">
-          <div className="leading-none">
-            <div className="flex items-center gap-1.5 font-display text-[9px] tracking-[0.3em] text-muted-foreground">FPS <Src k="live" /></div>
-            <div className="tnum text-[56px] font-bold leading-[0.9]" style={{ color: m.color, textShadow: `0 0 24px color-mix(in oklab, ${m.color} 45%, transparent)` }}>{t.fps}</div>
+    <motion.div variants={item} className={cn("relative chamfer p-[1px]", className)} style={{ background: `linear-gradient(135deg, ${glow}, color-mix(in oklab, var(--magenta) 60%, transparent) 55%, color-mix(in oklab, ${glow} 30%, transparent))` }}>
+      <div className="relative chamfer bg-glass-strong p-2.5">{children}</div>
+    </motion.div>
+  );
+}
+function BigRing({ value, label, color, unit = "%", max = 100 }: { value: number; label: string; color: string; unit?: string; max?: number }) {
+  const v = useCount(value); const size = 70, r = 29, c = 2 * Math.PI * r, arc = 0.78, pct = Math.min(1, v / max);
+  return (
+    <div className="relative flex flex-col items-center" style={{ width: size }}>
+      <svg width={size} height={size} className="rotate-[130deg]">
+        <circle cx={35} cy={35} r={r} stroke="var(--line)" strokeWidth="5" fill="none" strokeDasharray={`${c * arc} ${c}`} />
+        <circle cx={35} cy={35} r={r} stroke={color} strokeWidth="5" fill="none" strokeDasharray={`${c * arc * pct} ${c}`} style={{ filter: `drop-shadow(0 0 5px ${color})` }} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-1"><span className="tnum text-[17px] font-bold leading-none">{v}<span className="text-[10px]">{unit}</span></span><span className="mt-0.5 text-[9px] font-semibold tracking-wider" style={{ color }}>{label}</span></div>
+    </div>
+  );
+}
+function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon: typeof Ic.IHome; label: string; on: boolean; onClick: () => void; color?: string; dot?: boolean }) {
+  return (
+    <motion.button variants={item} whileTap={{ scale: 0.92 }} onClick={onClick} aria-pressed={on}
+      className="relative flex h-[62px] flex-col items-center justify-center gap-1 chamfer-sm border border-line text-[10px] font-semibold leading-tight transition-colors"
+      style={{ color: on ? color : "var(--foreground)", background: on ? `color-mix(in oklab, ${color} 16%, transparent)` : "color-mix(in oklab, var(--foreground) 4%, transparent)", boxShadow: on ? `inset 0 0 14px color-mix(in oklab, ${color} 35%, transparent)` : undefined }}>
+      {dot && <span className="fx-pulse absolute right-2 top-1.5 h-1.5 w-1.5 rounded-full bg-crimson" />}
+      <span style={{ color, filter: `drop-shadow(0 0 4px ${color})` }}><I width={20} height={20} /></span><span className="text-center">{label}</span>
+    </motion.button>
+  );
+}
+const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(--cyan)", hyper: "var(--magenta)", overdrive: "var(--gold)" };
+
+export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void }) {
+  const fps = useCount(t.fps, 700);
+  const [purged, setPurged] = useState(false);
+  const tog = (k: keyof ToolState) => () => { (ts[k] ? sfx.toggleOff : sfx.toggleOn)(); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
+  const purge = () => { sfx.exec(); haptic(20); setPurged(true); setTimeout(() => setPurged(false), 1600); };
+  return (
+    <motion.div variants={list} initial="hidden" animate="show" className="space-y-2">
+      <Card>
+        <div className="flex items-center gap-2">
+          <div className="shrink-0 leading-none">
+            <div className="tnum text-[40px] font-bold leading-[0.9] text-cyan [text-shadow:0_0_18px_var(--cyan)]">{fps}</div>
+            <div className="mt-0.5 flex items-center gap-1 font-display text-[11px] text-cyan">FPS <Src k="live" /></div>
           </div>
-          <div className="mb-1 grid flex-1 grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
-            <span className="text-muted-foreground">Frame</span><span className="tnum text-right">{t.frameTime}ms</span>
-            <span className="text-muted-foreground">Stability</span><span className="tnum text-right">{t.stability}%</span>
-            <span className="text-muted-foreground">Display</span><span className="tnum text-right">{t.refresh}Hz</span>
-          </div>
+          <div className="min-w-0 flex-1"><Wave data={t.history} color="var(--cyan)" /></div>
         </div>
-        <Wave data={t.history} color={m.color} />
-        <div className="h-[3px] w-full bg-foreground/5"><div className="h-full transition-all" style={{ width: `${t.stability}%`, background: m.color }} /></div>
-      </motion.div>
-      <motion.div variants={item} className="flex justify-between">
-        <Ring value={t.cpu} label="CPU" color="var(--cyan)" src="sim" />
-        <Ring value={t.gpu} label="GPU" color="var(--crimson)" src="sim" />
-        <Ring value={Math.round(t.temp)} label="TEMP" unit="°" max={55} color={t.temp > 43 ? "var(--gold)" : "var(--lime)"} src="sim" />
-      </motion.div>
-      <motion.div variants={item} className="grid grid-cols-2 gap-px bg-line chamfer-sm">
-        <div className="bg-glass-strong p-2.5">
-          <div className="flex items-center gap-1 text-[9px] text-muted-foreground">BATTERY <Src k={t.batteryReal ? "live" : "sim"} /></div>
-          <div className="tnum text-lg font-bold">{t.battery ?? "—"}<span className="text-[10px] text-muted-foreground">%{t.charging ? " ⚡" : ""}</span></div>
-          <div className="mt-1 flex gap-[2px]">{Array.from({ length: 10 }).map((_, i) => <span key={i} className={cn("h-1.5 flex-1", (t.battery ?? 0) / 10 > i ? "bg-lime" : "bg-foreground/10")} />)}</div>
+        <div className="mt-1 grid grid-cols-2 divide-x divide-line text-center">
+          <div><div className="tnum text-[14px] font-bold text-cyan">{t.frameTime}<span className="text-[10px]">ms</span></div><div className="text-[9px] text-muted-foreground">Frame Time</div></div>
+          <div><div className="tnum text-[14px] font-bold text-cyan">{t.stability}%</div><div className="text-[9px] text-muted-foreground">Stability</div></div>
         </div>
-        <div className="bg-glass-strong p-2.5">
-          <div className="flex items-center gap-1 text-[9px] text-muted-foreground">PING <Src k={t.pingReal ? "live" : "sim"} /></div>
-          <div className="tnum text-lg font-bold" style={{ color: (t.ping ?? 0) > 120 ? "var(--crimson)" : undefined }}>{t.ping ?? "—"}<span className="text-[10px] text-muted-foreground">ms</span></div>
-          <div className="text-[9px] text-muted-foreground">RTT to FRONTIER server</div>
+      </Card>
+      <Card glow="var(--magenta)">
+        <div className="flex items-center justify-around">
+          <BigRing value={t.cpu} label="CPU" color="var(--cyan)" />
+          <BigRing value={t.gpu} label="GPU" color="var(--crimson)" />
+          <BigRing value={Math.round(t.temp)} label="TEMP" unit="°C" max={55} color={t.temp > 43 ? "var(--gold)" : "var(--lime)"} />
         </div>
-      </motion.div>
-      <motion.div variants={item}>
-        <Label>Active profile</Label>
-        <div className="flex gap-1">
-          {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; return (
-            <button key={k} aria-label={M.name} onClick={() => setMode(k)} className={cn("flex flex-1 flex-col items-center gap-1 chamfer-sm py-2 transition-colors", on ? "bg-foreground/10" : "bg-foreground/[0.03]")} style={{ color: on ? M.color : undefined }}>
-              <M.icon width={18} height={18} /><span className="text-[9px]">{M.name.split(" ")[0]}</span>
-            </button>); })}
+        <div className="absolute right-2 top-1.5"><Src k="sim" /></div>
+      </Card>
+      <Card>
+        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>Performance Mode</div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const c = MODE_COL[k]; const od = k === "overdrive"; return (
+            <motion.button key={k} whileTap={{ scale: 0.92 }} aria-label={M.name} aria-pressed={on} onClick={() => setMode(k)}
+              className={cn("relative flex h-[58px] flex-col items-center justify-center gap-1 overflow-hidden chamfer-sm border text-[9px] font-semibold leading-tight transition-colors", on ? "border-current" : "border-line")}
+              style={{ color: on ? c : "var(--foreground)", background: on ? `color-mix(in oklab, ${c} 18%, transparent)` : "color-mix(in oklab, var(--foreground) 4%, transparent)", boxShadow: on ? `0 0 14px color-mix(in oklab, ${c} 50%, transparent), inset 0 0 12px color-mix(in oklab, ${c} 30%, transparent)` : undefined }}>
+              {on && od && <motion.span initial={{ x: "-100%" }} animate={{ x: "100%" }} transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }} className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-gold/30 to-transparent" />}
+              <span style={{ color: c, filter: `drop-shadow(0 0 4px ${c})` }}><M.icon width={18} height={18} /></span>
+              <span className="text-center">{od ? <>FRONTIER<br />OVERDRIVE</> : M.name.split(/[ -]/)[0]}</span>
+            </motion.button>); })}
         </div>
-      </motion.div>
+      </Card>
+      <Card glow="var(--magenta)">
+        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>Quick Tools<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">6 ›</button></div>
+        <motion.div variants={list} className="grid grid-cols-3 gap-1.5">
+          <QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} />
+          <QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} />
+          <QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} />
+          <QT icon={Ic.ICross} label="Crosshair" on={ts.crosshair} onClick={tog("crosshair")} color="var(--crimson)" />
+          <QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" />
+          <QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot />
+        </motion.div>
+      </Card>
+      <Card glow="var(--lime)">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-lime text-[14px] font-bold text-obsidian shadow-[0_0_12px_var(--lime)]">✓</span>
+          <div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold text-gold">Performance Optimized!</div><div className="truncate text-[9px] text-muted-foreground">Enjoy smoother gameplay</div></div>
+          <span className="fx-pulse flex gap-0.5">{[0, 1, 2].map((i) => <span key={i} className="h-3 w-1.5 -skew-x-[25deg] bg-cyan" />)}</span>
+        </div>
+      </Card>
     </motion.div>
   );
 }
