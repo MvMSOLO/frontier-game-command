@@ -40,7 +40,7 @@ object NativeGameDiscovery {
         }
     }
 
-    fun toJson(): String {
+    fun toJsonArray(): JSONArray {
         val games = JSONArray()
         cached().forEach { game ->
             games.put(
@@ -50,11 +50,13 @@ object NativeGameDiscovery {
                     .put("packageName", game.packageName),
             )
         }
-        return JSONObject()
-            .put("availability", "available")
-            .put("games", games)
-            .toString()
+        return games
     }
+
+    fun toJson(): String = JSONObject()
+        .put("availability", "available")
+        .put("games", toJsonArray())
+        .toString()
 
     fun findInstalled(gameId: String): InstalledNativeGame? =
         cached().firstOrNull { it.id == gameId }

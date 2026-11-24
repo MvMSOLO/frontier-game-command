@@ -69,7 +69,3 @@ class FrontierJavascriptBridge(
     fun launchGame(gameId: String): String = host.launchGame(gameId)
 }
 
-object NativeForegroundState {
-    @Volatile
-    var current: NativeGame? = null
-}

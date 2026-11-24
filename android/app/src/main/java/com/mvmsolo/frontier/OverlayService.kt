@@ -72,6 +72,10 @@ class OverlayService : Service(), FrontierBridgeHost {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun startOverlay(): Boolean {
         if (!android.provider.Settings.canDrawOverlays(this)) return false
         mainHandler.post { resizeOverlay(expand = false) }
@@ -146,6 +150,7 @@ class OverlayService : Service(), FrontierBridgeHost {
         overlayWebView = null
         overlayParams = null
         windowAdded = false
+        NativeForegroundState.current = null
         super.onDestroy()
     }
 
@@ -406,6 +411,11 @@ class OverlayService : Service(), FrontierBridgeHost {
         const val EXTRA_GAME_IDS = "game_ids"
         private const val CHANNEL_ID = "frontier_overlay"
         private const val NOTIFICATION_ID = 6041
+
+        fun isRunning(context: Context): Boolean =
+            (context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager)
+                .getRunningServices(Int.MAX_VALUE)
+                .any { it.service.className == OverlayService::class.java.name }
 
         fun start(context: Context, action: String? = null, extras: Intent? = null) {
             val intent = Intent(context, OverlayService::class.java)
