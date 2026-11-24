@@ -35,6 +35,15 @@ object NativeGameCatalog {
     fun forPackage(packageName: String?): NativeGame? =
         if (packageName == null) null else byPackage[packageName]
 
+    fun reduceForegroundPackage(currentPackage: String?, events: List<NativeUsageEvent>): String? {
+        var activePackage = currentPackage
+        events.sortedBy { it.timestamp }.forEach { event ->
+            if (event.foreground) activePackage = event.packageName
+            else if (activePackage == event.packageName) activePackage = null
+        }
+        return activePackage
+    }
+
     fun resolveForegroundGame(events: List<NativeUsageEvent>): NativeGame? {
         val latest = events.maxByOrNull { it.timestamp } ?: return null
         if (!latest.foreground) return null

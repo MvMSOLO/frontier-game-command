@@ -41,15 +41,14 @@ class NativeGameMonitor(context: Context, private val onGameChanged: (NativeGame
             val events = manager.queryEvents(lastEventTime, now)
             if (events != null) {
                 val event = android.app.usage.UsageEvents.Event()
+                val batch = mutableListOf<NativeUsageEvent>()
                 while (events.hasNextEvent()) {
                     events.getNextEvent(event)
                     val packageName = event.packageName ?: continue
-                    when (foregroundState(event.eventType)) {
-                        true -> foregroundPackage = packageName
-                        false -> if (foregroundPackage == packageName) foregroundPackage = null
-                        null -> Unit
-                    }
+                    val foreground = foregroundState(event.eventType) ?: continue
+                    batch += NativeUsageEvent(packageName, event.timeStamp, foreground)
                 }
+                foregroundPackage = NativeGameCatalog.reduceForegroundPackage(foregroundPackage, batch)
             }
             lastEventTime = now
             publish(NativeGameCatalog.forPackage(foregroundPackage))

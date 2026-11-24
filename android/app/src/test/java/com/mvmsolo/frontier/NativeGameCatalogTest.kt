@@ -45,6 +45,26 @@ class NativeGameCatalogTest {
     }
 
     @Test
+    fun `incremental foreground reducer preserves the latest active package`() {
+        val current = "com.activision.callofduty.shooter"
+        val events = listOf(
+            NativeUsageEvent("com.activision.callofduty.shooter", 20L, false),
+            NativeUsageEvent("jp.konami.pesam", 30L, true),
+        )
+        assertEquals("jp.konami.pesam", NativeGameCatalog.reduceForegroundPackage(current, events))
+    }
+
+    @Test
+    fun `background event only clears the matching foreground package`() {
+        assertEquals("jp.konami.pesam", NativeGameCatalog.reduceForegroundPackage("jp.konami.pesam", listOf(
+            NativeUsageEvent("com.activision.callofduty.shooter", 10L, false),
+        )))
+        assertNull(NativeGameCatalog.reduceForegroundPackage("jp.konami.pesam", listOf(
+            NativeUsageEvent("jp.konami.pesam", 20L, false),
+        )))
+    }
+
+    @Test
     fun `every entry has a display name and at least one package alias`() {
         NativeGameCatalog.games.forEach { game ->
             assertNotNull(game.name)
