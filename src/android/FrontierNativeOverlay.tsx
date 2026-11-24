@@ -29,16 +29,17 @@ export function FrontierNativeOverlay() {
   useEffect(() => {
     let active = true;
     const refresh = async () => {
-      const [game, discovery] = await Promise.all([
-        adapter.getForegroundGame(),
-        adapter.getInstalledGames(),
-      ]);
+      const game = await adapter.getForegroundGame();
       if (!active) return;
       setForegroundGame(game);
-      setGameAccess(discovery.availability);
     };
+    void adapter.getInstalledGames().then((discovery) => {
+      if (active) setGameAccess(discovery.availability);
+    });
     void refresh();
-    const timer = window.setInterval(() => void refresh(), 1800);
+    const timer = window.setInterval(() => void adapter.getForegroundGame().then((game) => {
+      if (active) setForegroundGame(game);
+    }), 2200);
     return () => {
       active = false;
       window.clearInterval(timer);

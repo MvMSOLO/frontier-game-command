@@ -91,27 +91,38 @@ class FrontierJavascriptBridge(
         val manager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val now = System.currentTimeMillis()
         val events = try {
-            manager.queryEvents(now - 120_000L, now) ?: return null
+            manager.queryEvents(now - 6 * 60 * 60 * 1000L, now) ?: return null
         } catch (_: RuntimeException) {
             return null
         }
 
         val event = android.app.usage.UsageEvents.Event()
-        var foregroundPackage: String? = null
-        var latestTimestamp = 0L
+        val activityEvents = mutableListOf<NativeUsageEvent>()
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
-            val resumed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                event.eventType == android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED
+            val isForeground = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                when (event.eventType) {
+                    android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED -> true
+                    android.app.usage.UsageEvents.Event.ACTIVITY_PAUSED,
+                    android.app.usage.UsageEvents.Event.ACTIVITY_STOPPED -> false
+                    else -> null
+                }
             } else {
                 @Suppress("DEPRECATION")
-                event.eventType == android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND
+                when (event.eventType) {
+                    android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> true
+                    android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> false
+                    else -> null
+                }
             }
-            if (resumed && event.timeStamp >= latestTimestamp) {
-                latestTimestamp = event.timeStamp
-                foregroundPackage = event.packageName
+            if (isForeground != null) {
+                activityEvents += NativeUsageEvent(
+                    packageName = event.packageName.orEmpty(),
+                    timestamp = event.timeStamp,
+                    foreground = isForeground,
+                )
             }
         }
-        return NativeGameCatalog.forPackage(foregroundPackage)
+        return NativeGameCatalog.resolveForegroundGame(activityEvents)
     }
 }

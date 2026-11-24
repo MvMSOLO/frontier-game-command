@@ -6,6 +6,12 @@ data class NativeGame(
     val packageNames: List<String>,
 )
 
+data class NativeUsageEvent(
+    val packageName: String,
+    val timestamp: Long,
+    val foreground: Boolean,
+)
+
 object NativeGameCatalog {
     val games: List<NativeGame> = listOf(
         NativeGame("pubg-mobile", "PUBG MOBILE", listOf("com.tencent.ig")),
@@ -28,4 +34,10 @@ object NativeGameCatalog {
 
     fun forPackage(packageName: String?): NativeGame? =
         if (packageName == null) null else byPackage[packageName]
+
+    fun resolveForegroundGame(events: List<NativeUsageEvent>): NativeGame? {
+        val latest = events.maxByOrNull { it.timestamp } ?: return null
+        if (!latest.foreground) return null
+        return forPackage(latest.packageName)
+    }
 }

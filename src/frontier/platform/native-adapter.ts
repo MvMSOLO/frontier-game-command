@@ -5,6 +5,9 @@ export interface FrontierAndroidBridge {
   openPermissionSettings(permissionId: string): string;
   getInstalledGames(): string;
   getForegroundGame(): string;
+  startOverlay?(): boolean;
+  minimizeOverlay?(): void;
+  stopOverlay?(): void;
 }
 
 declare global {

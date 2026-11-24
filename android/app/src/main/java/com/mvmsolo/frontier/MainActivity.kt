@@ -95,6 +95,15 @@ class MainActivity : Activity(), FrontierBridgeHost {
         }
     }
 
+    override fun onDestroy() {
+        if (::webView.isInitialized) {
+            webView.stopLoading()
+            webView.removeJavascriptInterface("FrontierAndroid")
+            webView.destroy()
+        }
+        super.onDestroy()
+    }
+
     override fun startOverlay(): Boolean {
         if (!Settings.canDrawOverlays(this)) {
             NativePermissionManager.openSettings(this, NativePermissionManager.OVERLAY)

@@ -174,17 +174,27 @@ class OverlayService : Service(), FrontierBridgeHost {
         }
         overlayWebView = webView
         currentView = webView
+        val displayMetrics = resources.displayMetrics
+        val displayWidth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            windowManager.currentWindowMetrics.bounds.width()
+        } else {
+            @Suppress("DEPRECATION")
+            displayMetrics.widthPixels
+        }
         val displayHeight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             windowManager.currentWindowMetrics.bounds.height()
         } else {
             @Suppress("DEPRECATION")
-            resources.displayMetrics.heightPixels
+            displayMetrics.heightPixels
         }
-        val panelHeight = (displayHeight * 0.82f).toInt().coerceAtLeast(dp(360))
+        val panelWidth = minOf(dp(360), (displayWidth * 0.76f).toInt(), displayWidth - dp(40))
+            .coerceAtLeast(dp(220))
+        val panelHeight = minOf((displayHeight * 0.84f).toInt(), displayHeight - dp(48))
+            .coerceAtLeast(dp(280))
         windowManager.addView(
             webView,
             windowParams(
-                dp(340),
+                panelWidth,
                 panelHeight,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             ),
