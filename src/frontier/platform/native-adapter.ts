@@ -12,6 +12,11 @@ export interface FrontierAndroidBridge {
   collapseOverlay?(): void;
   setAutoDetect?(enabled: boolean): boolean;
   setSelectedGames?(gameIdsJson: string): boolean;
+  getAutoDetectEnabled?(): boolean;
+  getSelectedGameIds?(): string;
+  getDetectorStatus?(): string;
+  launchGame?(gameId: string): string;
+  openSetup?(): void;
 }
 
 declare global {
