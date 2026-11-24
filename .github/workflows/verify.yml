@@ -36,7 +36,7 @@ jobs:
           bun x prettier --check src/frontier/Frontier.tsx src/frontier/FrontierEntry.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/frontier/audio.ts src/frontier/audio.test.ts src/frontier/onboarding/*.ts src/frontier/onboarding/*.tsx src/frontier/platform/*.ts src/test/onboarding-entry.test.tsx src/styles.css
 
       - name: Lint changed UI components
-        run: bun x eslint src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/frontier/audio.ts src/frontier/audio.test.ts
+        run: bun x eslint src/frontier/Frontier.tsx src/frontier/FrontierEntry.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/frontier/audio.ts src/frontier/audio.test.ts src/frontier/onboarding/*.ts src/frontier/onboarding/*.tsx src/frontier/platform/*.ts src/test/onboarding-entry.test.tsx
 
       - name: Unit tests
         run: bun run test
