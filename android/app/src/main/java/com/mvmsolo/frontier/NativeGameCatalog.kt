@@ -31,13 +31,22 @@ object NativeGameCatalog {
     private val byPackage: Map<String, NativeGame> = games
         .flatMap { game -> game.packageNames.map { packageName -> packageName to game } }
         .toMap()
+    private val byId = games.associateBy { it.id }
 
     fun forPackage(packageName: String?): NativeGame? =
         if (packageName == null) null else byPackage[packageName]
 
-    fun resolveForegroundGame(events: List<NativeUsageEvent>): NativeGame? {
-        val latest = events.maxByOrNull { it.timestamp } ?: return null
-        if (!latest.foreground) return null
-        return forPackage(latest.packageName)
+    fun forId(id: String?): NativeGame? = if (id == null) null else byId[id]
+
+    fun packageNames(): List<String> = games.flatMap { it.packageNames }
+
+    fun reduceForegroundPackage(currentPackage: String?, event: NativeUsageEvent): String? {
+        return if (event.foreground) {
+            event.packageName
+        } else if (currentPackage == event.packageName) {
+            null
+        } else {
+            currentPackage
+        }
     }
 }

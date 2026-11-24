@@ -45,6 +45,32 @@ class NativeGameCatalogTest {
     }
 
     @Test
+    fun `foreground reducer clears only the matching background package`() {
+        val current = "com.konami.pesam"
+        assertEquals(
+            current,
+            NativeGameCatalog.reduceForegroundPackage(
+                current,
+                NativeUsageEvent("com.example.other", 20L, false),
+            ),
+        )
+        assertEquals(
+            null,
+            NativeGameCatalog.reduceForegroundPackage(
+                current,
+                NativeUsageEvent("com.konami.pesam", 30L, false),
+            ),
+        )
+        assertEquals(
+            "com.example.next",
+            NativeGameCatalog.reduceForegroundPackage(
+                current,
+                NativeUsageEvent("com.example.next", 40L, true),
+            ),
+        )
+    }
+
+    @Test
     fun `every entry has a display name and at least one package alias`() {
         NativeGameCatalog.games.forEach { game ->
             assertNotNull(game.name)
