@@ -25,7 +25,7 @@ function Wave({ data, color }: { data: number[]; color: string }) {
     <svg viewBox={`0 0 ${w} ${h}`} className="h-[54px] w-full" preserveAspectRatio="none">
       {[0.25, 0.5, 0.75].map((y) => <line key={y} x1="0" x2={w} y1={h * y} y2={h * y} stroke="var(--line)" strokeDasharray="2 4" />)}
       <polyline points={`0,${h} ${pts} ${w},${h}`} fill={color} opacity=".08" />
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.4" style={{ filter: `drop-shadow(0 0 3px ${color})`, transition: "points 180ms ease" }} />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.4" style={{ filter: `drop-shadow(0 0 3px ${color})` }} />
     </svg>
   );
 }
@@ -58,7 +58,7 @@ function Card({ children, className, glow = "var(--accent-fx)" }: { children: Re
   );
 }
 function BigRing({ value, label, color, unit = "%", max = 100 }: { value: number; label: string; color: string; unit?: string; max?: number }) {
-  const v = useCount(value); const size = 70, r = 29, c = 2 * Math.PI * r, arc = 0.78, pct = Math.min(1, v / max);
+  const v = useCount(value); const size = 66, r = 27, c = 2 * Math.PI * r, arc = 0.78, pct = Math.min(1, v / max);
   return (
     <div className="frontier-hud-ring relative flex flex-col items-center" style={{ width: size }}>
       <svg width={size} height={size} className="rotate-[130deg]">
@@ -111,7 +111,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
       </Card>
       <Card>
         <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>Performance Mode</div>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="frontier-mode-grid grid grid-cols-2 gap-1.5">
           {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const c = MODE_COL[k]; const od = k === "overdrive"; return (
             <motion.button key={k} whileTap={{ scale: 0.92 }} aria-label={M.name} aria-pressed={on} onClick={() => setMode(k)}
               className={cn("relative flex h-[58px] flex-col items-center justify-center gap-1 overflow-hidden chamfer-sm border text-[9px] font-semibold leading-tight transition-colors", on ? "border-current" : "border-line")}
@@ -124,7 +124,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
       </Card>
       <Card glow="var(--magenta)">
         <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>Quick Tools<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">6 ›</button></div>
-        <motion.div variants={list} className="grid grid-cols-3 gap-1.5">
+        <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5">
           <QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} />
           <QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} />
           <QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} />
