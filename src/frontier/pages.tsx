@@ -8,6 +8,7 @@ import { Label, Ring, Seg, Slider, Src, Toggle } from "./ui";
 import * as Ic from "./icons";
 import { PerformanceArtwork } from "./components/Artwork";
 import { PRESETS, VoiceEngine, type VoiceParams, type VoicePreset } from "./voice";
+import { useText } from "./i18n";
 
 export const item = { hidden: { opacity: 0, y: 11, scale: 0.985 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 360, damping: 27, mass: 0.72 } } };
 export const list = { hidden: {}, show: { transition: { staggerChildren: 0.045, delayChildren: 0.035 } } };
@@ -59,6 +60,7 @@ function Card({ children, className, glow = "var(--accent-fx)" }: { children: Re
   );
 }
 function BigRing({ value, label, color, unit = "%", max = 100 }: { value: number; label: string; color: string; unit?: string; max?: number }) {
+  const t = useText();
   const v = useCount(value); const size = 66, r = 27, c = 2 * Math.PI * r, arc = 0.78, pct = Math.min(1, v / max);
   return (
     <div className="frontier-hud-ring relative flex flex-col items-center" style={{ width: size }}>
@@ -66,30 +68,46 @@ function BigRing({ value, label, color, unit = "%", max = 100 }: { value: number
         <circle cx={35} cy={35} r={r} stroke="var(--line)" strokeWidth="5" fill="none" strokeDasharray={`${c * arc} ${c}`} />
         <circle cx={35} cy={35} r={r} stroke={color} strokeWidth="5" fill="none" strokeDasharray={`${c * arc * pct} ${c}`} style={{ filter: `drop-shadow(0 0 5px ${color})`, transition: "stroke-dasharray 260ms ease" }} />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center pt-1"><span className="tnum text-[17px] font-bold leading-none">{v}<span className="text-[10px]">{unit}</span></span><span className="mt-0.5 text-[9px] font-semibold tracking-wider" style={{ color }}>{label}</span></div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-1"><span className="tnum text-[17px] font-bold leading-none">{v}<span className="text-[10px]">{unit}</span></span><span className="mt-0.5 text-[9px] font-semibold tracking-wider" style={{ color }}>{t(label)}</span></div>
     </div>
   );
 }
 function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon: typeof Ic.IHome; label: string; on: boolean; onClick: () => void; color?: string; dot?: boolean }) {
+  const t = useText();
   return (
     <motion.button variants={item} whileTap={{ scale: 0.92 }} onClick={onClick} aria-pressed={on}
       className="frontier-quick-tool relative flex h-[66px] flex-col items-center justify-center gap-1.5 chamfer-sm border border-line text-[11px] font-semibold leading-tight transition-colors"
       style={{ color: on ? color : "var(--foreground)", background: on ? `color-mix(in oklab, ${color} 16%, transparent)` : "color-mix(in oklab, var(--foreground) 4%, transparent)", boxShadow: on ? `inset 0 0 14px color-mix(in oklab, ${color} 35%, transparent)` : undefined }}>
       {dot && <span className="fx-pulse absolute right-2 top-1.5 h-1.5 w-1.5 rounded-full bg-crimson" />}
-      <span style={{ color, filter: `drop-shadow(0 0 4px ${color})` }}><I width={20} height={20} /></span><span className="text-center">{label}</span>
+      <span style={{ color, filter: `drop-shadow(0 0 4px ${color})` }}><I width={20} height={20} /></span><span className="text-center">{t(label)}</span>
     </motion.button>
   );
 }
 const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(--cyan)", hyper: "var(--magenta)", overdrive: "var(--gold)" };
 
-export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void }) {
+export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, activeGameName = null, installedGameCount = 0, androidPresentation = false }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void; activeGameName?: string | null; installedGameCount?: number; androidPresentation?: boolean }) {
+  const tx = useText();
   const fps = useCount(t.fps, 260);
   const [purged, setPurged] = useState(false);
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   const purge = () => { playSfx("tool-start"); haptic(20); setPurged(true); setTimeout(() => { setPurged(false); playSfx("tool-complete"); }, 1600); };
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-home">
-      <Card>
+      {androidPresentation ? (
+        <Card glow="var(--cyan)">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-display text-[9px] tracking-[0.16em] text-cyan">{tx("ACTIVE GAME")}</div>
+              <div className="mt-1 truncate text-[14px] font-bold">{activeGameName ?? tx("No supported game detected")}</div>
+              <div className="mt-1 text-[9px] text-muted-foreground">{installedGameCount} {tx("supported games installed")}</div>
+            </div>
+            <Src k="live" />
+          </div>
+          <div className="mt-3 border-t border-line/70 pt-2 text-[10px] leading-relaxed text-muted-foreground">
+            {tx("Android does not expose another game's FPS, CPU or GPU to ordinary apps. No game performance values are fabricated.")}
+          </div>
+        </Card>
+      ) : <Card>
         <div className="flex items-center gap-2">
           <div className="shrink-0 leading-none">
             <div className="tnum text-[40px] font-bold leading-[0.9] text-cyan [text-shadow:0_0_18px_var(--cyan)]">{fps}</div>
@@ -101,17 +119,18 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
           <div><div className="tnum text-[14px] font-bold text-cyan">{t.frameTime}<span className="text-[10px]">ms</span></div><div className="text-[9px] text-muted-foreground">Frame Time</div></div>
           <div><div className="tnum text-[14px] font-bold text-cyan">{t.stability}%</div><div className="text-[9px] text-muted-foreground">Stability</div></div>
         </div>
-      </Card>
-      <Card glow="var(--magenta)">
+      </Card>}
+      {!androidPresentation && <Card glow="var(--magenta)">
         <div className="flex items-center justify-around">
           <BigRing value={t.cpu} label="CPU" color="var(--cyan)" />
           <BigRing value={t.gpu} label="GPU" color="var(--crimson)" />
           <BigRing value={Math.round(t.temp)} label="TEMP" unit="°C" max={55} color={t.temp > 43 ? "var(--gold)" : "var(--lime)"} />
         </div>
         <div className="absolute right-2 top-1.5"><Src k="sim" /></div>
-      </Card>
+      </Card>}
       <Card>
-        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>Performance Mode</div>
+        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>{tx(androidPresentation ? "Overlay profile" : "Performance Mode")}</div>
+        {androidPresentation && <p className="mb-2 text-[9px] leading-relaxed text-muted-foreground">{tx("Profiles change FRONTIER's own interface only; they do not boost the game or change device refresh rate.")}</p>}
         <div className="frontier-mode-grid grid grid-cols-2 gap-1.5">
           {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const c = MODE_COL[k]; const od = k === "overdrive"; return (
             <motion.button key={k} whileTap={{ scale: 0.92 }} aria-label={M.name} aria-pressed={on} onClick={() => setMode(k)}
@@ -124,7 +143,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
             </motion.button>); })}
         </div>
       </Card>
-      <Card glow="var(--magenta)">
+      {!androidPresentation && <Card glow="var(--magenta)">
         <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>Quick Tools<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">6 ›</button></div>
         <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5">
           <QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} />
@@ -134,11 +153,11 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
           <QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" />
           <QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot />
         </motion.div>
-      </Card>
+      </Card>}
       <Card glow="var(--lime)">
         <div className="flex items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-lime text-[14px] font-bold text-obsidian shadow-[0_0_12px_var(--lime)]">✓</span>
-          <div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold text-gold">Performance Optimized!</div><div className="truncate text-[9px] text-muted-foreground">Enjoy smoother gameplay</div></div>
+          <div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold text-gold">{tx(androidPresentation ? "Overlay profile active" : "Performance Optimized!")}</div><div className="truncate text-[9px] text-muted-foreground">{tx(androidPresentation ? "FRONTIER interface profile is active" : "Enjoy smoother gameplay")}</div></div>
           <span className="fx-pulse flex gap-0.5">{[0, 1, 2].map((i) => <span key={i} className="h-3 w-1.5 -skew-x-[25deg] bg-cyan" />)}</span>
         </div>
       </Card>
@@ -147,6 +166,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
 }
 
 export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setMode: (m: Mode) => void; t: Telemetry; s: Settings; upd: (p: Partial<Settings>) => void }) {
+  const tx = useText();
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-performance">
       <motion.div variants={item}><Label right={<Src k="native" />}>Engine profile</Label></motion.div>
@@ -204,34 +224,35 @@ function Tile({ icon: I, name, on, onClick, src, children, color = "var(--accent
   )
 }
 
-export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recErr, goVoice }: { ts: ToolState; setTs: (p: Partial<ToolState>) => void; blocked: number; onRecord: () => void; onReplay: () => void; onClip: () => void; recErr: string | null; goVoice: () => void }) {
+export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recErr, goVoice, androidPresentation = false }: { ts: ToolState; setTs: (p: Partial<ToolState>) => void; blocked: number; onRecord: () => void; onReplay: () => void; onClip: () => void; recErr: string | null; goVoice: () => void; androidPresentation?: boolean }) {
+  const tx = useText();
   const [purge, setPurge] = useState<"idle" | "run" | "done">("idle"); const [freed, setFreed] = useState(0);
-  const runPurge = () => { if (purge === "run") return; playSfx("tool-start"); haptic(20); setPurge("run"); setTimeout(() => { setFreed(Math.round(300 + Math.random() * 900)); setPurge("done"); playSfx("tool-complete"); }, 1400); };
+  const runPurge = () => { if (purge === "run") return; playSfx("tool-error"); setPurge("idle"); };
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-1.5 frontier-page frontier-page-tools">
       <motion.div variants={item}><Label>Tactical tools</Label></motion.div>
-      <Tile icon={Ic.IRam} name="RAM Purge" on={purge !== "idle"} onClick={runPurge} src="sim" color="var(--lime)">
-        <AnimatePresence>{purge !== "idle" && <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="overflow-hidden pt-2">
-          <div className="h-1 bg-foreground/10"><motion.div initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 1.4 }} className="h-full bg-lime" /></div>
-          <div className="tnum pt-1 text-[10px] text-lime">{purge === "run" ? "Purging background processes…" : `${freed} MB reclaimed`}</div>
-        </motion.div>}</AnimatePresence>
-      </Tile>
-      <Tile icon={Ic.ITouch} name="Touch Boost" on={ts.touch} onClick={tog("touch")} src="native" />
-      <Tile icon={Ic.INet} name="Ping Stabilizer" on={ts.net} onClick={tog("net")} src="native" />
-      <Tile icon={Ic.ICross} name="Pro Crosshair" on={ts.crosshair} onClick={tog("crosshair")} src="live" color="var(--crimson)">
+      {!androidPresentation && <>
+        <Tile icon={Ic.IRam} name="RAM Purge" on={purge !== "idle"} onClick={runPurge} src="sim" color="var(--lime)">
+          <div className="tnum pt-1 pl-10 text-[10px] text-gold">{tx("System-wide RAM purge is not available to normal Android apps.")}</div>
+        </Tile>
+        <Tile icon={Ic.ITouch} name="Touch Boost" on={false} onClick={() => playSfx("tool-error")} src="native" />
+        <Tile icon={Ic.INet} name="Ping Stabilizer" on={false} onClick={() => playSfx("tool-error")} src="native" />
+      </>}
+      {!androidPresentation && <Tile icon={Ic.ICross} name="Pro Crosshair" on={ts.crosshair} onClick={tog("crosshair")} src="live" color="var(--crimson)">
         {ts.crosshair && <div className="space-y-2 pt-2">
           <Seg label="Crosshair style" value={ts.crossStyle} onChange={(v) => setTs({ crossStyle: v })} options={[{ v: "dot", l: "Dot" }, { v: "cross", l: "Cross" }, { v: "ring", l: "Ring" }]} />
           <div className="flex gap-2">{["var(--crimson)", "var(--lime)", "var(--cyan)", "var(--gold)"].map((c) => <button key={c} aria-label={`Color ${c}`} onClick={() => setTs({ crossColor: c })} className={cn("h-5 flex-1 chamfer-sm", ts.crossColor === c && "ring-1 ring-foreground")} style={{ background: c }} />)}</div>
         </div>}
-      </Tile>
-      <Tile icon={Ic.IShield} name="Zero-Distraction" on={ts.shield} onClick={tog("shield")} src="live" color="var(--lime)">
+      </Tile>}
+      <Tile icon={Ic.IShield} name="Zero-Distraction" on={androidPresentation ? ts.shield : false} onClick={tog("shield")} src={androidPresentation ? "native" : "live"} color="var(--lime)">
         {ts.shield && <div className="tnum pt-1 pl-10 text-[10px] text-muted-foreground">{blocked} notifications blocked</div>}
       </Tile>
-      <Tile icon={Ic.IReplay} name="Instant Replay" on={ts.replay} onClick={onReplay} src="live" color="var(--gold)">
+      {!androidPresentation && <Tile icon={Ic.IReplay} name="Instant Replay" on={ts.replay} onClick={onReplay} src="live" color="var(--gold)">
         {ts.replay && <button onClick={onClip} className="mt-2 w-full chamfer-sm bg-gold/20 py-1.5 text-[11px] font-semibold text-gold">SAVE LAST 30s</button>}
-      </Tile>
-      <Tile icon={Ic.IRec} name="Screen Recorder" on={ts.recording} onClick={onRecord} src="live" color="var(--crimson)" />
+      </Tile>}
+      <Tile icon={Ic.IRec} name="Screen Recorder" on={androidPresentation ? false : ts.recording} onClick={androidPresentation ? () => playSfx("tool-error") : onRecord} src={androidPresentation ? "native" : "live"} color="var(--crimson)" />
+      {androidPresentation && <div className="text-[9px] leading-relaxed text-muted-foreground">{tx("Screen capture requires a native MediaProjection session and fresh system consent. It is not yet enabled in this build.")}</div>}
       {recErr && <div className="text-[10px] text-crimson">{recErr}</div>}
       <Tile icon={Ic.IVoice} name="Voice Changer" on={false} onClick={goVoice} src="live" />
     </motion.div>
@@ -239,7 +260,8 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
 }
 
 const PRESET_LIST: { v: VoicePreset; l: string }[] = [{ v: "off", l: "Natural" }, { v: "robot", l: "Robot" }, { v: "titan", l: "Titan" }, { v: "spectre", l: "Spectre" }, { v: "radio", l: "Comms" }, { v: "alien", l: "Xeno" }];
-export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngine | null> }) {
+export function VoicePage({ engine, androidPresentation = false }: { engine: React.MutableRefObject<VoiceEngine | null>; androidPresentation?: boolean }) {
+  const tx = useText();
   const [live, setLive] = useState(!!engine.current?.ctx); const [err, setErr] = useState<string | null>(null);
   const [p, setP] = useState<VoiceParams>({ preset: "robot", tone: 0, mod: 50, echo: 15, monitor: false, gain: 50 });
   const bars = useRef<HTMLDivElement>(null);
@@ -279,16 +301,21 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
         <Slider label="Echo" min={0} max={100} value={p.echo} onChange={(v) => setP({ ...p, echo: v })} unit="%" />
         <Slider label="Input gain" min={0} max={100} value={p.gain} onChange={(v) => setP({ ...p, gain: v })} unit="%" />
         <div className="flex items-center justify-between text-[12px]"><span>Monitor in headphones</span><Toggle label="Monitor" on={p.monitor} onChange={(v) => setP({ ...p, monitor: v })} /></div>
-        <div className="text-[9px] text-muted-foreground">Routing into in-game voice chat requires the Android native bridge.</div>
+        <div className="text-[9px] text-muted-foreground">{tx(androidPresentation ? "Android does not provide a generic API to inject this processed microphone into another game's voice chat. This is local preview only." : "Routing into in-game voice chat requires the Android native bridge.")}</div>
       </motion.div>
     </motion.div>
   );
 }
 
-export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void }) {
+export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false, detectorStatus = "disabled", onAutoDetectChange }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void; autoDetectEnabled?: boolean; detectorStatus?: "disabled" | "running" | "permission-required" | "unavailable"; onAutoDetectChange?: (enabled: boolean) => void }) {
+  const tx = useText();
   const accents = [["cyan", "var(--cyan)"], ["lime", "var(--lime)"], ["crimson", "var(--crimson)"], ["gold", "var(--gold)"]] as const;
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-settings">
+      <motion.div variants={item}>
+        <Label>Language</Label>
+        <Seg label="Language" value={s.language} onChange={(language) => upd({ language })} options={[{ v: "en", l: "English" }, { v: "ru", l: "Russian" }]} />
+      </motion.div>
       <motion.div variants={item}><Label>Lighting</Label>
         <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { playSfx("setting-change"); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
       </motion.div>
@@ -325,6 +352,15 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
         <button type="button" onClick={onManageSetup} className="frontier-setup-manage-button" disabled={!onManageSetup}>
           <span>MANAGE GAMES & SETUP</span><span aria-hidden>↗</span>
         </button>
+      </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3">
+        <Label>Game detection</Label>
+        <p className="text-[9px] leading-relaxed text-muted-foreground">{tx("Automatically open FRONTIER when a selected supported game starts.")}</p>
+        <div className="flex items-center justify-between text-[11px]">
+          <span>{tx("Auto-detect")}</span>
+          <Toggle label="Auto-detect" on={autoDetectEnabled} onChange={(enabled) => onAutoDetectChange?.(enabled)} />
+        </div>
+        <div className="text-[9px] text-muted-foreground">{tx(detectorStatus === "running" ? "Detector active" : detectorStatus === "permission-required" ? "Usage access required" : detectorStatus === "unavailable" ? "Game detection unavailable on this device" : "Detector disabled")}</div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>Performance preference</Label>
         <Seg label="Launch profile" value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />
