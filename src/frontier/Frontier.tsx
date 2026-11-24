@@ -58,7 +58,7 @@ function Crosshair({ style, color }: { style: "dot" | "cross" | "ring"; color: s
   );
 }
 
-export function Frontier() {
+export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {}) {
   const [s, upd] = useSettings();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("home");
@@ -223,7 +223,7 @@ export function Frontier() {
                       {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} />}
                       {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); playSfx("navigation"); }} />}
                       {tab === "voice" && <VoicePage engine={voice} />}
-                      {tab === "settings" && <SettingsPage s={s} upd={upd} />}
+                      {tab === "settings" && <SettingsPage s={s} upd={upd} onManageSetup={onManageSetup} />}
                     </motion.div>
                   </AnimatePresence>
                 </div>

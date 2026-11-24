@@ -282,7 +282,7 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
   );
 }
 
-export function SettingsPage({ s, upd }: { s: Settings; upd: (p: Partial<Settings>) => void }) {
+export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void }) {
   const accents = [["cyan", "var(--cyan)"], ["lime", "var(--lime)"], ["crimson", "var(--crimson)"], ["gold", "var(--gold)"]] as const;
   return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-settings">
@@ -315,6 +315,13 @@ export function SettingsPage({ s, upd }: { s: Settings; upd: (p: Partial<Setting
       <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Gestures & overlay</Label>
         <Slider label="Edge swipe distance" min={20} max={90} step={5} value={s.edgeSensitivity} onChange={(v) => upd({ edgeSensitivity: v })} unit="px" />
         <Seg label="Auto-hide" value={s.autoHide} onChange={(v) => upd({ autoHide: v })} options={[{ v: 0, l: "Never" }, { v: 5, l: "5s" }, { v: 10, l: "10s" }, { v: 20, l: "20s" }]} />
+      </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3">
+        <Label>System setup</Label>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">Manage the games selected during initiation and review platform access.</p>
+        <button type="button" onClick={onManageSetup} className="frontier-setup-manage-button" disabled={!onManageSetup}>
+          <span>MANAGE GAMES & SETUP</span><span aria-hidden>↗</span>
+        </button>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>Performance preference</Label>
         <Seg label="Launch profile" value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />
