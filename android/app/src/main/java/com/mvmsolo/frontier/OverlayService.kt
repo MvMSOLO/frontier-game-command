@@ -59,7 +59,7 @@ class OverlayService : Service(), FrontierBridgeHost {
             ACTION_REFRESH_STATE -> {
                 emitPermissionSnapshot()
                 refreshAutoDetect()
-                NativeGameDiscovery.refresh(this) {
+                NativeGameDiscovery.refresh(this, force = true) {
                     emitNativeEvent(
                         "game-library",
                         JSONObject().put("availability", "available").put("games", NativeGameDiscovery.toJsonArray()),
@@ -125,6 +125,25 @@ class OverlayService : Service(), FrontierBridgeHost {
 
     override fun launchGame(gameId: String): String = NativeGameDiscovery.launch(this, gameId)
 
+    override fun getAutoDetectEnabled(): Boolean = GameSelectionStore.isAutoDetectEnabled(this)
+
+    override fun getSelectedGameIds(): String =
+        JSONObject().put("ids", org.json.JSONArray(GameSelectionStore.selectedGameIds(this))).toString()
+
+    override fun getDetectorStatus(): String = when {
+        !GameSelectionStore.isAutoDetectEnabled(this) -> "disabled"
+        !NativePermissionManager.hasUsageAccess(this) -> "permission-required"
+        foregroundMonitor != null -> "running"
+        else -> "unavailable"
+    }
+
+    override fun openSetup() {
+        val intent = Intent(this, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putExtra(MainActivity.EXTRA_MANAGE_SETUP, true)
+        startActivity(intent)
+    }
+
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
         mainHandler.post { resizeOverlay(expand = expanded) }
@@ -167,7 +186,7 @@ class OverlayService : Service(), FrontierBridgeHost {
             settings.mediaPlaybackRequiresUserGesture = true
             settings.javaScriptCanOpenWindowsAutomatically = false
             settings.setSupportMultipleWindows(false)
-            webViewClient = LocalAssetWebViewClient()
+            webViewClient = LocalAssetWebViewClient { emitCurrentState() }
             addJavascriptInterface(
                 FrontierJavascriptBridge(this@OverlayService, this@OverlayService),
                 "FrontierAndroid",
@@ -316,6 +335,28 @@ class OverlayService : Service(), FrontierBridgeHost {
         } else if (GameSelectionStore.isAutoDetectEnabled(this) && manuallyDismissedGameId != game.id) {
             resizeOverlay(expand = true)
         }
+    }
+
+    private fun emitCurrentState() {
+        emitNativeEvent(
+            "game-library",
+            JSONObject().put("availability", "available").put("games", NativeGameDiscovery.toJsonArray()),
+        )
+        emitNativeEvent(
+            "selection-state",
+            JSONObject().put("selectedGameIds", org.json.JSONArray(GameSelectionStore.selectedGameIds(this))),
+        )
+        emitNativeEvent("detector-state", JSONObject().put("status", getDetectorStatus()))
+        emitNativeEvent(
+            "game-state",
+            JSONObject()
+                .put("status", if (NativeForegroundState.current == null) "idle" else "game-active")
+                .put("game", NativeForegroundState.current?.let {
+                    JSONObject().put("id", it.id).put("name", it.name)
+                        .put("packageName", it.packageNames.firstOrNull().orEmpty())
+                } ?: JSONObject.NULL),
+        )
+        emitPermissionSnapshot()
     }
 
     private fun emitPermissionSnapshot() {

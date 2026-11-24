@@ -22,11 +22,12 @@ object NativeGameDiscovery {
 
     fun cached(): List<InstalledNativeGame> = cachedGames.get()
 
-    fun refresh(context: Context, onUpdated: ((List<InstalledNativeGame>) -> Unit)? = null) {
-        if (!hasScanned.compareAndSet(false, true)) {
+    fun refresh(context: Context, force: Boolean = false, onUpdated: ((List<InstalledNativeGame>) -> Unit)? = null) {
+        if (!force && !hasScanned.compareAndSet(false, true)) {
             onUpdated?.invoke(cached())
             return
         }
+        hasScanned.set(true)
         val appContext = context.applicationContext
         executor.execute {
             val discovered = NativeGameCatalog.games.mapNotNull { game ->

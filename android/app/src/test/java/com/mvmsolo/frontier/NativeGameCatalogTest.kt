@@ -71,6 +71,12 @@ class NativeGameCatalogTest {
     }
 
     @Test
+    fun `selected game codec rejects malformed JSON and ignores unknown ids`() {
+        assertEquals(setOf("efootball", "pubg-mobile"), GameSelectionCodec.parseSelectedIds("[\"efootball\",\"unknown\",\"pubg-mobile\"]"))
+        assertEquals(emptySet<String>(), GameSelectionCodec.parseSelectedIds("{broken"))
+    }
+
+    @Test
     fun `every entry has a display name and at least one package alias`() {
         NativeGameCatalog.games.forEach { game ->
             assertNotNull(game.name)

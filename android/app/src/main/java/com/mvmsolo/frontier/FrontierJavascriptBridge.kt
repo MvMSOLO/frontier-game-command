@@ -14,6 +14,10 @@ interface FrontierBridgeHost {
     fun setAutoDetect(enabled: Boolean): Boolean
     fun setSelectedGames(gameIdsJson: String): Boolean
     fun launchGame(gameId: String): String
+    fun getAutoDetectEnabled(): Boolean
+    fun getSelectedGameIds(): String
+    fun getDetectorStatus(): String
+    fun openSetup()
 }
 
 class FrontierJavascriptBridge(
@@ -67,5 +71,22 @@ class FrontierJavascriptBridge(
 
     @JavascriptInterface
     fun launchGame(gameId: String): String = host.launchGame(gameId)
+
+    @JavascriptInterface
+    fun getAutoDetectEnabled(): Boolean = GameSelectionStore.isAutoDetectEnabled(context)
+
+    @JavascriptInterface
+    fun getSelectedGameIds(): String =
+        JSONObject().put("ids", JSONArray(GameSelectionStore.selectedGameIds(context))).toString()
+
+    @JavascriptInterface
+    fun getDetectorStatus(): String = when {
+        !GameSelectionStore.isAutoDetectEnabled(context) -> "disabled"
+        !NativePermissionManager.hasUsageAccess(context) -> "permission-required"
+        else -> "running"
+    }
+
+    @JavascriptInterface
+    fun openSetup() = host.openSetup()
 }
 

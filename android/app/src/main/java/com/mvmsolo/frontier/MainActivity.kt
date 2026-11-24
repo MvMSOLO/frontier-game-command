@@ -19,6 +19,10 @@ class MainActivity : Activity(), FrontierBridgeHost {
     private lateinit var webView: WebView
     private lateinit var statusLabel: TextView
 
+    companion object {
+        const val EXTRA_MANAGE_SETUP = "frontier_manage_setup"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = Color.rgb(6, 8, 13)
@@ -80,7 +84,7 @@ class MainActivity : Activity(), FrontierBridgeHost {
             settings.mediaPlaybackRequiresUserGesture = true
             settings.javaScriptCanOpenWindowsAutomatically = false
             settings.setSupportMultipleWindows(false)
-            webViewClient = LocalAssetWebViewClient()
+            webViewClient = LocalAssetWebViewClient { emitLibraryEvent() }
             addJavascriptInterface(
                 FrontierJavascriptBridge(this@MainActivity, this@MainActivity),
                 "FrontierAndroid",
@@ -93,8 +97,18 @@ class MainActivity : Activity(), FrontierBridgeHost {
         setContentView(root)
         webView.loadUrl(LocalAssetWebViewClient.APP_URL)
         refreshPermissionLabel()
-        NativeGameDiscovery.refresh(this) {
+        NativeGameDiscovery.refresh(this, force = true) {
             emitLibraryEvent()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_MANAGE_SETUP, false) && ::webView.isInitialized) {
+            webView.post {
+                webView.evaluateJavascript("window.dispatchEvent(new Event('frontier:manage-setup'));", null)
+            }
         }
     }
 
@@ -182,6 +196,23 @@ class MainActivity : Activity(), FrontierBridgeHost {
     }
 
     override fun launchGame(gameId: String): String = NativeGameDiscovery.launch(this, gameId)
+
+    override fun getAutoDetectEnabled(): Boolean = GameSelectionStore.isAutoDetectEnabled(this)
+
+    override fun getSelectedGameIds(): String =
+        JSONObject().put("ids", org.json.JSONArray(GameSelectionStore.selectedGameIds(this))).toString()
+
+    override fun getDetectorStatus(): String = when {
+        !GameSelectionStore.isAutoDetectEnabled(this) -> "disabled"
+        !NativePermissionManager.hasUsageAccess(this) -> "permission-required"
+        else -> "running"
+    }
+
+    override fun openSetup() {
+        if (::webView.isInitialized) {
+            webView.post { webView.evaluateJavascript("window.dispatchEvent(new Event('frontier:manage-setup'));", null) }
+        }
+    }
 
     private fun emitLibraryEvent() {
         if (!::webView.isInitialized) return
