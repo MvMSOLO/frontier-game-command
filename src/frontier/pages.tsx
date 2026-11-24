@@ -9,7 +9,7 @@ import * as Ic from "./icons";
 import { PerformanceArtwork } from "./components/Artwork";
 import { PRESETS, VoiceEngine, type VoiceParams, type VoicePreset } from "./voice";
 import { GAME_CATALOG } from "./onboarding/catalog";
-import { tr, type FrontierLanguage } from "./i18n";
+import { LocalizedTree, tr, type FrontierLanguage } from "./i18n";
 
 export const item = { hidden: { opacity: 0, y: 11, scale: 0.985 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 360, damping: 27, mass: 0.72 } } };
 export const list = { hidden: {}, show: { transition: { staggerChildren: 0.045, delayChildren: 0.035 } } };
@@ -90,6 +90,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   const purge = () => { playSfx("tool-start"); haptic(20); setPurged(true); setTimeout(() => { setPurged(false); playSfx("tool-complete"); }, 1600); };
   return (
+    <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-home">
       <Card>
         <div className="flex items-center gap-2">
@@ -133,11 +134,13 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
         </div>
       </Card>}
     </motion.div>
+    </LocalizedTree>
   );
 }
 
 export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = false }: { mode: Mode; setMode: (m: Mode) => void; t: Telemetry; s: Settings; upd: (p: Partial<Settings>) => void; androidOverlay?: boolean }) {
   return (
+    <LocalizedTree language={s.language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-performance">
       <motion.div variants={item}><Label right={<Src k="native" />}>{tr(s.language, "Engine profile")}</Label></motion.div>
       <div className="space-y-1.5">
@@ -174,6 +177,7 @@ export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = fal
       </motion.div>}
       {androidOverlay && <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">FRONTIER profiles adjust the overlay experience only. Game FPS, GPU clocks and per-game thermal readings require OEM or privileged integrations.</motion.div>}
     </motion.div>
+    </LocalizedTree>
   );
 }
 
@@ -200,13 +204,16 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
   const runPurge = () => { if (purge === "run") return; playSfx("tool-start"); haptic(20); setPurge("run"); setTimeout(() => { setFreed(Math.round(300 + Math.random() * 900)); setPurge("done"); playSfx("tool-complete"); }, 1400); };
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   if (androidOverlay) return (
+    <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-tools">
       <Label>{tr(language, "Android capability status")}</Label>
       {[["Foreground game detection", "LIVE · USAGE ACCESS"], ["Launch selected games", "LIVE · PACKAGE INTENT"], ["Memory diagnostics", "READ-ONLY · DEVICE API"], ["Thermal status", "ANDROID THERMAL API"], ["Touch Boost", "UNAVAILABLE · OEM API"], ["Game FPS / GPU tuning", "UNAVAILABLE · PRIVILEGED API"], ["In-game voice routing", "UNAVAILABLE · GAME INTEGRATION"], ["Screen recording / replay", "NATIVE CAPTURE CONSENT REQUIRED"], ["Crosshair over game", "DISABLED · TOUCH SAFETY"]].map(([name, status]) => <div key={name} className="flex items-center justify-between gap-2 border border-line bg-foreground/[0.03] px-3 py-3"><span className="text-[10px] font-semibold">{name}</span><span className="text-right text-[8px] tracking-wider text-gold">{status}</span></div>)}
       <p className="text-[9px] leading-relaxed text-muted-foreground">{tr(language, "Only controls with a verified Android implementation are enabled. Unsupported game-level tuning is not simulated.")}</p>
     </motion.div>
+    </LocalizedTree>
   );
   return (
+    <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-1.5 frontier-page frontier-page-tools">
       <motion.div variants={item}><Label>Tactical tools</Label></motion.div>
       <Tile icon={Ic.IRam} name="RAM Purge" on={purge !== "idle"} onClick={runPurge} src="sim" color="var(--lime)">
@@ -233,6 +240,7 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
       {recErr && <div className="text-[10px] text-crimson">{recErr}</div>}
       <Tile icon={Ic.IVoice} name="Voice Changer" on={false} onClick={goVoice} src="live" />
     </motion.div>
+    </LocalizedTree>
   );
 }
 
@@ -253,6 +261,7 @@ export function VoicePage({ engine, androidOverlay = false, language = "en" }: {
   };
   const pick = (v: VoicePreset) => setP((o) => ({ ...o, preset: v, ...(v === "off" ? {} : PRESETS[v]) }));
   return (
+    <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-voice">
       <motion.div variants={item} className="flex items-center gap-3">
         <button onClick={toggle} aria-pressed={live} disabled={androidOverlay} className={cn("relative flex h-14 w-14 items-center justify-center chamfer transition-colors", live ? "bg-crimson/25 text-crimson" : "bg-foreground/5 text-muted-foreground")}>
@@ -281,6 +290,7 @@ export function VoicePage({ engine, androidOverlay = false, language = "en" }: {
         <div className="text-[9px] text-muted-foreground">Routing into in-game voice chat requires the Android native bridge.</div>
       </motion.div>
     </motion.div>
+    </LocalizedTree>
   );
 }
 
@@ -302,15 +312,15 @@ function DeviceDiagnostics({ language }: { language: FrontierLanguage }) {
     const timer = window.setInterval(read, 2000);
     return () => window.clearInterval(timer);
   }, []);
-  if (!snapshot) return <p className="text-[10px] text-muted-foreground">{tr(language, "Native device diagnostics are available in the Android overlay.")}</p>;
-  return <div className="grid grid-cols-2 gap-2 text-[10px]">
+  if (!snapshot) return <LocalizedTree language={language}><p className="text-[10px] text-muted-foreground">{tr(language, "Native device diagnostics are available in the Android overlay.")}</p></LocalizedTree>;
+  return <LocalizedTree language={language}><div className="grid grid-cols-2 gap-2 text-[10px]">
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Available RAM")}</span><strong className="mt-1 block">{snapshot.availableMemoryMb ?? "—"} MB</strong></div>
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Battery")}</span><strong className="mt-1 block">{snapshot.batteryPercent ?? "—"}%</strong></div>
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Thermal status")}</span><strong className="mt-1 block">{tr(language, snapshot.thermalStatus ?? "—")}</strong></div>
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Low memory")}</span><strong className="mt-1 block">{snapshot.lowMemory ? tr(language, "YES") : tr(language, "NO")}</strong></div>
     <div className="col-span-2 border border-line p-2"><span className="text-muted-foreground">{tr(language, "Foreground game")}</span><strong className="mt-1 block">{game?.name ?? tr(language, "No supported game detected")}</strong><small className="mt-1 block text-muted-foreground">{game?.packageName ?? tr(language, "Usage access required for detection")}</small></div>
     <div className="col-span-2 flex items-center justify-between border border-line p-2"><span className="text-muted-foreground">{tr(language, "Notification access")}</span><strong className="text-cyan">{tr(language, notificationAccess.toUpperCase())}</strong></div>
-  </div>;
+  </div></LocalizedTree>;
 }
 
 export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void }) {
@@ -329,6 +339,7 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
   };
   const accents = [["cyan", "var(--cyan)"], ["lime", "var(--lime)"], ["crimson", "var(--crimson)"], ["gold", "var(--gold)"]] as const;
   return (
+    <LocalizedTree language={s.language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-settings">
       <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Language</Label>
         <div className="grid grid-cols-2 gap-2">
@@ -391,5 +402,6 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
         {launchFeedback && <p role="status" className="text-[10px] text-muted-foreground">{launchFeedback}</p>}
       </motion.div>
     </motion.div>
+    </LocalizedTree>
   );
 }
