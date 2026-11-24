@@ -47,9 +47,9 @@ function Crosshair({ style, color }: { style: "dot" | "cross" | "ring"; color: s
   );
 }
 
-export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {}) {
+export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSetup?: () => void; androidOverlay?: boolean } = {}) {
   const [s, upd] = useSettings();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(androidOverlay);
   const [tab, setTab] = useState<Tab>("home");
   const [activeWing, setActiveWing] = useState<"core" | "nexus">("core");
   const [mode, setModeRaw] = useState<Mode>("balanced");
@@ -64,6 +64,16 @@ export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {})
   const lastTouch = useRef(Date.now());
   const openRef = useRef(false);
   useEffect(() => { openRef.current = open; }, [open]);
+  useEffect(() => {
+    if (!androidOverlay) return;
+    const onOverlayState = (event: Event) => {
+      const expanded = Boolean((event as CustomEvent<{ expanded?: boolean }>).detail?.expanded);
+      openRef.current = expanded;
+      setOpen(expanded);
+    };
+    window.addEventListener("frontier-overlay-expanded", onOverlayState);
+    return () => window.removeEventListener("frontier-overlay-expanded", onOverlayState);
+  }, [androidOverlay]);
   const shieldRef = useRef(ts.shield); shieldRef.current = ts.shield;
 
   useEffect(() => { setSound(s.sound, s.volume); setHaptics(s.haptics); document.documentElement.style.setProperty("--accent-fx", `var(--${s.accent})`); }, [s.sound, s.volume, s.haptics, s.accent]);
@@ -77,6 +87,7 @@ export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {})
   useEffect(() => { if (ts.shield) setNotes([]); }, [ts.shield]);
   // Auto-hide
   const doOpen = useCallback(() => {
+    if (androidOverlay) window.FrontierAndroid?.expandOverlay?.();
     if (!openRef.current) {
       openRef.current = true;
       setOpen(true);
@@ -84,14 +95,15 @@ export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {})
       haptic(15);
     }
     lastTouch.current = Date.now();
-  }, []);
+  }, [androidOverlay]);
   const closePanel = useCallback(() => {
     if (!openRef.current) return;
+    if (androidOverlay) window.FrontierAndroid?.minimizeOverlay?.();
     openRef.current = false;
     setOpen(false);
     playSfx("panel-close");
     haptic(10);
-  }, []);
+  }, [androidOverlay]);
   const doClose = closePanel;
   useEffect(() => { if (!open || !s.autoHide) return; const iv = setInterval(() => { if (Date.now() - lastTouch.current > s.autoHide * 1000) closePanel(); }, 500); return () => clearInterval(iv); }, [open, s.autoHide, closePanel]);
   useEffect(() => {
@@ -137,13 +149,13 @@ export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {})
 
   return (
     <MotionConfig reducedMotion={s.motion === 0 ? "always" : "user"} transition={{ ...SPRING, stiffness: 380 * Math.max(0.5, s.motion) }}>
-      <div className="frontier-app fixed inset-0 select-none overflow-hidden text-foreground" data-panel-open={open} style={{ touchAction: ts.touch ? "none" : "manipulation" }}>
-        <GameScene overdrive={od} />
-        {ts.crosshair && <Crosshair style={ts.crossStyle} color={ts.crossColor} />}
-        {(ts.recording || ts.replay) && <div className="tnum absolute right-3 top-3 z-10 flex items-center gap-1.5 bg-obsidian/70 px-2 py-1 text-[10px] text-crimson"><span className="fx-pulse h-2 w-2 rounded-full bg-crimson" />{ts.recording ? "REC" : "REPLAY BUFFER"}</div>}
-        <div className="absolute right-3 top-12 z-10 space-y-1">
+      <div className="frontier-app fixed inset-0 select-none overflow-hidden text-foreground" data-panel-open={open} data-android-overlay={androidOverlay ? "true" : undefined} style={{ touchAction: ts.touch && !androidOverlay ? "none" : "manipulation" }}>
+        {!androidOverlay && <GameScene overdrive={od} />}
+        {ts.crosshair && !androidOverlay && <Crosshair style={ts.crossStyle} color={ts.crossColor} />}
+        {!androidOverlay && (ts.recording || ts.replay) && <div className="tnum absolute right-3 top-3 z-10 flex items-center gap-1.5 bg-obsidian/70 px-2 py-1 text-[10px] text-crimson"><span className="fx-pulse h-2 w-2 rounded-full bg-crimson" />{ts.recording ? "REC" : "REPLAY BUFFER"}</div>}
+        {!androidOverlay && <div className="absolute right-3 top-12 z-10 space-y-1">
           <AnimatePresence>{notes.map((n) => <motion.div key={n.id} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="chamfer-sm bg-glass-strong px-3 py-2 text-[11px]">{n.text}</motion.div>)}</AnimatePresence>
-        </div>
+        </div>}
 
         <AnimatePresence>
           {!open && (
@@ -157,9 +169,9 @@ export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {})
                 </motion.button>
                 {s.miniFps && <div className="tnum pointer-events-none absolute left-2 top-3 bg-obsidian/70 px-2 py-1 text-[10px]" style={{ color: M.color }}>{t.fps} FPS</div>}
               </motion.div>
-              <motion.button key="right-edge" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} onClick={doOpen} aria-label="Open FRONTIER from right" className="frontier-edge-right absolute inset-y-0 right-0 z-20 flex w-8 items-center justify-end">
+              {!androidOverlay && <motion.button key="right-edge" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} onClick={doOpen} aria-label="Open FRONTIER from right" className="frontier-edge-right absolute inset-y-0 right-0 z-20 flex w-8 items-center justify-end">
                 <span className="frontier-edge-right-line block h-28 w-[3px] bg-magenta shadow-[0_0_16px_var(--magenta)]" />
-              </motion.button>
+              </motion.button>}
             </>
           )}
         </AnimatePresence>
@@ -185,7 +197,7 @@ export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {})
                     </motion.button>
                   );
                 })}
-                <button type="button" className="frontier-wing-switch" onClick={() => setActiveWing((wing) => wing === "core" ? "nexus" : "core")} aria-label={`Switch to ${activeWing === "core" ? "Nexus" : "Core"} panel`}><span>{activeWing === "core" ? "CORE" : "NEXUS"}</span><span aria-hidden>⇄</span></button>
+                {!androidOverlay && <button type="button" className="frontier-wing-switch" onClick={() => setActiveWing((wing) => wing === "core" ? "nexus" : "core")} aria-label={`Switch to ${activeWing === "core" ? "Nexus" : "Core"} panel`}><span>{activeWing === "core" ? "CORE" : "NEXUS"}</span><span aria-hidden>⇄</span></button>}
                 <div className="frontier-dock-fps border-l border-line px-3 text-right">
                   <div className="tnum text-[13px] font-bold" style={{ color: M.color }}>{t.fps}</div><div className="font-display text-[7px] tracking-widest text-muted-foreground">FPS</div>
                 </div>
@@ -218,7 +230,7 @@ export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {})
                 </div>
               </motion.section>
 
-              <motion.aside aria-label="FRONTIER Nexus quick intelligence" className={cn("frontier-wing frontier-wing-right absolute bottom-3 right-3 top-[68px] flex min-h-0 flex-col overflow-hidden", activeWing === "nexus" && "frontier-wing-active")}
+              {!androidOverlay && <motion.aside aria-label="FRONTIER Nexus quick intelligence" className={cn("frontier-wing frontier-wing-right absolute bottom-3 right-3 top-[68px] flex min-h-0 flex-col overflow-hidden", activeWing === "nexus" && "frontier-wing-active")}
                 variants={{ closed: { opacity: 0, x: 34, scaleX: 0.96 }, open: { opacity: 1, x: 0, scaleX: 1, transition: { ...SPRING, delay: 0.1 } } }} style={{ transformOrigin: "right center" }}>
                 <div className="frontier-wing-surface frontier-nexus-surface absolute inset-0 chamfer border border-magenta/45 bg-glass shadow-[0_0_28px_color-mix(in_oklab,var(--magenta)_13%,transparent),inset_0 0 34px color-mix(in_oklab,var(--magenta)_7%,transparent)]" style={{ opacity: s.opacity }} />
                 <motion.span key={`right-scan-${tab}`} initial={{ top: "100%", opacity: 0.8 }} animate={{ top: "0%", opacity: 0 }} transition={{ duration: 0.85, ease: "easeOut" }} className="pointer-events-none absolute inset-x-0 z-20 h-[2px] bg-magenta shadow-[0_0_14px_3px_var(--magenta)]" />
@@ -282,7 +294,7 @@ export function Frontier({ onManageSetup }: { onManageSetup?: () => void } = {})
                     </div>
                   </div>
                 </div>
-              </motion.aside>
+              </motion.aside>}
             </motion.div>
           )}
         </AnimatePresence>
