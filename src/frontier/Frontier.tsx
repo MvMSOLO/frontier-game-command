@@ -83,11 +83,15 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
   useEffect(() => { setSound(s.sound, s.volume); setHaptics(s.haptics); document.documentElement.style.setProperty("--accent-fx", `var(--${s.accent})`); }, [s.sound, s.volume, s.haptics, s.accent]);
   useEffect(() => { setModeRaw(s.startMode); }, [s.startMode]);
   // Fake game notifications — Zero-Distraction shield actually suppresses them
-  useEffect(() => { const iv = setInterval(() => {
-    if (shieldRef.current) { setBlocked((b) => b + 1); return; }
-    const id = Date.now(); setNotes((n) => [...n, { id, text: NOTES[Math.floor(Math.random() * NOTES.length)]! }].slice(-2));
-    setTimeout(() => setNotes((n) => n.filter((x) => x.id !== id)), 3500);
-  }, 9000); return () => clearInterval(iv); }, []);
+  useEffect(() => {
+    if (androidOverlay) return;
+    const iv = setInterval(() => {
+      if (shieldRef.current) { setBlocked((b) => b + 1); return; }
+      const id = Date.now(); setNotes((n) => [...n, { id, text: NOTES[Math.floor(Math.random() * NOTES.length)]! }].slice(-2));
+      setTimeout(() => setNotes((n) => n.filter((x) => x.id !== id)), 3500);
+    }, 9000);
+    return () => clearInterval(iv);
+  }, [androidOverlay]);
   useEffect(() => { if (ts.shield) setNotes([]); }, [ts.shield]);
   // Auto-hide
   const doOpen = useCallback(() => {

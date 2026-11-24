@@ -97,7 +97,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
             <div className="tnum text-[40px] font-bold leading-[0.9] text-cyan [text-shadow:0_0_18px_var(--cyan)]">{androidOverlay ? "—" : fps}</div>
             <div className="mt-0.5 flex items-center gap-1 font-display text-[11px] text-cyan">{androidOverlay ? "GAME FPS · NATIVE REQUIRED" : <>FPS <Src k="live" /></>}</div>
           </div>
-          <div className="min-w-0 flex-1"><Wave data={t.history} color="var(--cyan)" /></div>
+          {!androidOverlay && <div className="min-w-0 flex-1"><Wave data={t.history} color="var(--cyan)" /></div>}
         </div>
         <div className="mt-1 grid grid-cols-2 divide-x divide-line text-center">
           <div><div className="tnum text-[14px] font-bold text-cyan">{androidOverlay ? "—" : <>{t.frameTime}<span className="text-[10px]">ms</span></>}</div><div className="text-[9px] text-muted-foreground">{androidOverlay ? "GAME FRAME TIME · UNAVAILABLE" : "Frame Time"}</div></div>
@@ -151,14 +151,14 @@ export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = fal
               <span className="flex h-9 w-9 items-center justify-center chamfer-sm" style={{ color: M.color, background: `color-mix(in oklab, ${M.color} ${on ? 18 : 6}%, transparent)` }}><M.icon /></span>
               <div className="flex-1">
                 <div className={cn("text-[13px] font-semibold", od && "font-display text-[11px] tracking-widest")} style={{ color: on ? M.color : undefined }}>{od ? "FRONTIER OVERDRIVE" : M.name}</div>
-                <div className="text-[10px] text-muted-foreground">{M.tag} · target <span className="tnum">{M.target}</span> fps</div>
+                <div className="text-[10px] text-muted-foreground">{androidOverlay ? "FRONTIER overlay presentation profile · no game tuning" : <>{M.tag} · target <span className="tnum">{M.target}</span> fps</>}</div>
               </div>
               <span className={cn("h-2 w-2 rotate-45", on ? "fx-pulse" : "opacity-20")} style={{ background: od && on ? "var(--gold)" : M.color }} />
             </div>
-            <AnimatePresence>{on && (
-              <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-12 text-[10px] text-muted-foreground">
+            {!androidOverlay && <AnimatePresence>{on && (
+              <motion.ul initial={{ height: 0, opacity: 1 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pl-12 text-[10px] text-muted-foreground">
                 {M.bullets.map((b) => <li key={b} className="pt-1">› {b}</li>)}
-              </motion.ul>)}</AnimatePresence>
+              </motion.ul>)}</AnimatePresence>}
           </motion.button>); })}
       </div>
       <motion.div variants={item} className="space-y-3">
@@ -201,9 +201,9 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   if (androidOverlay) return (
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-tools">
-      <Label>Android capability status</Label>
+      <Label>{tr(language, "Android capability status")}</Label>
       {[["Foreground game detection", "LIVE · USAGE ACCESS"], ["Launch selected games", "LIVE · PACKAGE INTENT"], ["Memory diagnostics", "READ-ONLY · DEVICE API"], ["Thermal status", "ANDROID THERMAL API"], ["Touch Boost", "UNAVAILABLE · OEM API"], ["Game FPS / GPU tuning", "UNAVAILABLE · PRIVILEGED API"], ["In-game voice routing", "UNAVAILABLE · GAME INTEGRATION"], ["Screen recording / replay", "NATIVE CAPTURE CONSENT REQUIRED"], ["Crosshair over game", "DISABLED · TOUCH SAFETY"]].map(([name, status]) => <div key={name} className="flex items-center justify-between gap-2 border border-line bg-foreground/[0.03] px-3 py-3"><span className="text-[10px] font-semibold">{name}</span><span className="text-right text-[8px] tracking-wider text-gold">{status}</span></div>)}
-      <p className="text-[9px] leading-relaxed text-muted-foreground">Only controls with a verified Android implementation are enabled. Unsupported game-level tuning is not simulated.</p>
+      <p className="text-[9px] leading-relaxed text-muted-foreground">{tr(language, "Only controls with a verified Android implementation are enabled. Unsupported game-level tuning is not simulated.")}</p>
     </motion.div>
   );
   return (

@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
+import android.content.res.Configuration
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Color
@@ -72,6 +73,11 @@ class OverlayService : Service(), FrontierBridgeHost {
     }
     override fun stopOverlay() { mainHandler.post { stopSelf() } }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (viewAttached) attachOverlay(expanded)
+    }
+
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
         gameMonitor?.stop()
@@ -102,10 +108,17 @@ class OverlayService : Service(), FrontierBridgeHost {
         val webView = overlayWebView ?: return
         if (!Settings.canDrawOverlays(this)) { stopSelf(); return }
         val params = buildWindowParams(expanded)
-        if (!viewAttached) { windowManager.addView(webView, params); viewAttached = true }
-        else windowManager.updateViewLayout(webView, params)
-        this.expanded = expanded
-        dispatchExpandedState(expanded)
+        try {
+            if (!viewAttached) { windowManager.addView(webView, params); viewAttached = true }
+            else windowManager.updateViewLayout(webView, params)
+            this.expanded = expanded
+            dispatchExpandedState(expanded)
+        } catch (_: WindowManager.BadTokenException) {
+            stopSelf()
+        } catch (_: IllegalArgumentException) {
+            viewAttached = false
+            stopSelf()
+        }
     }
 
     private fun setExpanded(value: Boolean) {
