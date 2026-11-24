@@ -1,24 +1,30 @@
 package com.mvmsolo.frontier
 
-import org.junit.Assert.assertEquals
+import android.app.Notification
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NotificationPolicyStoreTest {
     @Test
-    fun `notification categories important to user are preserved`() {
-        val preserved = listOf(
-            android.app.Notification.CATEGORY_CALL,
-            android.app.Notification.CATEGORY_ALARM,
-            android.app.Notification.CATEGORY_NAVIGATION,
-            android.app.Notification.CATEGORY_SYSTEM,
-            android.app.Notification.CATEGORY_TRANSPORT,
+    fun `suppression requires both user opt-in and a selected game in foreground`() {
+        assertFalse(NotificationSuppressionPolicy.shouldSuppress(false, true, false, null))
+        assertFalse(NotificationSuppressionPolicy.shouldSuppress(true, false, false, null))
+        assertTrue(NotificationSuppressionPolicy.shouldSuppress(true, true, false, null))
+    }
+
+    @Test
+    fun `ongoing and critical notification categories are always preserved`() {
+        val critical = listOf(
+            Notification.CATEGORY_CALL,
+            Notification.CATEGORY_ALARM,
+            Notification.CATEGORY_NAVIGATION,
+            Notification.CATEGORY_SYSTEM,
+            Notification.CATEGORY_TRANSPORT,
         )
-        assertEquals(true, preserved.all { category ->
-            category == android.app.Notification.CATEGORY_CALL ||
-                category == android.app.Notification.CATEGORY_ALARM ||
-                category == android.app.Notification.CATEGORY_NAVIGATION ||
-                category == android.app.Notification.CATEGORY_SYSTEM ||
-                category == android.app.Notification.CATEGORY_TRANSPORT
-        })
+        assertFalse(NotificationSuppressionPolicy.shouldSuppress(true, true, true, null))
+        critical.forEach { category ->
+            assertFalse(NotificationSuppressionPolicy.shouldSuppress(true, true, false, category))
+        }
     }
 }
