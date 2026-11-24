@@ -1,22 +1,23 @@
 package com.mvmsolo.frontier
 
 import android.content.Context
-import org.json.JSONArray
-
 object GameSelectionCodec {
     fun parseSelectedIds(json: String): Set<String> {
         val allowed = NativeGameCatalog.games.map { it.id }.toSet()
-        return try {
-            val values = JSONArray(json)
-            buildSet {
-                for (index in 0 until values.length()) {
-                    val id = values.optString(index, "")
-                    if (id in allowed) add(id)
-                }
-            }
-        } catch (_: Exception) {
-            emptySet()
-        }
+        val trimmed = json.trim()
+        if (trimmed.length < 2 || trimmed.first() != '[' || trimmed.last() != ']') return emptySet()
+        val body = trimmed.substring(1, trimmed.length - 1).trim()
+        if (body.isEmpty()) return emptySet()
+
+        val tokens = body.split(',')
+        if (tokens.any { token ->
+                !token.trim().matches(Regex("\\"[a-z0-9-]+\\""))
+            }) return emptySet()
+
+        return tokens
+            .map { it.trim().removeSurrounding("\\\"") }
+            .filter { it in allowed }
+            .toSet()
     }
 }
 
