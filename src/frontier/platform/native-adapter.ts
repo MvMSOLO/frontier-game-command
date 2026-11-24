@@ -8,6 +8,10 @@ export interface FrontierAndroidBridge {
   startOverlay?(): boolean;
   minimizeOverlay?(): void;
   stopOverlay?(): void;
+  expandOverlay?(): void;
+  collapseOverlay?(): void;
+  setAutoDetect?(enabled: boolean): boolean;
+  setSelectedGames?(gameIdsJson: string): boolean;
 }
 
 declare global {
