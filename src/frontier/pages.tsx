@@ -280,11 +280,11 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
         {ts.shield && <div className="tnum pt-1 pl-10 text-[10px] text-muted-foreground">{blocked} {tx("notifications blocked")}</div>}
       </Tile>
       {!androidPresentation && <Tile icon={Ic.IReplay} name="Instant Replay" on={ts.replay} onClick={onReplay} src="live" color="var(--gold)">
-        {ts.replay && <button onClick={onClip} className="mt-2 w-full chamfer-sm bg-gold/20 py-1.5 text-[11px] font-semibold text-gold">SAVE LAST 30s</button>}
+        {ts.replay && <button onClick={onClip} className="mt-2 w-full chamfer-sm bg-gold/20 py-1.5 text-[11px] font-semibold text-gold">{tx("SAVE LAST 30s")}</button>}
       </Tile>}
       <Tile icon={Ic.IRec} name="Screen Recorder" on={androidPresentation ? false : ts.recording} onClick={androidPresentation ? () => playSfx("tool-error") : onRecord} src={androidPresentation ? "native" : "live"} color="var(--crimson)" />
       {androidPresentation && <div className="text-[9px] leading-relaxed text-muted-foreground">{tx("Screen capture requires a native MediaProjection session and fresh system consent. It is not yet enabled in this build.")}</div>}
-      {recErr && <div className="text-[10px] text-crimson">{recErr}</div>}
+      {recErr && <div className="text-[10px] text-crimson">{tx(recErr)}</div>}
       <Tile icon={Ic.IVoice} name="Voice Changer" on={false} onClick={goVoice} src="live" />
     </motion.div>
   );
@@ -348,30 +348,30 @@ export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false,
         <Seg label="Language" value={s.language} onChange={(language) => upd({ language })} options={[{ v: "en", l: "English" }, { v: "ru", l: "Russian" }]} />
       </motion.div>
       <motion.div variants={item}><Label>Lighting</Label>
-        <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { playSfx("setting-change"); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
+        <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={tx(`Accent ${k}`)} onClick={() => { playSfx("setting-change"); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Interface</Label>
         <Slider label="Animation intensity" min={0} max={2} step={0.5} value={s.motion} onChange={(v) => upd({ motion: v })} unit="×" />
         <Slider label="Panel opacity" min={0.6} max={1} step={0.05} value={s.opacity} onChange={(v) => upd({ opacity: v })} />
-        <div className="flex items-center justify-between text-[12px]"><span>Mini FPS when closed</span><Toggle label="Mini FPS" on={s.miniFps} onChange={(v) => upd({ miniFps: v })} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tx("Mini FPS when closed")}</span><Toggle label="Mini FPS" on={s.miniFps} onChange={(v) => upd({ miniFps: v })} /></div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group frontier-sound-settings space-y-3">
         <Label>Sound & haptics</Label>
-        <div className="flex items-center justify-between text-[12px]"><span>Interface sounds</span><Toggle label="Sounds" on={s.sound} onChange={(v) => { setSound(v, s.volume); upd({ sound: v }); if (v) playSfx("toggle-on"); }} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tx("Interface sounds")}</span><Toggle label="Sounds" on={s.sound} onChange={(v) => { setSound(v, s.volume); upd({ sound: v }); if (v) playSfx("toggle-on"); }} /></div>
         <Slider label="Master volume" min={0} max={1} step={0.05} value={s.volume} onChange={(v) => { setSound(s.sound, v); upd({ volume: v }); }} />
         <div className="frontier-sound-preview">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-display text-[9px] tracking-[0.16em] text-muted-foreground">SONIC PREVIEW</span>
-            <span className="tnum text-[8px] text-muted-foreground">{s.sound && s.volume > 0 ? "READY" : "MUTED"}</span>
+            <span className="font-display text-[9px] tracking-[0.16em] text-muted-foreground">{tx("SONIC PREVIEW")}</span>
+            <span className="tnum text-[8px] text-muted-foreground">{tx(s.sound && s.volume > 0 ? "READY" : "MUTED")}</span>
           </div>
           <div className="mt-2 grid grid-cols-3 gap-1.5">
-            <button type="button" disabled={!s.sound || s.volume === 0} onClick={() => playSfx("panel-open")} className="frontier-sound-preview-button"><span>01</span><strong>DEPLOY</strong></button>
-            <button type="button" disabled={!s.sound || s.volume === 0} onClick={() => playSfx("navigation")} className="frontier-sound-preview-button"><span>02</span><strong>SELECT</strong></button>
-            <button type="button" disabled={!s.sound || s.volume === 0} onClick={() => playSfx("mode-overdrive")} className="frontier-sound-preview-button"><span>03</span><strong>OVERDRIVE</strong></button>
+            <button type="button" disabled={!s.sound || s.volume === 0} onClick={() => playSfx("panel-open")} className="frontier-sound-preview-button"><span>01</span><strong>{tx("DEPLOY")}</strong></button>
+            <button type="button" disabled={!s.sound || s.volume === 0} onClick={() => playSfx("navigation")} className="frontier-sound-preview-button"><span>02</span><strong>{tx("SELECT")}</strong></button>
+            <button type="button" disabled={!s.sound || s.volume === 0} onClick={() => playSfx("mode-overdrive")} className="frontier-sound-preview-button"><span>03</span><strong>{tx("OVERDRIVE")}</strong></button>
           </div>
-          {!s.sound || s.volume === 0 ? <p className="mt-1 text-[9px] text-muted-foreground">Enable interface sounds and raise the volume to preview FRONTIER SFX.</p> : null}
+          {!s.sound || s.volume === 0 ? <p className="mt-1 text-[9px] text-muted-foreground">{tx("Enable interface sounds and raise the volume to preview FRONTIER SFX.")}</p> : null}
         </div>
-        <div className="flex items-center justify-between text-[12px]"><span>Haptic feedback</span><Toggle label="Haptics" on={s.haptics} onChange={(v) => upd({ haptics: v })} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tx("Haptic feedback")}</span><Toggle label="Haptics" on={s.haptics} onChange={(v) => upd({ haptics: v })} /></div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Gestures & overlay</Label>
         <Slider label="Edge swipe distance" min={20} max={90} step={5} value={s.edgeSensitivity} onChange={(v) => upd({ edgeSensitivity: v })} unit="px" />
@@ -381,7 +381,7 @@ export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false,
         <Label>System setup</Label>
         <p className="text-[10px] leading-relaxed text-muted-foreground">Manage the games selected during initiation and review platform access.</p>
         <button type="button" onClick={onManageSetup} className="frontier-setup-manage-button" disabled={!onManageSetup}>
-          <span>MANAGE GAMES & SETUP</span><span aria-hidden>↗</span>
+          <span>{tx("MANAGE GAMES & SETUP")}</span><span aria-hidden>↗</span>
         </button>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3">
