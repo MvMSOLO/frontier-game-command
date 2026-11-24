@@ -115,9 +115,6 @@ class OverlayService : Service(), FrontierBridgeHost {
             if (!viewAttached) { windowManager.addView(webView, params); viewAttached = true }
             else windowManager.updateViewLayout(webView, params)
             this.expanded = expanded
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-            }
             dispatchExpandedState(expanded)
         } catch (_: WindowManager.BadTokenException) {
             stopSelf()
@@ -148,7 +145,14 @@ class OverlayService : Service(), FrontierBridgeHost {
             else OverlayWindowSizing.collapsedHeight(displayHeight, density)
         return WindowManager.LayoutParams(width, height, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL; x = 0; y = 0 }
+            PixelFormat.TRANSLUCENT).apply {
+            gravity = Gravity.START or Gravity.CENTER_VERTICAL
+            x = 0
+            y = 0
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
     }
 
     private fun dispatchExpandedState(value: Boolean) {
