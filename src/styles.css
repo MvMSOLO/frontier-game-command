@@ -299,3 +299,95 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
 @keyframes fx-laser { 0% { transform: translateY(-100%); opacity: 0 } 30%,70% { opacity: 1 } 100% { transform: translateY(100%); opacity: 0 } }
 .fx-laser { animation: fx-laser 3.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .fx-circuit,.fx-pulse,.fx-drift,.fx-spin,.fx-spin-rev,.fx-laser { animation: none } }
+
+/* FRONTIER HYPER-REALITY — Task 02 visual system */
+:root {
+  --frontier-ink: #050912;
+  --frontier-panel: rgba(8, 14, 26, .88);
+  --frontier-panel-raised: rgba(13, 21, 37, .88);
+  --frontier-line: rgba(181, 220, 255, .16);
+  --frontier-core: #62e7ff;
+  --frontier-nexus: #db83ff;
+  --frontier-warn: #ff718e;
+  --frontier-gold: #ffd17b;
+  --frontier-lime: #9af5b5;
+}
+.frontier-twin-overlay { isolation: isolate; }
+.frontier-command-dock {
+  background: linear-gradient(145deg, rgba(17,27,46,.97), rgba(5,9,18,.95) 68%);
+  border-color: rgba(98,231,255,.32);
+  box-shadow: 0 12px 42px rgba(0,0,0,.42), 0 0 26px rgba(72,210,255,.12), inset 0 1px rgba(255,255,255,.08);
+  backdrop-filter: blur(24px) saturate(1.4);
+}
+.frontier-command-dock::after {
+  content: ""; position: absolute; left: 16%; right: 16%; bottom: -2px; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--frontier-core), var(--frontier-nexus), transparent); opacity: .75;
+}
+.frontier-dock-item { min-height: 42px; border-radius: 7px 2px 7px 2px; letter-spacing: .08em; transition: color .2s ease, background .2s ease; }
+.frontier-dock-item:hover { background: rgba(255,255,255,.045); }
+.frontier-dock-item[aria-current="page"] { color: var(--frontier-core); text-shadow: 0 0 14px rgba(98,231,255,.36); }
+.frontier-wing {
+  overflow: hidden; border-radius: 14px 3px 14px 3px;
+  background: linear-gradient(145deg, rgba(12,20,35,.9), rgba(5,9,17,.82) 55%, rgba(9,14,25,.9));
+  box-shadow: 0 18px 50px rgba(0,0,0,.34); backdrop-filter: blur(22px) saturate(1.24); -webkit-backdrop-filter: blur(22px) saturate(1.24);
+}
+.frontier-wing::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(145deg, rgba(255,255,255,.055), transparent 22%), linear-gradient(180deg, transparent 55%, rgba(0,0,0,.18)); }
+.frontier-wing-left { border: 1px solid rgba(98,231,255,.34); box-shadow: 0 16px 44px rgba(0,0,0,.34), -2px 0 24px rgba(43,202,255,.12), inset 0 0 36px rgba(57,190,255,.045); }
+.frontier-wing-right { border: 1px solid rgba(219,131,255,.34); box-shadow: 0 16px 44px rgba(0,0,0,.34), 2px 0 24px rgba(207,97,255,.12), inset 0 0 36px rgba(200,97,255,.045); }
+.frontier-wing > * { z-index: 1; }
+.frontier-wing-surface { z-index: -1; }
+.frontier-wing-header { background: linear-gradient(100deg, rgba(255,255,255,.035), transparent 75%); position: relative; }
+.frontier-wing-left .frontier-wing-header::after, .frontier-wing-right .frontier-wing-header::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 1px; }
+.frontier-wing-left .frontier-wing-header::after { background: linear-gradient(90deg, var(--frontier-core), transparent); }
+.frontier-wing-right .frontier-wing-header::after { background: linear-gradient(90deg, var(--frontier-nexus), transparent); }
+.frontier-wing-header .font-display { font-size: 10px; letter-spacing: .16em; }
+.frontier-hud-card { isolation: isolate; border-radius: 10px 3px 10px 3px; background: linear-gradient(135deg, rgba(98,231,255,.68), rgba(219,131,255,.23) 54%, rgba(255,255,255,.08)); box-shadow: 0 7px 18px rgba(0,0,0,.16); transition: transform .22s ease, filter .22s ease; }
+.frontier-hud-card:hover { filter: brightness(1.055); }
+.frontier-hud-card-surface { border-radius: 9px 2px 9px 2px; background: linear-gradient(145deg, rgba(18,29,48,.96), rgba(7,12,23,.97) 68%); box-shadow: inset 0 1px rgba(255,255,255,.055), inset 0 -1px rgba(0,0,0,.26); }
+.frontier-page-home .frontier-hud-card:first-child .frontier-hud-card-surface { background: radial-gradient(ellipse at 100% 0%, rgba(63,210,255,.14), transparent 45%), linear-gradient(140deg, rgba(15,31,52,.98), rgba(5,12,23,.98)); }
+.frontier-page-home .frontier-hud-card:nth-child(2) .frontier-hud-card-surface { background: radial-gradient(circle at 50% 20%, rgba(212,113,255,.10), transparent 58%), linear-gradient(145deg, rgba(21,22,42,.98), rgba(7,11,22,.98)); }
+.frontier-page-home .frontier-hud-card:nth-child(3) .frontier-hud-card-surface { background: linear-gradient(135deg, rgba(14,28,42,.98), rgba(7,12,22,.98)); }
+.frontier-hud-ring svg { filter: drop-shadow(0 5px 8px rgba(0,0,0,.28)); }
+.frontier-quick-tool { min-height: 66px; border-radius: 8px 2px 8px 2px; border-color: rgba(154,207,239,.16); background: linear-gradient(145deg, rgba(255,255,255,.055), rgba(255,255,255,.012)); box-shadow: inset 0 1px rgba(255,255,255,.045); transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease; }
+.frontier-quick-tool:hover { border-color: rgba(98,231,255,.42); background: linear-gradient(145deg, rgba(98,231,255,.11), rgba(255,255,255,.025)); }
+.frontier-quick-tool:active { transform: translateY(1px) scale(.975); }
+.frontier-mode-card { border: 1px solid rgba(255,255,255,.08); border-radius: 10px 3px 10px 3px; background: linear-gradient(120deg, rgba(255,255,255,.045), rgba(255,255,255,.012)); box-shadow: inset 0 1px rgba(255,255,255,.045); transition: border-color .22s ease, background .22s ease, box-shadow .22s ease; }
+.frontier-mode-card:hover { border-color: rgba(98,231,255,.28); }
+.frontier-mode-card[aria-pressed="true"] { border-color: currentColor; background: linear-gradient(115deg, rgba(255,255,255,.095), rgba(255,255,255,.025)); box-shadow: inset 0 0 24px color-mix(in oklab, currentColor 9%, transparent), 0 0 18px color-mix(in oklab, currentColor 12%, transparent); }
+.frontier-tool-tile { border: 1px solid rgba(165,207,236,.13); border-radius: 10px 3px 10px 3px; background: linear-gradient(135deg, rgba(255,255,255,.055), rgba(255,255,255,.012)); box-shadow: inset 0 1px rgba(255,255,255,.04); transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+.frontier-tool-tile:has(button[aria-pressed="true"]) { border-color: rgba(98,231,255,.38); background: linear-gradient(135deg, rgba(98,231,255,.085), rgba(255,255,255,.016)); }
+.frontier-tool-tile button { min-height: 42px; }
+.frontier-page-performance .frontier-mode-card { margin-bottom: 2px; }
+.frontier-page-performance .frontier-mode-card[aria-pressed="true"] { padding-block: 14px; }
+.frontier-page-tools .frontier-tool-tile { margin-block: 5px; }
+.frontier-page-voice .frontier-voice-wave { height: 56px; padding: 7px 10px; border: 1px solid rgba(219,131,255,.25); border-radius: 10px 3px 10px 3px; background: radial-gradient(ellipse at center, rgba(219,131,255,.14), transparent 68%), linear-gradient(90deg, rgba(219,131,255,.04), rgba(98,231,255,.04)); box-shadow: inset 0 0 22px rgba(219,131,255,.07); }
+.frontier-page-voice .frontier-voice-wave span { border-radius: 3px 3px 1px 1px; box-shadow: 0 0 8px color-mix(in oklab, var(--magenta) 38%, transparent); }
+.frontier-page-settings .frontier-settings-group { padding: 12px; border: 1px solid rgba(98,231,255,.14); border-radius: 10px 3px 10px 3px; background: linear-gradient(145deg, rgba(255,255,255,.04), rgba(255,255,255,.008)); }
+.frontier-section-label { min-height: 24px; font-size: 10px; letter-spacing: .2em; }
+.frontier-source-badge { font-size: 9px; letter-spacing: .12em; padding-inline: 5px; }
+.frontier-toggle { min-width: 42px; min-height: 24px; border: 1px solid rgba(255,255,255,.13); }
+.frontier-slider input[type="range"] { min-height: 28px; }
+.frontier-wing-switch { display: none; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid rgba(219,131,255,.3); border-radius: 7px 2px 7px 2px; color: var(--frontier-nexus); font: 600 9px var(--font-mono); letter-spacing: .12em; }
+.frontier-wing-switch:active { background: rgba(219,131,255,.12); }
+.frontier-nexus-card { border-radius: 10px 3px 10px 3px; background: linear-gradient(145deg, rgba(26,17,39,.78), rgba(9,12,24,.84)); box-shadow: inset 0 1px rgba(255,255,255,.05), inset 0 0 22px rgba(219,131,255,.045); }
+.frontier-nexus-content { scrollbar-width: none; }
+.frontier-nexus-content::-webkit-scrollbar { display: none; }
+.frontier-page .text-\\[9px\\] { line-height: 1.35; }
+.frontier-page .text-\\[10px\\] { line-height: 1.4; }
+.frontier-page button:focus-visible, .frontier-command-dock button:focus-visible { outline: 2px solid var(--frontier-core); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .frontier-hud-card:hover, .frontier-tool-tile:hover { transform: translateY(-1px); } }
+@media (max-width: 560px) and (orientation: portrait) {
+  .frontier-wing { width: auto !important; left: 12px !important; right: 12px !important; top: 58px !important; bottom: 8px !important; }
+  .frontier-wing:not(.frontier-wing-active) { display: none; }
+  .frontier-wing-switch { display: inline-flex; }
+  .frontier-command-dock { gap: 3px; }
+  .frontier-dock-item { padding-inline: 7px; }
+  .frontier-dock-item span { display: none; }
+  .frontier-dock-brand .font-display { display: none; }
+  .frontier-dock-fps { display: none; }
+  .frontier-page .text-\\[9px\\] { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .frontier-hud-card, .frontier-tool-tile, .frontier-quick-tool { transition: none !important; }
+  .frontier-page-voice .frontier-voice-wave span { box-shadow: none; }
+}
