@@ -10,7 +10,7 @@ import { HomePage, MODES, PerformancePage, SettingsPage, ToolsPage, VoicePage, t
 import type { VoiceEngine } from "./voice";
 import { LanguageProvider } from "./i18n";
 import { getPlatformAdapter } from "./platform";
-import { subscribeNativeEvents } from "./platform/native-events";
+import { subscribeNativeEvents, type NativeGameSummary } from "./platform/native-events";
 
 export type FrontierPresentation = "browser" | "android-overlay";
 type Tab = "home" | "perf" | "tools" | "voice" | "settings";
@@ -58,6 +58,9 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
   const [detectorStatus, setDetectorStatus] = useState<"disabled" | "running" | "permission-required" | "unavailable">("disabled");
   const [activeGameName, setActiveGameName] = useState<string | null>(null);
   const [installedGameCount, setInstalledGameCount] = useState(0);
+  const [installedGames, setInstalledGames] = useState<NativeGameSummary[]>([]);
+  const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
+  const [launchMessage, setLaunchMessage] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("home");
   const [activeWing, setActiveWing] = useState<"core" | "nexus">("core");
@@ -83,7 +86,20 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
     if (bridge) {
       try {
         const discovery = JSON.parse(bridge.getInstalledGames()) as { games?: unknown[] };
-        if (Array.isArray(discovery.games)) setInstalledGameCount(discovery.games.length);
+        if (Array.isArray(discovery.games)) {
+          const games = discovery.games.filter((game): game is NativeGameSummary =>
+            !!game && typeof game === "object" &&
+            typeof (game as NativeGameSummary).id === "string" &&
+            typeof (game as NativeGameSummary).name === "string" &&
+            typeof (game as NativeGameSummary).packageName === "string"
+          );
+          setInstalledGameCount(games.length);
+          setInstalledGames(games);
+        }
+        if (bridge.getSelectedGameIds) {
+          const selection = JSON.parse(bridge.getSelectedGameIds()) as { ids?: unknown[] };
+          if (Array.isArray(selection.ids)) setSelectedGameIds(selection.ids.filter((id): id is string => typeof id === "string"));
+        }
       } catch {
         setInstalledGameCount(0);
       }
@@ -99,11 +115,14 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
       });
     }
     return subscribeNativeEvents((event) => {
-      if (event.type === "game-library") setInstalledGameCount(event.payload.games.length);
+      if (event.type === "game-library") {
+        setInstalledGameCount(event.payload.games.length);
+        setInstalledGames(event.payload.games);
+      }
       if (event.type === "game-state") setActiveGameName(event.payload.game?.name ?? null);
       if (event.type === "detector-state") setDetectorStatus(event.payload.status);
       if (event.type === "selection-state") {
-        bridge?.setSelectedGames?.(JSON.stringify(event.payload.selectedGameIds));
+        setSelectedGameIds(event.payload.selectedGameIds);
       }
     });
   }, [nativeAdapter, presentation]);
@@ -253,7 +272,11 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
                 <div className="frontier-page-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-width:none]">
                   <AnimatePresence mode="wait">
                     <motion.div key={tab} initial={{ opacity: 0, y: 10, scale: 0.992 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.996, transition: { duration: 0.16, ease: "easeOut" } }} transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}>
-                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} activeGameName={activeGameName} installedGameCount={installedGameCount} androidPresentation={presentation === "android-overlay"} />}
+                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} activeGameName={activeGameName} installedGameCount={installedGameCount} installedGames={installedGames} selectedGameIds={selectedGameIds} launchMessage={launchMessage} onLaunchGame={(gameId) => {
+                        const result = window.FrontierAndroid?.launchGame?.(gameId) ?? "unavailable";
+                        setLaunchMessage(result);
+                        window.setTimeout(() => setLaunchMessage(null), 2800);
+                      }} androidPresentation={presentation === "android-overlay"} />}
                       {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} />}
                       {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); playSfx("navigation"); }} androidPresentation={presentation === "android-overlay"} />}
                       {tab === "voice" && <VoicePage engine={voice} androidPresentation={presentation === "android-overlay"} />}
