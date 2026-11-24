@@ -49,19 +49,7 @@ class NativeGameMonitor(
                 while (events.hasNextEvent()) {
                     events.getNextEvent(event)
                     val packageName = event.packageName ?: continue
-                    val foreground = when {
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> when (event.eventType) {
-                            android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED -> true
-                            android.app.usage.UsageEvents.Event.ACTIVITY_PAUSED,
-                            android.app.usage.UsageEvents.Event.ACTIVITY_STOPPED -> false
-                            else -> null
-                        }
-                        else -> @Suppress("DEPRECATION") when (event.eventType) {
-                            android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> true
-                            android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> false
-                            else -> null
-                        }
-                    }
+                    val foreground = foregroundState(event.eventType)
                     if (foreground == true) foregroundPackage = packageName
                     else if (foreground == false && foregroundPackage == packageName) foregroundPackage = null
                 }
@@ -72,6 +60,22 @@ class NativeGameMonitor(
             publish(null)
         }
         scheduleNext()
+    }
+
+    @Suppress("DEPRECATION")
+    private fun foregroundState(eventType: Int): Boolean? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        when (eventType) {
+            android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED -> true
+            android.app.usage.UsageEvents.Event.ACTIVITY_PAUSED,
+            android.app.usage.UsageEvents.Event.ACTIVITY_STOPPED -> false
+            else -> null
+        }
+    } else {
+        when (eventType) {
+            android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> true
+            android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> false
+            else -> null
+        }
     }
 
     private fun publish(game: NativeGame?) {

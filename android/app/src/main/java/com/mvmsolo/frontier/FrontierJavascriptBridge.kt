@@ -29,13 +29,6 @@ class FrontierJavascriptBridge(
 
     @JavascriptInterface
     fun getInstalledGames(): String {
-        if (!NativePermissionManager.hasUsageAccess(context)) {
-            return JSONObject()
-                .put("availability", "permission-required")
-                .put("games", JSONArray())
-                .toString()
-        }
-
         val installed = JSONArray()
         NativeGameCatalog.games.forEach { game ->
             val packageName = game.packageNames.firstOrNull { isInstalled(it) } ?: return@forEach

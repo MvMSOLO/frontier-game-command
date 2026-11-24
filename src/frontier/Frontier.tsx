@@ -78,6 +78,7 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
   const shieldRef = useRef(ts.shield); shieldRef.current = ts.shield;
 
   useEffect(() => { applyLanguage(s.language); }, [s.language]);
+  useEffect(() => { window.FrontierAndroid?.setAutoDetectEnabled?.(s.autoDetect); }, [s.autoDetect]);
   useEffect(() => { setSound(s.sound, s.volume); setHaptics(s.haptics); document.documentElement.style.setProperty("--accent-fx", `var(--${s.accent})`); }, [s.sound, s.volume, s.haptics, s.accent]);
   useEffect(() => { setModeRaw(s.startMode); }, [s.startMode]);
   // Fake game notifications — Zero-Distraction shield actually suppresses them

@@ -295,6 +295,9 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
           <button type="button" aria-pressed={s.language === "ru"} onClick={() => { playSfx("setting-change"); upd({ language: "ru" }); }} className={cn("chamfer-sm border px-3 py-2 text-[11px] font-semibold", s.language === "ru" ? "border-cyan/60 bg-cyan/10 text-cyan" : "border-line bg-foreground/[0.03] text-muted-foreground")}>РУССКИЙ</button>
         </div>
       </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Game integration</Label>
+        <div className="flex items-center justify-between text-[12px]"><span>Auto-detect selected games</span><Toggle label="Auto-detect games" on={s.autoDetect} onChange={(v) => upd({ autoDetect: v })} /></div>
+      </motion.div>
       <motion.div variants={item}><Label>Lighting</Label>
         <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { playSfx("setting-change"); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
       </motion.div>

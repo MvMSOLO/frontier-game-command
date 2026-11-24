@@ -10,7 +10,10 @@ function InitializingScreen() {
 export function FrontierEntry({ androidOverlay = false }: { androidOverlay?: boolean } = {}) {
   const [view, setView] = useState<EntryView>("initializing");
   const [setup, setSetup] = useState<OnboardingState>(createInitialOnboardingState());
-  useEffect(() => { const saved = readOnboardingState(); setSetup(saved); setView(saved.status === "complete" ? "frontier" : "onboarding"); }, []);
+  useEffect(() => {
+    const saved = readOnboardingState(); setSetup(saved); setView(saved.status === "complete" ? "frontier" : "onboarding");
+    window.FrontierAndroid?.setSelectedGames?.(JSON.stringify(saved.selectedGameIds));
+  }, []);
   const persist = useCallback((next: OnboardingState) => {
     setSetup(next); writeOnboardingState(next);
     window.FrontierAndroid?.setSelectedGames?.(JSON.stringify(next.selectedGameIds));
