@@ -1,14 +1,23 @@
+import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Frontier } from "./Frontier";
 
-vi.mock("framer-motion", () => ({
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
-  MotionConfig: ({ children }: { children: React.ReactNode }) => children,
-  motion: new Proxy({}, { get: (_target, tag) => tag }),
-  useMotionValue: () => ({ get: () => 0, set: vi.fn() }),
-  useTransform: () => 0.5,
-}));
+vi.mock("framer-motion", () => {
+  const motion = new Proxy({}, {
+    get: (_target, tag) => React.forwardRef<HTMLElement, Record<string, unknown> & { children?: React.ReactNode; onTap?: () => void }>(
+      ({ children, onTap, drag, dragConstraints, dragElastic, dragSnapToOrigin, onDragEnd, whileTap, variants, initial, animate, exit, transition, layout, ...props }, ref) =>
+        React.createElement(tag as string, { ...props, ref, onClick: props.onClick ?? onTap }, children),
+    ),
+  });
+  return {
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+    MotionConfig: ({ children }: { children: React.ReactNode }) => children,
+    motion,
+    useMotionValue: () => ({ get: () => 0, set: vi.fn() }),
+    useTransform: () => 0.5,
+  };
+});
 
 vi.mock("./audio", () => ({
   haptic: vi.fn(),
