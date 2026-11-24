@@ -263,7 +263,6 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
   .frontier-wing-right { right: 5px !important; }
   .frontier-wing-header { min-height: 42px; padding: 7px 8px; }
   .frontier-wing-header .font-display { font-size: 8px; }
-  .frontier-wing-header .text-\\[9px\\] { font-size: 7px; }
   .frontier-page-scroll, .frontier-nexus-content { padding-inline: 7px; }
   .frontier-telemetry { margin-inline: 7px; }
   .frontier-nexus-card { padding: 8px; }
