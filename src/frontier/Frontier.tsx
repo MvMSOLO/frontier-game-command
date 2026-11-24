@@ -187,6 +187,24 @@ export function Frontier() {
                 </motion.div>)}</AnimatePresence>
             </motion.section>
           </motion.div>)}</AnimatePresence>
+        {/* Right wing: compact reactor pod (SIM data) */}
+        <AnimatePresence>{open && (
+          <motion.aside key="wing" aria-label="Reactor telemetry" initial={{ x: 120, opacity: 0 }} animate={{ x: 0, opacity: 1, transition: { ...SPRING, delay: 0.15 } }} exit={{ x: 120, opacity: 0 }}
+            className="pointer-events-none absolute right-0 top-1/2 z-20 hidden w-[92px] -translate-y-1/2 flex-col items-center gap-2 border-l-2 border-magenta/60 bg-glass-strong py-3 sm:flex [clip-path:polygon(18%_0,100%_0,100%_100%,18%_100%,0_88%,0_12%)]">
+            <span className="fx-laser absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-transparent via-cyan to-transparent" />
+            {([["GPU", t.gpu, "var(--magenta)"], ["CPU", t.cpu, "var(--cyan)"]] as const).map(([l, v, c]) => (
+              <div key={l} className="relative flex h-16 w-16 items-center justify-center">
+                <svg viewBox="0 0 64 64" className="absolute inset-0" style={{ color: c }}>
+                  <ellipse className="fx-spin" cx="32" cy="38" rx="28" ry="10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="6 4" style={{ transformOrigin: "32px 38px" }} />
+                  <ellipse className="fx-spin-rev" cx="32" cy="38" rx="20" ry="6" fill="none" stroke="currentColor" strokeOpacity=".6" strokeDasharray="3 3" style={{ transformOrigin: "32px 38px" }} />
+                </svg>
+                <div className="relative -mt-3 text-center"><div className="tnum text-[15px] font-bold" style={{ color: c, textShadow: `0 0 8px ${c}` }}>{v}%</div><div className="font-display text-[8px] tracking-widest text-muted-foreground">{l} · SIM</div></div>
+              </div>))}
+            <div className="flex flex-col-reverse gap-[3px]" aria-label={`Thermal ${t.temp}°C`}>
+              {Array.from({ length: 12 }).map((_, i) => { const lit = i < Math.round((t.temp / 60) * 12); return <span key={i} className="h-[4px] transition-colors" style={{ width: 20 + i * 2, background: lit ? (i > 8 ? "var(--crimson)" : i > 5 ? "var(--gold)" : "var(--cyan)") : "var(--line)", boxShadow: lit ? "0 0 6px currentColor" : undefined }} />; })}
+            </div>
+            <div className="tnum text-[9px] text-muted-foreground">{t.temp}°C</div>
+          </motion.aside>)}</AnimatePresence>
       </div>
     </MotionConfig>
   );

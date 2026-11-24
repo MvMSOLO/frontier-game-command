@@ -197,4 +197,9 @@ body { font-family: var(--font-body); background: var(--obsidian); overscroll-be
 .fx-pulse { animation: fx-pulse 2.4s ease-in-out infinite; }
 @keyframes fx-drift { from { transform: translateX(0) } to { transform: translateX(-50%) } }
 .fx-drift { animation: fx-drift 90s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .fx-circuit,.fx-pulse,.fx-drift { animation: none } }
+@keyframes fx-spin { to { transform: rotate(360deg) } }
+.fx-spin { animation: fx-spin 6s linear infinite; }
+.fx-spin-rev { animation: fx-spin 4s linear infinite reverse; }
+@keyframes fx-laser { 0% { transform: translateY(-100%); opacity: 0 } 30%,70% { opacity: 1 } 100% { transform: translateY(100%); opacity: 0 } }
+.fx-laser { animation: fx-laser 3.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .fx-circuit,.fx-pulse,.fx-drift,.fx-spin,.fx-spin-rev,.fx-laser { animation: none } }
