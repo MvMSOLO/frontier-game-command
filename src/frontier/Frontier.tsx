@@ -226,8 +226,8 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
                     <motion.div key={tab} initial={{ opacity: 0, y: 10, scale: 0.992 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.996, transition: { duration: 0.16, ease: "easeOut" } }} transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}>
                       {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} androidOverlay={androidOverlay} />}
                       {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} androidOverlay={androidOverlay} />}
-                      {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); playSfx("navigation"); }} androidOverlay={androidOverlay} />}
-                      {tab === "voice" && <VoicePage engine={voice} androidOverlay={androidOverlay} />}
+                      {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); playSfx("navigation"); }} androidOverlay={androidOverlay} language={s.language} />}
+                      {tab === "voice" && <VoicePage engine={voice} androidOverlay={androidOverlay} language={s.language} />}
                       {tab === "settings" && <SettingsPage s={s} upd={upd} onManageSetup={onManageSetup} />}
                     </motion.div>
                   </AnimatePresence>
