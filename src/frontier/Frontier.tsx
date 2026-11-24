@@ -121,6 +121,15 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
       }
       if (event.type === "game-state") setActiveGameName(event.payload.game?.name ?? null);
       if (event.type === "detector-state") setDetectorStatus(event.payload.status);
+      if (event.type === "overlay-state") {
+        const nextOpen = event.payload.expanded;
+        if (openRef.current !== nextOpen) {
+          openRef.current = nextOpen;
+          setOpen(nextOpen);
+          playSfx(nextOpen ? "panel-open" : "panel-close");
+          haptic(nextOpen ? 15 : 10);
+        }
+      }
       if (event.type === "selection-state") {
         setSelectedGameIds(event.payload.selectedGameIds);
       }
@@ -277,7 +286,7 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
                         setLaunchMessage(result);
                         window.setTimeout(() => setLaunchMessage(null), 2800);
                       }} androidPresentation={presentation === "android-overlay"} />}
-                      {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} />}
+                      {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} androidPresentation={presentation === "android-overlay"} />}
                       {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); playSfx("navigation"); }} androidPresentation={presentation === "android-overlay"} />}
                       {tab === "voice" && <VoicePage engine={voice} androidPresentation={presentation === "android-overlay"} />}
                       {tab === "settings" && <SettingsPage s={s} upd={upd} onManageSetup={onManageSetup ?? (() => window.FrontierAndroid?.openSetup?.())}
