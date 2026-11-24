@@ -245,11 +245,11 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
                   <div className="min-w-0"><div className="font-display text-[10px] tracking-[0.18em] text-cyan">01 / CORE SYSTEM</div><div className="mt-0.5 truncate text-[9px] font-semibold tracking-wider text-foreground">{NAV.find((n) => n.id === tab)?.label.toUpperCase()} CONTROL</div></div>
                   <span className="tnum shrink-0 text-[10px]" style={{ color: M.color }}>{M.name.toUpperCase()}</span>
                 </header>
-                <div aria-label={`Simulated telemetry: CPU ${t.cpu}%, GPU ${t.gpu}%, temperature ${Math.round(t.temp)} degrees Celsius`} className="frontier-telemetry relative mx-3 grid grid-cols-3 divide-x divide-line border-b border-line/70 py-2">
+                {presentation === "browser" && <div aria-label={`Simulated telemetry: CPU ${t.cpu}%, GPU ${t.gpu}%, temperature ${Math.round(t.temp)} degrees Celsius`} className="frontier-telemetry relative mx-3 grid grid-cols-3 divide-x divide-line border-b border-line/70 py-2">
                   {([[ "CPU", `${t.cpu}%` ], [ "GPU", `${t.gpu}%` ], [ "THERMAL", `${Math.round(t.temp)}°C` ]] as const).map(([label, value]) => (
                     <div key={label} className="text-center leading-tight"><div className="tnum text-[12px] font-semibold text-foreground">{value}</div><div className="font-display text-[7px] tracking-[0.12em] text-muted-foreground">{label} <span className="text-gold">SIM</span></div></div>
                   ))}
-                </div>
+                </div>}
                 <div className="frontier-page-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-width:none]">
                   <AnimatePresence mode="wait">
                     <motion.div key={tab} initial={{ opacity: 0, y: 10, scale: 0.992 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.996, transition: { duration: 0.16, ease: "easeOut" } }} transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}>
@@ -263,13 +263,7 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
                         onAutoDetectChange={(enabled) => {
                           const success = window.FrontierAndroid?.setAutoDetect?.(enabled) ?? false;
                           if (success) setAutoDetectEnabled(enabled);
-                        }}
-    autoDetectEnabled={autoDetectEnabled}
-    detectorStatus={detectorStatus}
-    onAutoDetectChange={(enabled) => {
-      const success = window.FrontierAndroid?.setAutoDetect?.(enabled) ?? false;
-      if (success) setAutoDetectEnabled(enabled);
-    }} />}
+                        }} />}
                     </motion.div>
                   </AnimatePresence>
                 </div>
