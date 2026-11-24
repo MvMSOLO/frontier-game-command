@@ -6,10 +6,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 
-class NativeGameMonitor(
-    context: Context,
-    private val onGameChanged: (NativeGame?) -> Unit,
-) {
+class NativeGameMonitor(context: Context, private val onGameChanged: (NativeGame?) -> Unit) {
     private val appContext = context.applicationContext
     private val thread = HandlerThread("frontier-game-monitor")
     private var handler: Handler? = null
@@ -28,6 +25,7 @@ class NativeGameMonitor(
 
     fun stop() {
         running = false
+        currentGame = null
         handler?.removeCallbacksAndMessages(null)
         handler = null
         if (thread.isAlive) thread.quitSafely()
@@ -36,9 +34,7 @@ class NativeGameMonitor(
     private fun poll() {
         if (!running) return
         if (!NativePermissionManager.hasUsageAccess(appContext)) {
-            publish(null)
-            scheduleNext()
-            return
+            publish(null); scheduleNext(); return
         }
         val now = System.currentTimeMillis()
         val manager = appContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
@@ -49,9 +45,11 @@ class NativeGameMonitor(
                 while (events.hasNextEvent()) {
                     events.getNextEvent(event)
                     val packageName = event.packageName ?: continue
-                    val foreground = foregroundState(event.eventType)
-                    if (foreground == true) foregroundPackage = packageName
-                    else if (foreground == false && foregroundPackage == packageName) foregroundPackage = null
+                    when (foregroundState(event.eventType)) {
+                        true -> foregroundPackage = packageName
+                        false -> if (foregroundPackage == packageName) foregroundPackage = null
+                        null -> Unit
+                    }
                 }
             }
             lastEventTime = now
@@ -85,9 +83,7 @@ class NativeGameMonitor(
         onGameChanged(game)
     }
 
-    private fun scheduleNext() {
-        if (running) handler?.postDelayed(::poll, POLL_INTERVAL_MS)
-    }
+    private fun scheduleNext() { if (running) handler?.postDelayed(::poll, POLL_INTERVAL_MS) }
 
     companion object {
         private const val INITIAL_LOOKBACK_MS = 12_000L
