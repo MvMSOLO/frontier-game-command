@@ -4,7 +4,20 @@ export type NativeGameSummary = {
   packageName: string;
 };
 
+export interface NativeDeviceSnapshot {
+  batteryPercent: number | null;
+  charging: boolean;
+  thermalStatus: string | null;
+  availableMemoryMb: number;
+  totalMemoryMb: number;
+  lowMemory: boolean;
+  networkTransport: string;
+  networkValidated: boolean;
+}
+
 export type NativeEventPayloads = {
+  "device-snapshot": NativeDeviceSnapshot;
+  "notification-policy-state": { enabled: boolean };
   "game-library": {
     availability: "available" | "permission-required" | "unsupported";
     games: NativeGameSummary[];
@@ -47,6 +60,19 @@ export function parseNativeEvent(value: unknown): NativeEventEnvelope | null {
 
   const payload = value.payload;
   switch (value.type) {
+    case "device-snapshot":
+      if ((payload.batteryPercent !== null && typeof payload.batteryPercent !== "number") ||
+        typeof payload.charging !== "boolean" ||
+        (payload.thermalStatus !== null && typeof payload.thermalStatus !== "string") ||
+        typeof payload.availableMemoryMb !== "number" ||
+        typeof payload.totalMemoryMb !== "number" ||
+        typeof payload.lowMemory !== "boolean" ||
+        typeof payload.networkTransport !== "string" ||
+        typeof payload.networkValidated !== "boolean") return null;
+      break;
+    case "notification-policy-state":
+      if (typeof payload.enabled !== "boolean") return null;
+      break;
     case "game-library":
       if (!["available", "permission-required", "unsupported"].includes(String(payload.availability)) ||
         !Array.isArray(payload.games) || !payload.games.every(isGame)) return null;

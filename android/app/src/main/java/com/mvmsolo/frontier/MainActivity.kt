@@ -215,6 +215,16 @@ class MainActivity : Activity(), FrontierBridgeHost {
         }
     }
 
+    override fun setNotificationSuppression(enabled: Boolean): Boolean {
+        if (enabled && !NativePermissionManager.hasNotificationAccess(this)) {
+            NativePermissionManager.openSettings(this, NativePermissionManager.NOTIFICATION_ACCESS)
+            return false
+        }
+        return NotificationPolicyStore.setEnabled(this, enabled)
+    }
+
+    override fun getNotificationSuppressionEnabled(): Boolean = NotificationPolicyStore.isEnabled(this)
+
     private fun emitLibraryEvent() {
         if (!::webView.isInitialized) return
         val envelope = JSONObject()

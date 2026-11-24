@@ -18,6 +18,8 @@ interface FrontierBridgeHost {
     fun getSelectedGameIds(): String
     fun getDetectorStatus(): String
     fun openSetup()
+    fun setNotificationSuppression(enabled: Boolean): Boolean
+    fun getNotificationSuppressionEnabled(): Boolean
 }
 
 class FrontierJavascriptBridge(
@@ -89,5 +91,14 @@ class FrontierJavascriptBridge(
 
     @JavascriptInterface
     fun openSetup() = host.openSetup()
+
+    @JavascriptInterface
+    fun setNotificationSuppression(enabled: Boolean): Boolean = host.setNotificationSuppression(enabled)
+
+    @JavascriptInterface
+    fun getNotificationSuppressionEnabled(): Boolean = host.getNotificationSuppressionEnabled()
+
+    @JavascriptInterface
+    fun getDeviceSnapshot(): String = DeviceSnapshotProvider.read(context).toString()
 }
 

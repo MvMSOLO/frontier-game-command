@@ -32,6 +32,14 @@ class OverlayService : Service(), FrontierBridgeHost {
     private var foregroundMonitor: ForegroundGameMonitor? = null
     private var activeGame: NativeGame? = null
     private var manuallyDismissedGameId: String? = null
+    private val snapshotPoll = object : Runnable {
+        override fun run() {
+            if (!serviceAlive) return
+            emitNativeEvent("device-snapshot", DeviceSnapshotProvider.read(this@OverlayService))
+            mainHandler.postDelayed(this, SNAPSHOT_INTERVAL_MS)
+        }
+    }
+    @Volatile private var serviceAlive = true
 
     override fun onCreate() {
         super.onCreate()
@@ -47,6 +55,8 @@ class OverlayService : Service(), FrontierBridgeHost {
         }
         refreshAutoDetect()
         emitPermissionSnapshot()
+        serviceAlive = true
+        mainHandler.post(snapshotPoll)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -130,6 +140,19 @@ class OverlayService : Service(), FrontierBridgeHost {
     override fun getSelectedGameIds(): String =
         JSONObject().put("ids", org.json.JSONArray(GameSelectionStore.selectedGameIds(this))).toString()
 
+    override fun setNotificationSuppression(enabled: Boolean): Boolean {
+        if (enabled && !NativePermissionManager.hasNotificationAccess(this)) {
+            NativePermissionManager.openSettings(this, NativePermissionManager.NOTIFICATION_ACCESS)
+            emitNativeEvent("permission-state", permissionSnapshot())
+            return false
+        }
+        val saved = NotificationPolicyStore.setEnabled(this, enabled)
+        emitNativeEvent("notification-policy-state", JSONObject().put("enabled", NotificationPolicyStore.isEnabled(this)))
+        return saved
+    }
+
+    override fun getNotificationSuppressionEnabled(): Boolean = NotificationPolicyStore.isEnabled(this)
+
     override fun getDetectorStatus(): String = when {
         !GameSelectionStore.isAutoDetectEnabled(this) -> "disabled"
         !NativePermissionManager.hasUsageAccess(this) -> "permission-required"
@@ -150,6 +173,8 @@ class OverlayService : Service(), FrontierBridgeHost {
     }
 
     override fun onDestroy() {
+        serviceAlive = false
+        mainHandler.removeCallbacks(snapshotPoll)
         foregroundMonitor?.stop()
         foregroundMonitor = null
         overlayWebView?.let { webView ->
@@ -358,10 +383,13 @@ class OverlayService : Service(), FrontierBridgeHost {
     }
 
     private fun emitPermissionSnapshot() {
-        val ids = JSONArrayCompat.PERMISSION_IDS
+        emitNativeEvent("permission-state", permissionSnapshot())
+    }
+
+    private fun permissionSnapshot(): JSONObject {
         val states = JSONObject()
-        ids.forEach { id -> states.put(id, NativePermissionManager.status(this, id)) }
-        emitNativeEvent("permission-state", states)
+        JSONArrayCompat.PERMISSION_IDS.forEach { id -> states.put(id, NativePermissionManager.status(this, id)) }
+        return states
     }
 
     private fun emitNativeEvent(type: String, payload: JSONObject) {
@@ -450,6 +478,7 @@ class OverlayService : Service(), FrontierBridgeHost {
         const val EXTRA_GAME_IDS = "game_ids"
         private const val CHANNEL_ID = "frontier_overlay"
         private const val NOTIFICATION_ID = 6041
+        private const val SNAPSHOT_INTERVAL_MS = 5_000L
 
         fun isRunning(context: Context): Boolean =
             (context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager)

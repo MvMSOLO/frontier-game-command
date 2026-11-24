@@ -85,7 +85,7 @@ function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon:
 }
 const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(--cyan)", hyper: "var(--magenta)", overdrive: "var(--gold)" };
 
-export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, activeGameName = null, installedGameCount = 0, installedGames = [], selectedGameIds = [], launchMessage = null, onLaunchGame, androidPresentation = false }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void; activeGameName?: string | null; installedGameCount?: number; installedGames?: Array<{ id: string; name: string; packageName: string }>; selectedGameIds?: string[]; launchMessage?: string | null; onLaunchGame?: (gameId: string) => void; androidPresentation?: boolean }) {
+export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, activeGameName = null, installedGameCount = 0, installedGames = [], selectedGameIds = [], launchMessage = null, deviceSnapshot = null, onLaunchGame, androidPresentation = false }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void; activeGameName?: string | null; installedGameCount?: number; installedGames?: Array<{ id: string; name: string; packageName: string }>; selectedGameIds?: string[]; launchMessage?: string | null; deviceSnapshot?: import("./platform/native-events").NativeDeviceSnapshot | null; onLaunchGame?: (gameId: string) => void; androidPresentation?: boolean }) {
   const tx = useText();
   const fps = useCount(t.fps, 260);
   const [purged, setPurged] = useState(false);
@@ -106,6 +106,12 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
           <div className="mt-3 border-t border-line/70 pt-2 text-[10px] leading-relaxed text-muted-foreground">
             {tx("Android does not expose another game's FPS, CPU or GPU to ordinary apps. No game performance values are fabricated.")}
           </div>
+          {deviceSnapshot && <div className="mt-3 grid grid-cols-2 gap-1.5 border-t border-line/70 pt-3">
+            <div className="rounded border border-line/60 bg-foreground/[0.025] p-2"><small className="block text-[7px] text-muted-foreground">{tx("BATTERY")}</small><strong className="mt-1 block text-[12px]">{deviceSnapshot.batteryPercent === null ? "—" : deviceSnapshot.batteryPercent + "%"}{deviceSnapshot.charging ? " +" : ""}</strong></div>
+            <div className="rounded border border-line/60 bg-foreground/[0.025] p-2"><small className="block text-[7px] text-muted-foreground">{tx("THERMAL STATUS")}</small><strong className="mt-1 block text-[11px]">{tx(deviceSnapshot.thermalStatus ?? "Not supported")}</strong></div>
+            <div className="rounded border border-line/60 bg-foreground/[0.025] p-2"><small className="block text-[7px] text-muted-foreground">{tx("AVAILABLE MEMORY")}</small><strong className="mt-1 block text-[11px]">{Math.round(deviceSnapshot.availableMemoryMb)} MB</strong></div>
+            <div className="rounded border border-line/60 bg-foreground/[0.025] p-2"><small className="block text-[7px] text-muted-foreground">{tx("NETWORK")}</small><strong className="mt-1 block text-[11px]">{tx(deviceSnapshot.networkTransport)} · {tx(deviceSnapshot.networkValidated ? "VALIDATED" : "UNVALIDATED")}</strong></div>
+          </div>}
           <div className="mt-3 border-t border-line/70 pt-2">
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="font-display text-[8px] tracking-[0.16em] text-muted-foreground">{tx("YOUR GAME LIBRARY")}</span>
@@ -332,7 +338,7 @@ export function VoicePage({ engine, androidPresentation = false }: { engine: Rea
   );
 }
 
-export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false, detectorStatus = "disabled", onAutoDetectChange }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void; autoDetectEnabled?: boolean; detectorStatus?: "disabled" | "monitoring" | "running" | "permission-required" | "unavailable"; onAutoDetectChange?: (enabled: boolean) => void }) {
+export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false, detectorStatus = "disabled", notificationSuppressionEnabled = false, onAutoDetectChange, onNotificationSuppressionChange }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void; autoDetectEnabled?: boolean; detectorStatus?: "disabled" | "monitoring" | "running" | "permission-required" | "unavailable"; notificationSuppressionEnabled?: boolean; onAutoDetectChange?: (enabled: boolean) => void; onNotificationSuppressionChange?: (enabled: boolean) => void }) {
   const tx = useText();
   const accents = [["cyan", "var(--cyan)"], ["lime", "var(--lime)"], ["crimson", "var(--crimson)"], ["gold", "var(--gold)"]] as const;
   return (
@@ -386,6 +392,15 @@ export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false,
           <Toggle label="Auto-detect" on={autoDetectEnabled} onChange={(enabled) => onAutoDetectChange?.(enabled)} />
         </div>
         <div className="text-[9px] text-muted-foreground">{tx(detectorStatus === "running" ? "Detector active" : detectorStatus === "monitoring" ? "Passive game detection ready" : detectorStatus === "permission-required" ? "Usage access required" : detectorStatus === "unavailable" ? "Game detection unavailable on this device" : "Detector disabled")}</div>
+      </motion.div>
+      <motion.div variants={item} className="frontier-settings-group space-y-3">
+        <Label>Notification control</Label>
+        <p className="text-[9px] leading-relaxed text-muted-foreground">{tx("When enabled, selected-game notifications are dismissed while the game is active. Calls, alarms, navigation and system notifications are preserved. No notification text is stored.")}</p>
+        <div className="flex items-center justify-between text-[11px]">
+          <span>{tx("Quiet notifications in selected games")}</span>
+          <Toggle label="Quiet notifications in selected games" on={notificationSuppressionEnabled} onChange={(enabled) => onNotificationSuppressionChange?.(enabled)} />
+        </div>
+        <div className="text-[9px] text-muted-foreground">{tx("Requires Notification access.")}</div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>Performance preference</Label>
         <Seg label="Launch profile" value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />

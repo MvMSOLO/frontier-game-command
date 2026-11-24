@@ -10,7 +10,7 @@ import { HomePage, MODES, PerformancePage, SettingsPage, ToolsPage, VoicePage, t
 import type { VoiceEngine } from "./voice";
 import { LanguageProvider } from "./i18n";
 import { getPlatformAdapter } from "./platform";
-import { subscribeNativeEvents, type NativeGameSummary } from "./platform/native-events";
+import { subscribeNativeEvents, type NativeDeviceSnapshot, type NativeGameSummary } from "./platform/native-events";
 
 export type FrontierPresentation = "browser" | "android-overlay";
 type Tab = "home" | "perf" | "tools" | "voice" | "settings";
@@ -61,6 +61,8 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
   const [installedGames, setInstalledGames] = useState<NativeGameSummary[]>([]);
   const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
   const [launchMessage, setLaunchMessage] = useState<string | null>(null);
+  const [deviceSnapshot, setDeviceSnapshot] = useState<NativeDeviceSnapshot | null>(null);
+  const [notificationSuppressionEnabled, setNotificationSuppressionEnabled] = useState(false);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("home");
   const [activeWing, setActiveWing] = useState<"core" | "nexus">("core");
@@ -104,6 +106,10 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
         setInstalledGameCount(0);
       }
       if (bridge.getAutoDetectEnabled) setAutoDetectEnabled(bridge.getAutoDetectEnabled());
+      if (bridge.getNotificationSuppressionEnabled) setNotificationSuppressionEnabled(bridge.getNotificationSuppressionEnabled());
+      if (bridge.getDeviceSnapshot) {
+        try { setDeviceSnapshot(JSON.parse(bridge.getDeviceSnapshot()) as NativeDeviceSnapshot); } catch { setDeviceSnapshot(null); }
+      }
       if (bridge.getDetectorStatus) {
         const status = bridge.getDetectorStatus();
         if (status === "disabled" || status === "monitoring" || status === "running" || status === "permission-required" || status === "unavailable") {
@@ -115,6 +121,8 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
       });
     }
     return subscribeNativeEvents((event) => {
+      if (event.type === "device-snapshot") setDeviceSnapshot(event.payload);
+      if (event.type === "notification-policy-state") setNotificationSuppressionEnabled(event.payload.enabled);
       if (event.type === "game-library") {
         setInstalledGameCount(event.payload.games.length);
         setInstalledGames(event.payload.games);
@@ -281,7 +289,7 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
                 <div className="frontier-page-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-width:none]">
                   <AnimatePresence mode="wait">
                     <motion.div key={tab} initial={{ opacity: 0, y: 10, scale: 0.992 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.996, transition: { duration: 0.16, ease: "easeOut" } }} transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}>
-                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} activeGameName={activeGameName} installedGameCount={installedGameCount} installedGames={installedGames} selectedGameIds={selectedGameIds} launchMessage={launchMessage} onLaunchGame={(gameId) => {
+                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} activeGameName={activeGameName} installedGameCount={installedGameCount} installedGames={installedGames} selectedGameIds={selectedGameIds} launchMessage={launchMessage} deviceSnapshot={deviceSnapshot} onLaunchGame={(gameId) => {
                         const result = window.FrontierAndroid?.launchGame?.(gameId) ?? "unavailable";
                         setLaunchMessage(result);
                         window.setTimeout(() => setLaunchMessage(null), 2800);
@@ -292,6 +300,11 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
                       {tab === "settings" && <SettingsPage s={s} upd={upd} onManageSetup={onManageSetup ?? (() => window.FrontierAndroid?.openSetup?.())}
                         autoDetectEnabled={autoDetectEnabled}
                         detectorStatus={detectorStatus}
+                        notificationSuppressionEnabled={notificationSuppressionEnabled}
+                        onNotificationSuppressionChange={(enabled) => {
+                          const success = window.FrontierAndroid?.setNotificationSuppression?.(enabled) ?? false;
+                          if (success) setNotificationSuppressionEnabled(enabled);
+                        }}
                         onAutoDetectChange={(enabled) => {
                           const success = window.FrontierAndroid?.setAutoDetect?.(enabled) ?? false;
                           if (success) setAutoDetectEnabled(enabled);
