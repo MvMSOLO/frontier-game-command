@@ -14,12 +14,9 @@ function createAudioParam() {
 }
 
 function createNode() {
-  return {
-    connect: vi.fn(function (this: ReturnType<typeof createNode>) {
-      return this;
-    }),
-    disconnect: vi.fn(),
-  };
+  const node = { connect: vi.fn(), disconnect: vi.fn() };
+  node.connect.mockReturnValue(node);
+  return node;
 }
 
 function createAudioContextMock() {
