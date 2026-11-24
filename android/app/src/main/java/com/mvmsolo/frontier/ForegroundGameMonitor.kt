@@ -134,9 +134,9 @@ class ForegroundGameMonitor(
     }
 
     companion object {
-        private const val INITIAL_LOOKBACK_MS = 25_000L
+        private const val INITIAL_LOOKBACK_MS = 6 * 60 * 60 * 1000L
         private const val OVERLAP_MS = 1_200L
-        private const val MAX_QUERY_WINDOW_MS = 45_000L
+        private const val MAX_QUERY_WINDOW_MS = 6 * 60 * 60 * 1000L
         private const val EVENT_KEY_RETENTION_MS = 10_000L
         private const val POLL_INTERVAL_MS = 1_250L
         private const val DEBOUNCE_MS = 650L

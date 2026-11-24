@@ -14,7 +14,7 @@ export type NativeEventPayloads = {
     game: NativeGameSummary | null;
   };
   "detector-state": {
-    status: "disabled" | "running" | "permission-required" | "unavailable";
+    status: "disabled" | "monitoring" | "running" | "permission-required" | "unavailable";
   };
   "selection-state": { selectedGameIds: string[] };
   "permission-state": Record<string, string>;
@@ -56,7 +56,7 @@ export function parseNativeEvent(value: unknown): NativeEventEnvelope | null {
         (payload.game !== null && !isGame(payload.game))) return null;
       break;
     case "detector-state":
-      if (!["disabled", "running", "permission-required", "unavailable"].includes(String(payload.status))) return null;
+      if (!["disabled", "monitoring", "running", "permission-required", "unavailable"].includes(String(payload.status))) return null;
       break;
     case "selection-state":
       if (!Array.isArray(payload.selectedGameIds) || !payload.selectedGameIds.every((id) => typeof id === "string")) return null;

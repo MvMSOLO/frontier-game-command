@@ -296,14 +296,10 @@ class OverlayService : Service(), FrontierBridgeHost {
 
     private fun refreshAutoDetect() {
         val enabled = GameSelectionStore.isAutoDetectEnabled(this)
-        if (!enabled) {
+        if (!NativePermissionManager.hasUsageAccess(this)) {
             foregroundMonitor?.stop()
             foregroundMonitor = null
             NativeForegroundState.current = null
-            emitNativeEvent("detector-state", JSONObject().put("status", "disabled"))
-            return
-        }
-        if (!NativePermissionManager.hasUsageAccess(this)) {
             emitNativeEvent("detector-state", JSONObject().put("status", "permission-required"))
             return
         }
@@ -313,6 +309,8 @@ class OverlayService : Service(), FrontierBridgeHost {
             }
         }
         foregroundMonitor?.start()
+        emitNativeEvent("detector-state", JSONObject().put("status", if (enabled) "running" else "monitoring"))
+        if (enabled) NativeForegroundState.current?.let { onForegroundStateChanged(it, "game-active") }
     }
 
     private fun onForegroundStateChanged(game: NativeGame?, status: String) {
@@ -328,7 +326,7 @@ class OverlayService : Service(), FrontierBridgeHost {
         if (status == "permission-required" || status == "unavailable") {
             emitNativeEvent("detector-state", JSONObject().put("status", status))
         } else if (status == "running") {
-            emitNativeEvent("detector-state", JSONObject().put("status", "running"))
+            emitNativeEvent("detector-state", JSONObject().put("status", if (GameSelectionStore.isAutoDetectEnabled(this)) "running" else "monitoring"))
         } else if (game == null) {
             manuallyDismissedGameId = null
             resizeOverlay(expand = false)

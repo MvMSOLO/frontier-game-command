@@ -81,8 +81,9 @@ class FrontierJavascriptBridge(
 
     @JavascriptInterface
     fun getDetectorStatus(): String = when {
-        !GameSelectionStore.isAutoDetectEnabled(context) -> "disabled"
         !NativePermissionManager.hasUsageAccess(context) -> "permission-required"
+        !OverlayService.isRunning(context) -> "disabled"
+        !GameSelectionStore.isAutoDetectEnabled(context) -> "monitoring"
         else -> "running"
     }
 

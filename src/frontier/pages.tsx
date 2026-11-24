@@ -332,7 +332,7 @@ export function VoicePage({ engine, androidPresentation = false }: { engine: Rea
   );
 }
 
-export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false, detectorStatus = "disabled", onAutoDetectChange }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void; autoDetectEnabled?: boolean; detectorStatus?: "disabled" | "running" | "permission-required" | "unavailable"; onAutoDetectChange?: (enabled: boolean) => void }) {
+export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false, detectorStatus = "disabled", onAutoDetectChange }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void; autoDetectEnabled?: boolean; detectorStatus?: "disabled" | "monitoring" | "running" | "permission-required" | "unavailable"; onAutoDetectChange?: (enabled: boolean) => void }) {
   const tx = useText();
   const accents = [["cyan", "var(--cyan)"], ["lime", "var(--lime)"], ["crimson", "var(--crimson)"], ["gold", "var(--gold)"]] as const;
   return (
@@ -385,7 +385,7 @@ export function SettingsPage({ s, upd, onManageSetup, autoDetectEnabled = false,
           <span>{tx("Auto-detect")}</span>
           <Toggle label="Auto-detect" on={autoDetectEnabled} onChange={(enabled) => onAutoDetectChange?.(enabled)} />
         </div>
-        <div className="text-[9px] text-muted-foreground">{tx(detectorStatus === "running" ? "Detector active" : detectorStatus === "permission-required" ? "Usage access required" : detectorStatus === "unavailable" ? "Game detection unavailable on this device" : "Detector disabled")}</div>
+        <div className="text-[9px] text-muted-foreground">{tx(detectorStatus === "running" ? "Detector active" : detectorStatus === "monitoring" ? "Passive game detection ready" : detectorStatus === "permission-required" ? "Usage access required" : detectorStatus === "unavailable" ? "Game detection unavailable on this device" : "Detector disabled")}</div>
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>Performance preference</Label>
         <Seg label="Launch profile" value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />

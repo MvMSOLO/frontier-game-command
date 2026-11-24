@@ -55,7 +55,7 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
   const [s, upd] = useSettings();
   const nativeAdapter = useMemo(() => getPlatformAdapter(), []);
   const [autoDetectEnabled, setAutoDetectEnabled] = useState(false);
-  const [detectorStatus, setDetectorStatus] = useState<"disabled" | "running" | "permission-required" | "unavailable">("disabled");
+  const [detectorStatus, setDetectorStatus] = useState<"disabled" | "monitoring" | "running" | "permission-required" | "unavailable">("disabled");
   const [activeGameName, setActiveGameName] = useState<string | null>(null);
   const [installedGameCount, setInstalledGameCount] = useState(0);
   const [installedGames, setInstalledGames] = useState<NativeGameSummary[]>([]);
@@ -106,7 +106,7 @@ export function Frontier({ onManageSetup, presentation = "browser" }: { onManage
       if (bridge.getAutoDetectEnabled) setAutoDetectEnabled(bridge.getAutoDetectEnabled());
       if (bridge.getDetectorStatus) {
         const status = bridge.getDetectorStatus();
-        if (status === "disabled" || status === "running" || status === "permission-required" || status === "unavailable") {
+        if (status === "disabled" || status === "monitoring" || status === "running" || status === "permission-required" || status === "unavailable") {
           setDetectorStatus(status);
         }
       }

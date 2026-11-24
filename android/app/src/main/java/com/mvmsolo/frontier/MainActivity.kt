@@ -203,8 +203,9 @@ class MainActivity : Activity(), FrontierBridgeHost {
         JSONObject().put("ids", org.json.JSONArray(GameSelectionStore.selectedGameIds(this))).toString()
 
     override fun getDetectorStatus(): String = when {
-        !GameSelectionStore.isAutoDetectEnabled(this) -> "disabled"
         !NativePermissionManager.hasUsageAccess(this) -> "permission-required"
+        !OverlayService.isRunning(this) -> "disabled"
+        !GameSelectionStore.isAutoDetectEnabled(this) -> "monitoring"
         else -> "running"
     }
 
