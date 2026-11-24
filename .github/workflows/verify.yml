@@ -1,0 +1,45 @@
+name: FRONTIER verification
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Format changed UI files
+        run: |
+          bun x prettier --write src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/styles.css
+          bun x prettier --check src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx src/styles.css
+
+      - name: Lint changed UI components
+        run: bun x eslint src/frontier/Frontier.tsx src/frontier/pages.tsx src/frontier/ui.tsx
+
+      - name: Unit tests
+        run: bun run test
+
+      - name: Production build
+        run: bun run build

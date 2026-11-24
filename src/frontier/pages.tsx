@@ -8,8 +8,8 @@ import { Label, Ring, Seg, Slider, Src, Toggle } from "./ui";
 import * as Ic from "./icons";
 import { PRESETS, VoiceEngine, type VoiceParams, type VoicePreset } from "./voice";
 
-export const item = { hidden: { opacity: 0, x: -14 }, show: { opacity: 1, x: 0, transition: { type: "spring" as const, stiffness: 380, damping: 28 } } };
-export const list = { hidden: {}, show: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } } };
+export const item = { hidden: { opacity: 0, y: 11, scale: 0.985 }, show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 360, damping: 27, mass: 0.72 } } };
+export const list = { hidden: {}, show: { transition: { staggerChildren: 0.045, delayChildren: 0.035 } } };
 
 export const MODES: Record<Mode, { name: string; tag: string; color: string; icon: typeof Ic.IHome; target: string; bullets: string[] }> = {
   stealth: { name: "Stealth", tag: "Thermal guard", color: "var(--lime)", icon: Ic.IStealth, target: "45–60", bullets: ["Battery preservation", "Thermal-conscious clocks", "Background activity reduced"] },
@@ -30,25 +30,40 @@ function Wave({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-function useCount(v: number, ms = 900) {
-  const [n, setN] = useState(0); const start = useRef<number | null>(null); const done = useRef(false);
-  useEffect(() => { if (done.current) { setN(v); return; } let raf = 0; const tick = (ts: number) => { start.current ??= ts; const k = Math.min(1, (ts - start.current) / ms); setN(Math.round(v * (1 - Math.pow(1 - k, 3)))); if (k < 1) raf = requestAnimationFrame(tick); else done.current = true; }; raf = requestAnimationFrame(tick); return () => cancelAnimationFrame(raf); }, [v, ms]);
+function useCount(v: number, ms = 280) {
+  const [n, setN] = useState(v);
+  const displayed = useRef(v);
+  useEffect(() => {
+    const from = displayed.current;
+    const startedAt = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const progress = ms <= 0 ? 1 : Math.min(1, (now - startedAt) / ms);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const next = from + (v - from) * eased;
+      displayed.current = next;
+      setN(Math.round(next));
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [v, ms]);
   return n;
 }
 function Card({ children, className, glow = "var(--accent-fx)" }: { children: React.ReactNode; className?: string; glow?: string }) {
   return (
-    <motion.div variants={item} className={cn("relative chamfer p-[1px]", className)} style={{ background: `linear-gradient(135deg, ${glow}, color-mix(in oklab, var(--magenta) 60%, transparent) 55%, color-mix(in oklab, ${glow} 30%, transparent))` }}>
-      <div className="relative chamfer bg-glass-strong p-2.5">{children}</div>
+    <motion.div variants={item} className={cn("frontier-hud-card relative chamfer p-[1px]", className)} style={{ background: `linear-gradient(135deg, ${glow}, color-mix(in oklab, var(--magenta) 60%, transparent) 55%, color-mix(in oklab, ${glow} 30%, transparent))` }}>
+      <div className="frontier-hud-card-surface relative chamfer bg-glass-strong p-2.5">{children}</div>
     </motion.div>
   );
 }
 function BigRing({ value, label, color, unit = "%", max = 100 }: { value: number; label: string; color: string; unit?: string; max?: number }) {
-  const v = useCount(value); const size = 70, r = 29, c = 2 * Math.PI * r, arc = 0.78, pct = Math.min(1, v / max);
+  const v = useCount(value); const size = 66, r = 27, c = 2 * Math.PI * r, arc = 0.78, pct = Math.min(1, v / max);
   return (
-    <div className="relative flex flex-col items-center" style={{ width: size }}>
+    <div className="frontier-hud-ring relative flex flex-col items-center" style={{ width: size }}>
       <svg width={size} height={size} className="rotate-[130deg]">
         <circle cx={35} cy={35} r={r} stroke="var(--line)" strokeWidth="5" fill="none" strokeDasharray={`${c * arc} ${c}`} />
-        <circle cx={35} cy={35} r={r} stroke={color} strokeWidth="5" fill="none" strokeDasharray={`${c * arc * pct} ${c}`} style={{ filter: `drop-shadow(0 0 5px ${color})` }} />
+        <circle cx={35} cy={35} r={r} stroke={color} strokeWidth="5" fill="none" strokeDasharray={`${c * arc * pct} ${c}`} style={{ filter: `drop-shadow(0 0 5px ${color})`, transition: "stroke-dasharray 260ms ease" }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-1"><span className="tnum text-[17px] font-bold leading-none">{v}<span className="text-[10px]">{unit}</span></span><span className="mt-0.5 text-[9px] font-semibold tracking-wider" style={{ color }}>{label}</span></div>
     </div>
@@ -57,7 +72,7 @@ function BigRing({ value, label, color, unit = "%", max = 100 }: { value: number
 function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon: typeof Ic.IHome; label: string; on: boolean; onClick: () => void; color?: string; dot?: boolean }) {
   return (
     <motion.button variants={item} whileTap={{ scale: 0.92 }} onClick={onClick} aria-pressed={on}
-      className="relative flex h-[62px] flex-col items-center justify-center gap-1 chamfer-sm border border-line text-[10px] font-semibold leading-tight transition-colors"
+      className="frontier-quick-tool relative flex h-[66px] flex-col items-center justify-center gap-1.5 chamfer-sm border border-line text-[11px] font-semibold leading-tight transition-colors"
       style={{ color: on ? color : "var(--foreground)", background: on ? `color-mix(in oklab, ${color} 16%, transparent)` : "color-mix(in oklab, var(--foreground) 4%, transparent)", boxShadow: on ? `inset 0 0 14px color-mix(in oklab, ${color} 35%, transparent)` : undefined }}>
       {dot && <span className="fx-pulse absolute right-2 top-1.5 h-1.5 w-1.5 rounded-full bg-crimson" />}
       <span style={{ color, filter: `drop-shadow(0 0 4px ${color})` }}><I width={20} height={20} /></span><span className="text-center">{label}</span>
@@ -67,12 +82,12 @@ function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon:
 const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(--cyan)", hyper: "var(--magenta)", overdrive: "var(--gold)" };
 
 export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void }) {
-  const fps = useCount(t.fps, 700);
+  const fps = useCount(t.fps, 260);
   const [purged, setPurged] = useState(false);
   const tog = (k: keyof ToolState) => () => { (ts[k] ? sfx.toggleOff : sfx.toggleOn)(); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   const purge = () => { sfx.exec(); haptic(20); setPurged(true); setTimeout(() => setPurged(false), 1600); };
   return (
-    <motion.div variants={list} initial="hidden" animate="show" className="space-y-2">
+    <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-home">
       <Card>
         <div className="flex items-center gap-2">
           <div className="shrink-0 leading-none">
@@ -96,7 +111,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
       </Card>
       <Card>
         <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>Performance Mode</div>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="frontier-mode-grid grid grid-cols-2 gap-1.5">
           {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const c = MODE_COL[k]; const od = k === "overdrive"; return (
             <motion.button key={k} whileTap={{ scale: 0.92 }} aria-label={M.name} aria-pressed={on} onClick={() => setMode(k)}
               className={cn("relative flex h-[58px] flex-col items-center justify-center gap-1 overflow-hidden chamfer-sm border text-[9px] font-semibold leading-tight transition-colors", on ? "border-current" : "border-line")}
@@ -109,7 +124,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
       </Card>
       <Card glow="var(--magenta)">
         <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>Quick Tools<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">6 ›</button></div>
-        <motion.div variants={list} className="grid grid-cols-3 gap-1.5">
+        <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5">
           <QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} />
           <QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} />
           <QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} />
@@ -131,12 +146,12 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore }:
 
 export function PerformancePage({ mode, setMode, t, s, upd }: { mode: Mode; setMode: (m: Mode) => void; t: Telemetry; s: Settings; upd: (p: Partial<Settings>) => void }) {
   return (
-    <motion.div variants={list} initial="hidden" animate="show" className="space-y-4">
+    <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-performance">
       <motion.div variants={item}><Label right={<Src k="native" />}>Engine profile</Label></motion.div>
       <div className="space-y-1.5">
         {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const od = k === "overdrive"; return (
           <motion.button variants={item} key={k} onClick={() => setMode(k)} whileTap={{ scale: 0.98 }}
-            className={cn("relative block w-full overflow-hidden chamfer p-3 text-left transition-colors", on ? "bg-foreground/[0.08]" : "bg-foreground/[0.03] hover:bg-foreground/[0.06]")}>
+            className={cn("frontier-mode-card relative block w-full overflow-hidden chamfer p-3 text-left transition-colors", on ? "bg-foreground/[0.08]" : "bg-foreground/[0.03] hover:bg-foreground/[0.06]")}>
             {on && <motion.span layoutId="modebar" className="absolute inset-y-0 left-0 w-[3px]" style={{ background: M.color, boxShadow: `0 0 12px ${M.color}` }} />}
             {on && od && <motion.span initial={{ x: "-100%" }} animate={{ x: "100%" }} transition={{ repeat: Infinity, duration: 1.8, ease: "linear" }} className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-gold/15 to-transparent" />}
             <div className="flex items-center gap-3">
@@ -172,7 +187,7 @@ export type ToolState = { touch: boolean; net: boolean; crosshair: boolean; cros
 
 function Tile({ icon: I, name, on, onClick, src, children, color = "var(--accent-fx)" }: { icon: typeof Ic.IHome; name: string; on: boolean; onClick: () => void; src: "live" | "sim" | "native"; children?: React.ReactNode; color?: string }) {
   return (
-    <motion.div variants={item} className={cn("relative chamfer bg-foreground/[0.03] p-2.5 transition-colors", on && "bg-foreground/[0.08]")}>
+    <motion.div variants={item} className={cn("frontier-tool-tile relative chamfer bg-foreground/[0.03] p-2.5 transition-colors", on && "bg-foreground/[0.08]")}>
       <button onClick={onClick} aria-pressed={on} className="flex w-full items-center gap-2.5 text-left">
         <span className="relative flex h-8 w-8 items-center justify-center" style={{ color: on ? color : "var(--muted-foreground)" }}>
           <svg viewBox="0 0 32 32" className="absolute inset-0"><path d="M6 1h25v25l-5 5H1V6z" fill="none" stroke="currentColor" strokeOpacity={on ? 0.7 : 0.25} /></svg>
@@ -191,7 +206,7 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
   const runPurge = () => { if (purge === "run") return; sfx.exec(); haptic(20); setPurge("run"); setTimeout(() => { setFreed(Math.round(300 + Math.random() * 900)); setPurge("done"); }, 1400); };
   const tog = (k: keyof ToolState) => () => { (ts[k] ? sfx.toggleOff : sfx.toggleOn)(); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
   return (
-    <motion.div variants={list} initial="hidden" animate="show" className="space-y-1.5">
+    <motion.div variants={list} initial="hidden" animate="show" className="space-y-1.5 frontier-page frontier-page-tools">
       <motion.div variants={item}><Label>Tactical tools</Label></motion.div>
       <Tile icon={Ic.IRam} name="RAM Purge" on={purge !== "idle"} onClick={runPurge} src="sim" color="var(--lime)">
         <AnimatePresence>{purge !== "idle" && <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="overflow-hidden pt-2">
@@ -236,7 +251,7 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
   };
   const pick = (v: VoicePreset) => setP((o) => ({ ...o, preset: v, ...(v === "off" ? {} : PRESETS[v]) }));
   return (
-    <motion.div variants={list} initial="hidden" animate="show" className="space-y-4">
+    <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-voice">
       <motion.div variants={item} className="flex items-center gap-3">
         <button onClick={toggle} aria-pressed={live} className={cn("relative flex h-14 w-14 items-center justify-center chamfer transition-colors", live ? "bg-crimson/25 text-crimson" : "bg-foreground/5 text-muted-foreground")}>
           <Ic.IVoice width={24} height={24} />{live && <span className="fx-pulse absolute right-1.5 top-1.5 h-1.5 w-1.5 bg-crimson" />}
@@ -247,7 +262,7 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
         </div>
       </motion.div>
       {err && <div className="text-[10px] text-crimson">{err}</div>}
-      <motion.div variants={item} ref={bars} className="flex h-10 items-center gap-[3px]">
+      <motion.div variants={item} ref={bars} className="frontier-voice-wave flex h-12 items-center gap-[3px]">
         {Array.from({ length: 24 }).map((_, i) => <span key={i} className="h-full flex-1 origin-center bg-fx" style={{ transform: "scaleY(.06)", opacity: 0.4 + (i / 24) * 0.6 }} />)}
       </motion.div>
       <motion.div variants={item}><Label>Presets</Label>
@@ -270,25 +285,25 @@ export function VoicePage({ engine }: { engine: React.MutableRefObject<VoiceEngi
 export function SettingsPage({ s, upd }: { s: Settings; upd: (p: Partial<Settings>) => void }) {
   const accents = [["cyan", "var(--cyan)"], ["lime", "var(--lime)"], ["crimson", "var(--crimson)"], ["gold", "var(--gold)"]] as const;
   return (
-    <motion.div variants={list} initial="hidden" animate="show" className="space-y-4">
+    <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-settings">
       <motion.div variants={item}><Label>Lighting</Label>
         <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { sfx.nav(); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>
       </motion.div>
-      <motion.div variants={item} className="space-y-3"><Label>Interface</Label>
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Interface</Label>
         <Slider label="Animation intensity" min={0} max={2} step={0.5} value={s.motion} onChange={(v) => upd({ motion: v })} unit="×" />
         <Slider label="Panel opacity" min={0.6} max={1} step={0.05} value={s.opacity} onChange={(v) => upd({ opacity: v })} />
         <div className="flex items-center justify-between text-[12px]"><span>Mini FPS when closed</span><Toggle label="Mini FPS" on={s.miniFps} onChange={(v) => upd({ miniFps: v })} /></div>
       </motion.div>
-      <motion.div variants={item} className="space-y-3"><Label>Sound & haptics</Label>
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Sound & haptics</Label>
         <div className="flex items-center justify-between text-[12px]"><span>Interface sounds</span><Toggle label="Sounds" on={s.sound} onChange={(v) => upd({ sound: v })} /></div>
         <Slider label="Volume" min={0} max={1} step={0.05} value={s.volume} onChange={(v) => upd({ volume: v })} />
         <div className="flex items-center justify-between text-[12px]"><span>Haptic feedback</span><Toggle label="Haptics" on={s.haptics} onChange={(v) => upd({ haptics: v })} /></div>
       </motion.div>
-      <motion.div variants={item} className="space-y-3"><Label>Gestures & overlay</Label>
+      <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>Gestures & overlay</Label>
         <Slider label="Edge swipe distance" min={20} max={90} step={5} value={s.edgeSensitivity} onChange={(v) => upd({ edgeSensitivity: v })} unit="px" />
         <Seg label="Auto-hide" value={s.autoHide} onChange={(v) => upd({ autoHide: v })} options={[{ v: 0, l: "Never" }, { v: 5, l: "5s" }, { v: 10, l: "10s" }, { v: 20, l: "20s" }]} />
       </motion.div>
-      <motion.div variants={item} className="space-y-2"><Label>Performance preference</Label>
+      <motion.div variants={item} className="frontier-settings-group space-y-2"><Label>Performance preference</Label>
         <Seg label="Launch profile" value={s.startMode} onChange={(v) => upd({ startMode: v })} options={(Object.keys(MODES) as Mode[]).map((m) => ({ v: m, l: MODES[m].name.split(" ")[0]! }))} />
       </motion.div>
     </motion.div>

@@ -61,6 +61,7 @@ export function Frontier() {
   const [s, upd] = useSettings();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("home");
+  const [activeWing, setActiveWing] = useState<"core" | "nexus">("core");
   const [mode, setModeRaw] = useState<Mode>("balanced");
   const [activating, setActivating] = useState(false);
   const t = useTelemetry(mode, Infinity);
@@ -130,7 +131,7 @@ export function Frontier() {
   const od = mode === "overdrive"; const M = MODES[mode];
 
   return (
-    <MotionConfig reducedMotion={s.motion === 0 ? "always" : "never"} transition={{ ...SPRING, stiffness: 380 * Math.max(0.5, s.motion) }}>
+    <MotionConfig reducedMotion={s.motion === 0 ? "always" : "user"} transition={{ ...SPRING, stiffness: 380 * Math.max(0.5, s.motion) }}>
       <div className="frontier-app fixed inset-0 select-none overflow-hidden text-foreground" data-panel-open={open} style={{ touchAction: ts.touch ? "none" : "manipulation" }}>
         <GameScene overdrive={od} />
         {ts.crosshair && <Crosshair style={ts.crossStyle} color={ts.crossColor} />}
@@ -179,13 +180,14 @@ export function Frontier() {
                     </motion.button>
                   );
                 })}
+                <button type="button" className="frontier-wing-switch" onClick={() => setActiveWing((wing) => wing === "core" ? "nexus" : "core")} aria-label={`Switch to ${activeWing === "core" ? "Nexus" : "Core"} panel`}><span>{activeWing === "core" ? "CORE" : "NEXUS"}</span><span aria-hidden>⇄</span></button>
                 <div className="frontier-dock-fps border-l border-line px-3 text-right">
                   <div className="tnum text-[13px] font-bold" style={{ color: M.color }}>{t.fps}</div><div className="font-display text-[7px] tracking-widest text-muted-foreground">FPS</div>
                 </div>
                 <button onClick={doClose} aria-label="Minimize FRONTIER" title="Minimize FRONTIER (Esc)" className="flex h-8 w-8 items-center justify-center chamfer-sm border border-magenta/30 text-magenta transition-colors hover:bg-magenta/10"><Ic.IMin width={16} height={16} /></button>
               </motion.nav>
 
-              <motion.section aria-label="FRONTIER Core controls" className="frontier-wing frontier-wing-left absolute bottom-3 left-3 top-[68px] flex min-h-0 flex-col overflow-hidden"
+              <motion.section aria-label="FRONTIER Core controls" className={cn("frontier-wing frontier-wing-left absolute bottom-3 left-3 top-[68px] flex min-h-0 flex-col overflow-hidden", activeWing === "core" && "frontier-wing-active")}
                 variants={{ closed: { opacity: 0, x: -34, scaleX: 0.96 }, open: { opacity: 1, x: 0, scaleX: 1, transition: { ...SPRING, delay: 0.05 } } }} style={{ transformOrigin: "left center" }}>
                 <div className="frontier-wing-surface absolute inset-0 chamfer border border-cyan/45 bg-glass shadow-[0_0_28px_color-mix(in_oklab,var(--cyan)_13%,transparent),inset_0 0 34px color-mix(in_oklab,var(--cyan)_7%,transparent)]" style={{ opacity: s.opacity }} />
                 <motion.span key={`left-scan-${tab}`} initial={{ top: "0%", opacity: 0.9 }} animate={{ top: "100%", opacity: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} className="pointer-events-none absolute inset-x-0 z-20 h-[2px] bg-cyan shadow-[0_0_14px_3px_var(--cyan)]" />
@@ -200,7 +202,7 @@ export function Frontier() {
                 </div>
                 <div className="frontier-page-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-width:none]">
                   <AnimatePresence mode="wait">
-                    <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8, transition: { duration: 0.12 } }}>
+                    <motion.div key={tab} initial={{ opacity: 0, y: 10, scale: 0.992 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.996, transition: { duration: 0.16, ease: "easeOut" } }} transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}>
                       {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); sfx.nav(); }} />}
                       {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} />}
                       {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); sfx.nav(); }} />}
@@ -211,7 +213,7 @@ export function Frontier() {
                 </div>
               </motion.section>
 
-              <motion.aside aria-label="FRONTIER Nexus quick intelligence" className="frontier-wing frontier-wing-right absolute bottom-3 right-3 top-[68px] flex min-h-0 flex-col overflow-hidden"
+              <motion.aside aria-label="FRONTIER Nexus quick intelligence" className={cn("frontier-wing frontier-wing-right absolute bottom-3 right-3 top-[68px] flex min-h-0 flex-col overflow-hidden", activeWing === "nexus" && "frontier-wing-active")}
                 variants={{ closed: { opacity: 0, x: 34, scaleX: 0.96 }, open: { opacity: 1, x: 0, scaleX: 1, transition: { ...SPRING, delay: 0.1 } } }} style={{ transformOrigin: "right center" }}>
                 <div className="frontier-wing-surface frontier-nexus-surface absolute inset-0 chamfer border border-magenta/45 bg-glass shadow-[0_0_28px_color-mix(in_oklab,var(--magenta)_13%,transparent),inset_0 0 34px color-mix(in_oklab,var(--magenta)_7%,transparent)]" style={{ opacity: s.opacity }} />
                 <motion.span key={`right-scan-${tab}`} initial={{ top: "100%", opacity: 0.8 }} animate={{ top: "0%", opacity: 0 }} transition={{ duration: 0.85, ease: "easeOut" }} className="pointer-events-none absolute inset-x-0 z-20 h-[2px] bg-magenta shadow-[0_0_14px_3px_var(--magenta)]" />

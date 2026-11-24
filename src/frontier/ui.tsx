@@ -5,15 +5,15 @@ import { sfx, haptic } from "./audio";
 
 export function Src({ k }: { k: "live" | "sim" | "native" }) {
   const map = { live: ["LIVE", "text-lime"], sim: ["SIM", "text-gold"], native: ["NATIVE", "text-crimson"] } as const;
-  return <span className={cn("tnum rounded-[2px] border border-current/40 px-1 text-[8px] leading-[14px] tracking-widest", map[k][1])} title={k === "live" ? "Real device/browser data" : k === "sim" ? "Simulated: no web API exists" : "Requires FRONTIER Android native bridge"}>{map[k][0]}</span>;
+  return <span className={cn("frontier-source-badge tnum rounded-[2px] border border-current/40 px-1 text-[8px] leading-[14px] tracking-widest", map[k][1])} title={k === "live" ? "Real device/browser data" : k === "sim" ? "Simulated: no web API exists" : "Requires FRONTIER Android native bridge"}>{map[k][0]}</span>;
 }
 export function Label({ children, right }: { children: ReactNode; right?: ReactNode }) {
-  return <div className="mb-2 flex items-center gap-2"><span className="h-px w-3 bg-fx" /><span className="font-display text-[9px] uppercase tracking-[0.25em] text-muted-foreground">{children}</span><span className="h-px flex-1 bg-line" />{right}</div>;
+  return <div className="frontier-section-label mb-2 flex items-center gap-2"><span className="h-px w-3 bg-fx" /><span className="font-display text-[9px] uppercase tracking-[0.25em] text-muted-foreground">{children}</span><span className="h-px flex-1 bg-line" />{right}</div>;
 }
 export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <button aria-label={label} aria-pressed={on} onClick={() => { (on ? sfx.toggleOff : sfx.toggleOn)(); haptic(); onChange(!on); }}
-      className={cn("relative h-5 w-10 shrink-0 chamfer-sm transition-colors", on ? "bg-fx/25" : "bg-foreground/10")}>
+      className={cn("frontier-toggle relative h-5 w-10 shrink-0 chamfer-sm transition-colors", on ? "bg-fx/25" : "bg-foreground/10")}>
       <motion.span layout transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={cn("absolute top-1 h-3 w-4 chamfer-sm", on ? "right-1 bg-fx shadow-[0_0_10px_var(--accent-fx)]" : "left-1 bg-muted-foreground")} />
     </button>
@@ -22,7 +22,7 @@ export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boo
 export function Slider({ value, min, max, step = 1, onChange, label, unit = "" }: { value: number; min: number; max: number; step?: number; onChange: (v: number) => void; label: string; unit?: string }) {
   const pct = ((value - min) / (max - min)) * 100;
   return (
-    <label className="block">
+    <label className="frontier-slider block">
       <div className="mb-1 flex justify-between text-[11px] text-muted-foreground"><span>{label}</span><span className="tnum text-foreground">{value}{unit}</span></div>
       <div className="relative h-5">
         <div className="absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 bg-foreground/10" />
