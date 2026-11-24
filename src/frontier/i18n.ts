@@ -242,7 +242,8 @@ const RU: Record<string, string> = {
   "DISABLED · TOUCH SAFETY": "ОТКЛЮЧЕНО · ЗАЩИТА УПРАВЛЕНИЯ",
   "SYSTEM PERMISSIONS": "СИСТЕМНЫЕ РАЗРЕШЕНИЯ",
   " of 3 system permissions granted on this device.": " из 3 системных разрешений предоставлено на этом устройстве.",
-  " SUPPORTED GAMES FOUND — installed titles are marked in the catalog.": " ПОДДЕРЖИВАЕМЫХ ИГР НАЙДЕНО — установленные игры отмечены в каталоге."
+  " SUPPORTED GAMES FOUND — installed titles are marked in the catalog.": " ПОДДЕРЖИВАЕМЫХ ИГР НАЙДЕНО — установленные игры отмечены в каталоге.",
+  "Configure your game library and review the system capabilities FRONTIER can use on this device.": "Настройте библиотеку игр и проверьте системные возможности, доступные FRONTIER на этом устройстве."
 };
 
 export function tr(language: FrontierLanguage, value: string): string {
