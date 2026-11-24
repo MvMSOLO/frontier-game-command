@@ -122,8 +122,11 @@ class OverlayService : Service(), FrontierBridgeHost {
         }
         val displayWidth = metrics.width()
         val displayHeight = metrics.height()
-        val width = if (expanded) minOf(dp(390), (displayWidth * 0.78f).toInt(), displayWidth - dp(24)).coerceAtLeast(dp(250)) else dp(38)
-        val height = if (expanded) minOf((displayHeight * 0.9f).toInt(), displayHeight - dp(24)).coerceAtLeast(dp(300)) else dp(132)
+        val density = resources.displayMetrics.density
+        val width = if (expanded) OverlayWindowSizing.expandedWidth(displayWidth, density)
+            else OverlayWindowSizing.collapsedWidth(displayWidth, density)
+        val height = if (expanded) OverlayWindowSizing.expandedHeight(displayHeight, density)
+            else OverlayWindowSizing.collapsedHeight(displayHeight, density)
         return WindowManager.LayoutParams(width, height, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT).apply { gravity = Gravity.START or Gravity.CENTER_VERTICAL; x = 0; y = 0 }
