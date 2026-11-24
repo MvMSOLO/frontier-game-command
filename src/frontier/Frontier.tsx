@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useMotionValue, useTransform, MotionConfig } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { haptic, playSfx, setHaptics, setSound, type SfxEvent } from "./audio";
 import { useTelemetry, type Mode } from "./telemetry";
