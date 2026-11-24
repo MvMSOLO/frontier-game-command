@@ -164,11 +164,11 @@ export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = fal
               </motion.ul>)}</AnimatePresence>}
           </motion.button>); })}
       </div>
-      <motion.div variants={item} className="space-y-3">
+{!androidOverlay ? <motion.div variants={item} className="space-y-3">
         <Label right={<Src k="native" />}>{tr(s.language, "Display")}</Label>
         <Seg label={tr(s.language, "Refresh rate")} value={s.refresh} onChange={(v) => upd({ refresh: v })} options={[60, 90, 120, 144].map((v) => ({ v, l: `${v}Hz` }))} />
         <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Frame pacing lock")}</span><Toggle label={tr(s.language, "Frame pacing")} on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
-      </motion.div>
+      </motion.div> : <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">Android overlay profiles only affect FRONTIER presentation. Display refresh-rate and game frame-pacing controls require OEM or privileged APIs and are not exposed as active toggles.</motion.div>}
       {!androidOverlay && <motion.div variants={item}>
         <Label right={<Src k="sim" />}>{tr(s.language, "Thermal envelope")}</Label>
         <div className="relative h-2 bg-gradient-to-r from-lime via-gold to-crimson opacity-80 chamfer-sm" />
