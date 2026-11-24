@@ -8,6 +8,7 @@ export interface FrontierAndroidBridge {
   startOverlay?(): boolean;
   minimizeOverlay?(): void;
   expandOverlay?(): void;
+  setLanguage?(language: string): void;
   setSelectedGames?(ids: string): void;
   setAutoDetectEnabled?(enabled: boolean): void;
   launchGame?(gameId: string): boolean;

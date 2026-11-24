@@ -2,6 +2,7 @@ package com.mvmsolo.frontier
 
 import android.app.Activity
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -13,10 +14,14 @@ import android.webkit.WebView
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import java.util.Locale
 
 class MainActivity : Activity(), FrontierBridgeHost {
     private lateinit var webView: WebView
     private lateinit var statusLabel: TextView
+    private lateinit var brandLabel: TextView
+    private lateinit var startButton: Button
+    private lateinit var stopButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +41,7 @@ class MainActivity : Activity(), FrontierBridgeHost {
                 intArrayOf(Color.rgb(13, 29, 43), Color.rgb(7, 12, 20)),
             )
         }
-        val brand = TextView(this).apply {
+        brandLabel = TextView(this).apply {
             text = "FRONTIER  /  ANDROID CORE"
             setTextColor(Color.rgb(109, 226, 248))
             textSize = 10f
@@ -49,15 +54,15 @@ class MainActivity : Activity(), FrontierBridgeHost {
             typeface = Typeface.MONOSPACE
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
         }
-        val startButton = toolbarButton("START LEFT OVERLAY")
-        val stopButton = toolbarButton("STOP")
+        startButton = toolbarButton(getString(R.string.start_overlay))
+        stopButton = toolbarButton(getString(R.string.stop_overlay))
         startButton.setOnClickListener {
             if (Settings.canDrawOverlays(this)) startOverlay()
             else NativePermissionManager.openSettings(this, NativePermissionManager.OVERLAY)
         }
         stopButton.setOnClickListener { stopOverlay() }
 
-        toolbar.addView(brand, LinearLayout.LayoutParams(0, dp(36), 1f))
+        toolbar.addView(brandLabel, LinearLayout.LayoutParams(0, dp(36), 1f))
         toolbar.addView(statusLabel, LinearLayout.LayoutParams(dp(92), dp(36)))
         toolbar.addView(startButton, LinearLayout.LayoutParams(dp(122), dp(36)).apply { leftMargin = dp(6) })
         toolbar.addView(stopButton, LinearLayout.LayoutParams(dp(54), dp(36)).apply { leftMargin = dp(6) })
@@ -90,6 +95,7 @@ class MainActivity : Activity(), FrontierBridgeHost {
     override fun onResume() {
         super.onResume()
         if (::webView.isInitialized) {
+            applyNativeLanguage()
             refreshPermissionLabel()
             webView.evaluateJavascript("window.dispatchEvent(new Event('focus'));", null)
         }
@@ -127,9 +133,25 @@ class MainActivity : Activity(), FrontierBridgeHost {
         stopService(Intent(this, OverlayService::class.java))
     }
 
+    private fun localizedContext(): Context {
+        val language = getSharedPreferences(OverlayService.PREFS_NAME, MODE_PRIVATE).getString(OverlayService.KEY_LANGUAGE, "en") ?: "en"
+        val configuration = Configuration(resources.configuration)
+        configuration.setLocale(Locale.forLanguageTag(language))
+        return createConfigurationContext(configuration)
+    }
+
+    private fun applyNativeLanguage() {
+        if (!::brandLabel.isInitialized) return
+        val localized = localizedContext()
+        brandLabel.text = localized.getString(R.string.native_brand)
+        startButton.text = localized.getString(R.string.start_overlay)
+        stopButton.text = localized.getString(R.string.stop_overlay)
+    }
+
     private fun refreshPermissionLabel() {
         if (!::statusLabel.isInitialized) return
-        statusLabel.text = if (Settings.canDrawOverlays(this)) "OVERLAY READY" else "OVERLAY ACCESS NEEDED"
+        val localized = localizedContext()
+        statusLabel.text = if (Settings.canDrawOverlays(this)) localized.getString(R.string.overlay_ready) else localized.getString(R.string.overlay_access_needed)
     }
 
     private fun toolbarButton(label: String) = Button(this).apply {

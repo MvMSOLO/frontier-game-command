@@ -37,6 +37,14 @@ class FrontierJavascriptBridge(private val context: Context, private val host: F
     }
 
     @JavascriptInterface
+    fun setLanguage(language: String) {
+        val safeLanguage = if (language == "ru") "ru" else "en"
+        context.getSharedPreferences(OverlayService.PREFS_NAME, Context.MODE_PRIVATE).edit()
+            .putString(OverlayService.KEY_LANGUAGE, safeLanguage).apply()
+        try { context.startService(android.content.Intent(context, OverlayService::class.java).setAction(OverlayService.ACTION_UPDATE_LANGUAGE)) } catch (_: Exception) { }
+    }
+
+    @JavascriptInterface
     fun setSelectedGames(encodedIds: String) {
         val ids = try { JSONArray(encodedIds).let { array -> (0 until array.length()).mapNotNull { array.optString(it).takeIf(String::isNotBlank) }.toSet() } }
         catch (_: Exception) { emptySet() }

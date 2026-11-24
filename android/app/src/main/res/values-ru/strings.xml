@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">FRONTIER</string>
+    <string name="native_brand">FRONTIER  /  ЯДРО ANDROID</string>
+    <string name="start_overlay">ЗАПУСТИТЬ ОВЕРЛЕЙ</string>
+    <string name="stop_overlay">СТОП</string>
+    <string name="overlay_ready">ОВЕРЛЕЙ ГОТОВ</string>
+    <string name="overlay_access_needed">НУЖЕН ДОСТУП К ОВЕРЛЕЮ</string>
+    <string name="notification_listener_label">Доступ FRONTIER к уведомлениям</string>
+    <string name="overlay_channel_name">Оверлей FRONTIER</string>
+    <string name="overlay_notification_title">FRONTIER активен</string>
+    <string name="overlay_notification_text">Игровое управление доступно у левого края.</string>
+</resources>

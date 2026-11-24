@@ -77,7 +77,7 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
   }, [androidOverlay]);
   const shieldRef = useRef(ts.shield); shieldRef.current = ts.shield;
 
-  useEffect(() => { applyLanguage(s.language); }, [s.language]);
+  useEffect(() => { applyLanguage(s.language); window.FrontierAndroid?.setLanguage?.(s.language); }, [s.language]);
   useEffect(() => { window.FrontierAndroid?.setAutoDetectEnabled?.(s.autoDetect); }, [s.autoDetect]);
   useEffect(() => { window.FrontierAndroid?.setZeroDistractionEnabled?.(s.zeroDistraction); }, [s.zeroDistraction]);
   useEffect(() => { setSound(s.sound, s.volume); setHaptics(s.haptics); document.documentElement.style.setProperty("--accent-fx", `var(--${s.accent})`); }, [s.sound, s.volume, s.haptics, s.accent]);

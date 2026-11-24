@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.res.Configuration
+import java.util.Locale
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Color
@@ -57,6 +58,7 @@ class OverlayService : Service(), FrontierBridgeHost {
             ACTION_MINIMIZE -> setExpanded(false)
             ACTION_EXPAND -> setExpanded(true)
             ACTION_STOP -> stopSelf()
+            ACTION_UPDATE_LANGUAGE -> createNotificationChannel()
             else -> setExpanded(true)
         }
         return START_NOT_STICKY
@@ -173,8 +175,8 @@ class OverlayService : Service(), FrontierBridgeHost {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, getString(R.string.overlay_channel_name), NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Status for the user-enabled FRONTIER game overlay."
+            NotificationChannel(CHANNEL_ID, localizedContext().getString(R.string.overlay_channel_name), NotificationManager.IMPORTANCE_LOW).apply {
+                description = localizedContext().getString(R.string.overlay_notification_text)
                 setShowBadge(false)
             })
     }
@@ -188,9 +190,16 @@ class OverlayService : Service(), FrontierBridgeHost {
             Notification.Builder(this)
         }
         return builder.setSmallIcon(android.R.drawable.ic_menu_view)
-            .setContentTitle(getString(R.string.overlay_notification_title))
-            .setContentText(getString(R.string.overlay_notification_text))
+            .setContentTitle(localizedContext().getString(R.string.overlay_notification_title))
+            .setContentText(localizedContext().getString(R.string.overlay_notification_text))
             .setContentIntent(pendingIntent).setOngoing(true).setCategory(Notification.CATEGORY_SERVICE).build()
+    }
+
+    private fun localizedContext(): Context {
+        val language = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getString(KEY_LANGUAGE, "en") ?: "en"
+        val configuration = Configuration(resources.configuration)
+        configuration.setLocale(Locale.forLanguageTag(language))
+        return createConfigurationContext(configuration)
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
@@ -199,9 +208,11 @@ class OverlayService : Service(), FrontierBridgeHost {
         const val ACTION_MINIMIZE = "com.mvmsolo.frontier.action.MINIMIZE"
         const val ACTION_EXPAND = "com.mvmsolo.frontier.action.EXPAND"
         const val ACTION_STOP = "com.mvmsolo.frontier.action.STOP"
+        const val ACTION_UPDATE_LANGUAGE = "com.mvmsolo.frontier.action.UPDATE_LANGUAGE"
         const val PREFS_NAME = "frontier_native"
         const val KEY_SELECTED_GAMES = "selected_game_ids"
         const val KEY_AUTO_DETECT = "auto_detect"
+        const val KEY_LANGUAGE = "language"
         private const val CHANNEL_ID = "frontier_overlay"
         private const val NOTIFICATION_ID = 6041
         fun start(context: Context) {
