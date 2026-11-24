@@ -11,11 +11,17 @@ object GameSelectionCodec {
 
         val tokens = body.split(',')
         if (tokens.any { token ->
-                !token.trim().matches(Regex("\\"[a-z0-9-]+\\""))
+                val value = token.trim()
+                value.length < 3 ||
+                    value.first() != '"' ||
+                    value.last() != '"' ||
+                    !value.substring(1, value.length - 1).all { ch ->
+                        ch in 'a'..'z' || ch in '0'..'9' || ch == '-'
+                    }
             }) return emptySet()
 
         return tokens
-            .map { it.trim().removeSurrounding("\\\"") }
+            .map { it.trim().removeSurrounding("\"") }
             .filter { it in allowed }
             .toSet()
     }
