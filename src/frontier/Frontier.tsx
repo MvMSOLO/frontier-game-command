@@ -116,12 +116,12 @@ export function Frontier() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, closePanel]);
   const setMode = (m: Mode) => {
-    if (m === mode) return; setModeRaw(m); haptic(m === "overdrive" ? [20, 40, 20, 40, 60] as unknown as number : 12);
+    if (m === mode) return; setModeRaw(m); haptic(m === "overdrive" ? [20, 40, 20, 40, 60] : 12);
     playSfx(MODE_SFX[m]);
     if (m === "overdrive") { setActivating(true); setTimeout(() => setActivating(false), 1300); }
   };
 
-  const stopRec = () => { const r = rec.current; if (!r) return; playSfx("capture-stop"); if (r.mr.state !== "inactive") r.mr.stop(); r.stream.getTracks().forEach((x) => x.stop()); rec.current = null; setTs({ recording: false, replay: false }); };
+  const stopRec = () => { const r = rec.current; if (!r) return; rec.current = null; playSfx("capture-stop"); if (r.mr.state !== "inactive") r.mr.stop(); r.stream.getTracks().forEach((x) => x.stop()); setTs({ recording: false, replay: false }); };
   const download = (chunks: Blob[], name: string) => { const url = URL.createObjectURL(new Blob(chunks, { type: "video/webm" })); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 2000); };
   const startCapture = async (kind: "rec" | "replay") => {
     setRecErr(null);
