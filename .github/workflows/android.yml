@@ -88,6 +88,14 @@ jobs:
       - name: Run native unit tests and assemble debug APK
         run: gradle -p android --no-daemon :app:testDebugUnitTest :app:assembleDebug
 
+      - name: Upload debug APK (available even if emulator smoke test fails)
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontier-android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Android emulator launch and rotation smoke test
         uses: reactivecircus/android-emulator-runner@v2
         with:
