@@ -1,15 +1,31 @@
 package com.mvmsolo.frontier
 
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import java.io.ByteArrayInputStream
 
-class LocalAssetWebViewClient(private val onPageFinished: (() -> Unit)? = null) : WebViewClient() {
+class LocalAssetWebViewClient(
+    private val onPageFinished: (() -> Unit)? = null,
+    private val onPageError: ((String) -> Unit)? = null,
+) : WebViewClient() {
     override fun onPageFinished(view: WebView?, url: String?) {
         super.onPageFinished(view, url)
         onPageFinished?.invoke()
+    }
+
+    override fun onReceivedError(view: WebView?, request: WebResourceRequest, error: WebResourceError) {
+        super.onReceivedError(view, request, error)
+        if (request.isForMainFrame) onPageError?.invoke(error.description?.toString() ?: "Local page load failed")
+    }
+
+    override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest, errorResponse: WebResourceResponse) {
+        super.onReceivedHttpError(view, request, errorResponse)
+        if (request.isForMainFrame && errorResponse.statusCode >= 400) {
+            onPageError?.invoke("Local page returned HTTP ${errorResponse.statusCode}")
+        }
     }
 
     override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest): WebResourceResponse? {
@@ -31,7 +47,7 @@ class LocalAssetWebViewClient(private val onPageFinished: (() -> Unit)? = null) 
     }
 
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest): Boolean =
-        request.url.host != LOCAL_HOST
+        request.url.scheme != "https" || request.url.host != LOCAL_HOST
 
     private fun mimeType(path: String): String = when (path.substringAfterLast('.', "").lowercase()) {
         "html" -> "text/html"
