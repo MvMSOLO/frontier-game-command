@@ -217,7 +217,7 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
               <motion.nav id="frontier-navigation" aria-label="FRONTIER main navigation" className="frontier-command-dock absolute left-1/2 top-2 z-40 flex -translate-x-1/2 items-center gap-1.5 border border-cyan/30 bg-obsidian/90 p-1.5 shadow-[0_0_32px_color-mix(in_oklab,var(--cyan)_16%,transparent)] backdrop-blur-xl"
                 variants={{ closed: { opacity: 0, y: -18, scale: 0.96 }, open: { opacity: 1, y: 0, scale: 1, transition: { ...SPRING, staggerChildren: 0.045, delayChildren: 0.06 } } }}>
                 <div className="frontier-dock-brand flex items-center gap-2 border-r border-line px-3">
-                  <span className="flex h-8 w-8 items-center justify-center chamfer-sm border border-magenta/50 bg-magenta/10 text-magenta"><Ic.ILogo width={20} height={20} /></span>
+                  <span className="flex h-8 w-8 items-center justify-center chamfer-sm border border-cyan/50 bg-obsidian/80 p-0.5 shadow-[0_0_14px_color-mix(in_oklab,var(--cyan)_24%,transparent)]"><img src="/frontier-logo.png" alt="FRONTIER" className="h-full w-full object-contain" /></span>
                   <span className="font-display text-[11px] italic tracking-[0.12em]">FRONT<span className="bg-gradient-to-r from-cyan to-magenta bg-clip-text text-transparent">IER</span></span>
                   <span className="fx-pulse h-1.5 w-1.5 rounded-full bg-lime" />
                 </div>
