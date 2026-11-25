@@ -165,7 +165,7 @@ export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = fal
               <span className="flex h-9 w-9 items-center justify-center chamfer-sm" style={{ color: M.color, background: `color-mix(in oklab, ${M.color} ${on ? 18 : 6}%, transparent)` }}><M.icon /></span>
               <div className="flex-1">
                 <div className={cn("text-[13px] font-semibold", od && "font-display text-[11px] tracking-widest")} style={{ color: on ? M.color : undefined }}>{od ? "FRONTIER OVERDRIVE" : M.name}</div>
-                <div className="text-[10px] text-muted-foreground">{androidOverlay ? "{tr(s.language, "FRONTIER overlay presentation profile · no game tuning")}" : <>{M.tag} · target <span className="tnum">{M.target}</span> fps</>}</div>
+                <div className="text-[10px] text-muted-foreground">{androidOverlay ? tr(s.language, "FRONTIER overlay presentation profile · no game tuning") : <>{M.tag} · target <span className="tnum">{M.target}</span> fps</>}</div>
               </div>
               <span className={cn("h-2 w-2 rotate-45", on ? "fx-pulse" : "opacity-20")} style={{ background: od && on ? "var(--gold)" : M.color }} />
             </div>
