@@ -165,7 +165,7 @@ export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = fal
               <span className="flex h-9 w-9 items-center justify-center chamfer-sm" style={{ color: M.color, background: `color-mix(in oklab, ${M.color} ${on ? 18 : 6}%, transparent)` }}><M.icon /></span>
               <div className="flex-1">
                 <div className={cn("text-[13px] font-semibold", od && "font-display text-[11px] tracking-widest")} style={{ color: on ? M.color : undefined }}>{od ? "FRONTIER OVERDRIVE" : M.name}</div>
-                <div className="text-[10px] text-muted-foreground">{androidOverlay ? "FRONTIER overlay presentation profile · no game tuning" : <>{M.tag} · target <span className="tnum">{M.target}</span> fps</>}</div>
+                <div className="text-[10px] text-muted-foreground">{androidOverlay ? tr(s.language, "FRONTIER overlay presentation profile · no game tuning") : <>{M.tag} · target <span className="tnum">{M.target}</span> fps</>}</div>
               </div>
               <span className={cn("h-2 w-2 rotate-45", on ? "fx-pulse" : "opacity-20")} style={{ background: od && on ? "var(--gold)" : M.color }} />
             </div>
@@ -179,14 +179,14 @@ export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = fal
         <Label right={<Src k="native" />}>{tr(s.language, "Display")}</Label>
         <Seg label={tr(s.language, "Refresh rate")} value={s.refresh} onChange={(v) => upd({ refresh: v })} options={[60, 90, 120, 144].map((v) => ({ v, l: `${v}Hz` }))} />
         <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Frame pacing lock")}</span><Toggle label={tr(s.language, "Frame pacing")} on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
-      </motion.div> : <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">Android overlay profiles only affect FRONTIER presentation. Display refresh-rate and game frame-pacing controls require OEM or privileged APIs and are not exposed as active toggles.</motion.div>}
+      </motion.div> : <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">{tr(s.language, "Android overlay profiles only affect FRONTIER presentation. Display refresh-rate and game frame-pacing controls require OEM or privileged APIs and are not exposed as active toggles.")}</motion.div>}
       {!androidOverlay && <motion.div variants={item}>
         <Label right={<Src k="sim" />}>{tr(s.language, "Thermal envelope")}</Label>
         <div className="relative h-2 bg-gradient-to-r from-lime via-gold to-crimson opacity-80 chamfer-sm" />
         <div className="relative h-3"><motion.span animate={{ left: `${Math.min(100, ((t.temp - 25) / 30) * 100)}%` }} className="absolute top-0 h-3 w-[2px] bg-foreground" /></div>
         <div className="tnum flex justify-between text-[9px] text-muted-foreground"><span>25°</span><span>{t.temp}°C</span><span>55°</span></div>
       </motion.div>}
-      {androidOverlay && <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">FRONTIER profiles adjust the overlay experience only. Game FPS, GPU clocks and per-game thermal readings require OEM or privileged integrations.</motion.div>}
+      {androidOverlay && <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">{tr(s.language, "FRONTIER profiles adjust the overlay experience only. Game FPS, GPU clocks and per-game thermal readings require OEM or privileged integrations.")}</motion.div>}
     </motion.div>
     </LocalizedTree>
   );
@@ -218,7 +218,7 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
     <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-tools">
       <Label>{tr(language, "Android capability status")}</Label>
-      {[["Foreground game detection", "LIVE · USAGE ACCESS"], ["Launch selected games", "LIVE · PACKAGE INTENT"], ["Memory diagnostics", "READ-ONLY · DEVICE API"], ["Thermal status", "ANDROID THERMAL API"], ["Touch Boost", "UNAVAILABLE · OEM API"], ["Game FPS / GPU tuning", "UNAVAILABLE · PRIVILEGED API"], ["In-game voice routing", "UNAVAILABLE · GAME INTEGRATION"], ["Screen recording / replay", "UNAVAILABLE · NOT IMPLEMENTED IN THIS BUILD"], ["Crosshair over game", "UNAVAILABLE · TOUCH-SAFE WINDOW NOT IMPLEMENTED"]].map(([name, status]) => <div key={name} className="flex items-center justify-between gap-2 border border-line bg-foreground/[0.03] px-3 py-3"><span className="text-[10px] font-semibold">{name}</span><span className="text-right text-[8px] tracking-wider text-gold">{status}</span></div>)}
+      {[["Foreground game detection", "READY · USAGE ACCESS + OVERLAY SERVICE"], ["Launch selected games", "AVAILABLE · PACKAGE LAUNCH INTENT"], ["Memory diagnostics", "READ-ONLY · DEVICE API"], ["Thermal status", "READ-ONLY · ANDROID THERMAL API"], ["Touch Boost", "UNAVAILABLE · OEM API"], ["Game FPS / GPU tuning", "UNAVAILABLE · PRIVILEGED API"], ["In-game voice routing", "UNAVAILABLE · GAME INTEGRATION"], ["Screen recording / replay", "UNAVAILABLE · NOT IMPLEMENTED IN THIS BUILD"], ["Crosshair over game", "UNAVAILABLE · TOUCH-SAFE WINDOW NOT IMPLEMENTED"]].map(([name, status]) => <div key={name} className="flex items-center justify-between gap-2 border border-line bg-foreground/[0.03] px-3 py-3"><span className="text-[10px] font-semibold">{name}</span><span className="text-right text-[8px] tracking-wider text-gold">{status}</span></div>)}
       <p className="text-[9px] leading-relaxed text-muted-foreground">{tr(language, "Only controls with a verified Android implementation are enabled. Unsupported game-level tuning is not simulated.")}</p>
     </motion.div>
     </LocalizedTree>
@@ -338,10 +338,10 @@ function DeviceDiagnostics({ language }: { language: FrontierLanguage }) {
     };
     readDevice(); readGameAndPermissions();
     const deviceTimer = window.setInterval(readDevice, 15000);
-    const gameTimer = window.setInterval(readGameAndPermissions, 1800);
+    const gameTimer = window.setInterval(readGameAndPermissions, 2500);
     return () => { window.clearInterval(deviceTimer); window.clearInterval(gameTimer); };
   }, []);
-  if (!snapshot) return <LocalizedTree language={language}><p className="text-[10px] text-muted-foreground">{tr(language, "Native device diagnostics are available in the Android overlay.")}</p></LocalizedTree>;
+  if (!snapshot) return <LocalizedTree language={language}><p className="text-[10px] text-muted-foreground">{tr(language, "Android device diagnostics are temporarily unavailable.")}</p></LocalizedTree>;
   return <LocalizedTree language={language}><div className="grid grid-cols-2 gap-2 text-[10px]">
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Available RAM")}</span><strong className="mt-1 block">{snapshot.availableMemoryMb ?? "—"} MB</strong></div>
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Battery")}</span><strong className="mt-1 block">{snapshot.batteryPercent ?? "—"}%</strong></div>
