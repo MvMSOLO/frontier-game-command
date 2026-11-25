@@ -135,7 +135,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
       </Card>
       <Card glow="var(--magenta)">
         <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>{androidOverlay ? "NATIVE CAPABILITIES" : "Quick Tools"}<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">{androidOverlay ? "DETAILS" : "6 ›"}</button></div>
-        {androidOverlay ? <div className="space-y-2 text-[9px]"><div className="flex justify-between"><span>{tr(language, "Foreground game detector")}</span><span className="text-gold">{tr(language, "USAGE ACCESS REQUIRED")}</span></div><div className="flex justify-between"><span>{tr(language, "Launch selected game")}</span><span className="text-lime">{tr(language, "AVAILABLE FOR INSTALLED TITLES")}</span></div><div className="flex justify-between"><span>{tr(language, "System memory / thermal")}</span><span className="text-gold">{tr(language, "DIAGNOSTICS")}</span></div><div className="flex justify-between"><span>{tr(language, "Notification filter")}</span><span className="text-gold">{tr(language, "OPT-IN · NOTIFICATION ACCESS")}</span></div><div className="flex justify-between"><span>{tr(language, "Game FPS / GPU tuning")}</span><span className="text-gold">{tr(language, "NOT EXPOSED BY ANDROID")}</span></div></div> : <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5"><QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} /><QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} /><QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} /><QT icon={Ic.ICross} label="Crosshair" on={ts.crosshair} onClick={tog("crosshair")} color="var(--crimson)" /><QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" /><QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot /></motion.div>}
+        {androidOverlay ? <div className="space-y-2 text-[9px]"><div className="flex justify-between"><span>{tr(language, "Foreground game detector")}</span><span className="text-gold">{tr(language, "USAGE ACCESS")}</span></div><div className="flex justify-between"><span>{tr(language, "Launch selected game")}</span><span className="text-lime">{tr(language, "AVAILABLE FOR INSTALLED TITLES")}</span></div><div className="flex justify-between"><span>{tr(language, "System memory / thermal")}</span><span className="text-gold">{tr(language, "DIAGNOSTICS")}</span></div><div className="flex justify-between"><span>{tr(language, "Notification filter")}</span><span className="text-gold">{tr(language, "OPT-IN · NOTIFICATION ACCESS")}</span></div><div className="flex justify-between"><span>{tr(language, "Game FPS / GPU tuning")}</span><span className="text-gold">{tr(language, "NOT EXPOSED BY ANDROID")}</span></div></div> : <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5"><QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} /><QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} /><QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} /><QT icon={Ic.ICross} label="Crosshair" on={ts.crosshair} onClick={tog("crosshair")} color="var(--crimson)" /><QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" /><QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot /></motion.div>}
       </Card>
       {!androidOverlay && <Card glow="var(--lime)">
         <div className="flex items-center gap-2">
@@ -369,7 +369,7 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
   }, []);
   const launchSelectedGame = (gameId: string) => {
     const launched = window.FrontierAndroid?.launchGame?.(gameId) ?? false;
-    setLaunchFeedback(launched ? (s.language === "ru" ? "Игра запускается…" : "Launching game…") : (s.language === "ru" ? "Game is not installed or cannot be launched." : "Game is not installed or cannot be launched."));
+    setLaunchFeedback(launched ? (s.language === "ru" ? "Игра запускается…" : "Launching game…") : (s.language === "ru" ? "Игра не установлена или запуск недоступен." : "Game is not installed or cannot be launched."));
     playSfx(launched ? "tool-complete" : "tool-error");
   };
   const toggleNativeSetting = (setting: PendingNativePermission["setting"], permission: PendingNativePermission["permission"], enabled: boolean) => {
@@ -387,6 +387,16 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
     setPendingPermission({ permission, setting });
     bridge.openPermissionSettings(permission);
   };
+  useEffect(() => {
+    const bridge = window.FrontierAndroid;
+    if (!bridge) return;
+    try {
+      if (s.autoDetect && bridge.getPermissionStatus("usage-access") !== "granted") upd({ autoDetect: false });
+      if (s.zeroDistraction && bridge.getPermissionStatus("notification-access") !== "granted") upd({ zeroDistraction: false });
+    } catch {
+      if (s.autoDetect || s.zeroDistraction) upd({ autoDetect: false, zeroDistraction: false });
+    }
+  }, [s.autoDetect, s.zeroDistraction, upd]);
   useEffect(() => {
     if (!pendingPermission) return;
     const verifyPermission = () => {

@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - "feat/**"
+      - "fix/**"
     paths:
       - "android/**"
       - "src/android/**"
@@ -31,6 +32,10 @@ on:
       - "src/frontier/platform/**"
       - "src/frontier/onboarding/**"
       - "src/frontier/store.ts"
+      - "src/frontier/Frontier.tsx"
+      - "src/frontier/pages.tsx"
+      - "src/frontier/telemetry.ts"
+      - "src/frontier/i18n.ts"
       - "src/styles.css"
       - "index.android.html"
       - "index.overlay.html"

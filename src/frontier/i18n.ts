@@ -100,6 +100,7 @@ const RU: Record<string, string> = {
   "UNKNOWN": "НЕИЗВЕСТНО",
   "Android capability status": "Статус возможностей Android",
   "Overlay Profile": "Профиль оверлея",
+  "USAGE ACCESS": "ДОСТУП К ИСТОРИИ ИСПОЛЬЗОВАНИЯ",
   "Android does not expose another game microphone input to a normal overlay app.": "Android не предоставляет обычному оверлею доступ к микрофону другой игры.",
   "No microphone is opened and no demo voice processing is running in this build.": "Микрофон не включается; демонстрационная обработка голоса в этой сборке отключена.",
   "Grant this Android access in system Settings and return. FRONTIER enables the feature only after it verifies the permission.": "Предоставьте разрешение в настройках Android и вернитесь. FRONTIER включит функцию только после проверки разрешения.",
