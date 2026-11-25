@@ -36,21 +36,21 @@ class MainActivity : Activity(), FrontierBridgeHost {
         val toolbar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(12), dp(7), dp(10), dp(7))
+            setPadding(dp(8), dp(5), dp(8), dp(5))
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
                 intArrayOf(Color.rgb(13, 29, 43), Color.rgb(7, 12, 20)),
             )
         }
         brandLabel = TextView(this).apply {
-            text = "FRONTIER  /  ANDROID CORE"
+            text = "FRONTIER"
             setTextColor(Color.rgb(109, 226, 248))
-            textSize = 10f
+            textSize = 9f
             typeface = Typeface.MONOSPACE
             letterSpacing = 0.08f
         }
         statusLabel = TextView(this).apply {
-            textSize = 8f
+            textSize = 7f
             setTextColor(Color.rgb(126, 155, 177))
             typeface = Typeface.MONOSPACE
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
@@ -63,11 +63,11 @@ class MainActivity : Activity(), FrontierBridgeHost {
         }
         stopButton.setOnClickListener { stopOverlay() }
 
-        toolbar.addView(brandLabel, LinearLayout.LayoutParams(0, dp(36), 1f))
-        toolbar.addView(statusLabel, LinearLayout.LayoutParams(dp(92), dp(36)))
-        toolbar.addView(startButton, LinearLayout.LayoutParams(dp(122), dp(36)).apply { leftMargin = dp(6) })
-        toolbar.addView(stopButton, LinearLayout.LayoutParams(dp(54), dp(36)).apply { leftMargin = dp(6) })
-        root.addView(toolbar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)))
+        toolbar.addView(brandLabel, LinearLayout.LayoutParams(0, dp(32), 1f))
+        toolbar.addView(statusLabel, LinearLayout.LayoutParams(dp(78), dp(32)))
+        toolbar.addView(startButton, LinearLayout.LayoutParams(dp(94), dp(32)).apply { leftMargin = dp(4) })
+        toolbar.addView(stopButton, LinearLayout.LayoutParams(dp(48), dp(32)).apply { leftMargin = dp(4) })
+        root.addView(toolbar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)))
 
         webView = WebView(this).apply {
             setBackgroundColor(Color.rgb(6, 8, 13))

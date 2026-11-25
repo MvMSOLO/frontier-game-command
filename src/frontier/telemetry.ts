@@ -9,13 +9,14 @@ export type Telemetry = {
 const LOAD: Record<Mode, [number, number, number]> = {
   stealth: [22, 30, 34], balanced: [38, 48, 38], hyper: [55, 66, 41], overdrive: [78, 88, 45],
 };
-export function useTelemetry(mode: Mode, cap: number) {
+export function useTelemetry(mode: Mode, cap: number, enabled = true) {
   const [t, setT] = useState<Telemetry>({ fps: 0, frameTime: 0, stability: 100, history: Array(60).fill(0), refresh: 60,
     cpu: 30, gpu: 40, temp: 36, battery: null, charging: false, batteryReal: false, ping: null, pingReal: false });
   const frames = useRef<number[]>([]);
   const modeRef = useRef(mode); modeRef.current = mode;
   const capRef = useRef(cap); capRef.current = cap;
   useEffect(() => {
+    if (!enabled) return;
     let raf = 0, last = performance.now(), peak = 0;
     const loop = (n: number) => { frames.current.push(n - last); last = n; if (frames.current.length > 240) frames.current.shift(); raf = requestAnimationFrame(loop); };
     raf = requestAnimationFrame(loop);
@@ -46,6 +47,6 @@ export function useTelemetry(mode: Mode, cap: number) {
     };
     void ping(); const pi = setInterval(ping, 3000);
     return () => { cancelAnimationFrame(raf); clearInterval(iv); clearInterval(pi); };
-  }, []);
+  }, [enabled]);
   return t;
 }

@@ -10,8 +10,9 @@ class NativeGameMonitor(context: Context, private val onGameChanged: (NativeGame
     private val appContext = context.applicationContext
     private val thread = HandlerThread("frontier-game-monitor")
     private var handler: Handler? = null
-    private var lastEventTime = System.currentTimeMillis() - INITIAL_LOOKBACK_MS
+    private var lastEventTime = System.currentTimeMillis()
     private var foregroundPackage: String? = null
+    private var hadUsageAccess = false
     @Volatile private var running = false
 
     fun start(): NativeGameMonitor {
@@ -32,10 +33,23 @@ class NativeGameMonitor(context: Context, private val onGameChanged: (NativeGame
 
     private fun poll() {
         if (!running) return
-        if (!NativePermissionManager.hasUsageAccess(appContext)) {
-            publish(null); scheduleNext(); return
-        }
         val now = System.currentTimeMillis()
+        if (!NativePermissionManager.hasUsageAccess(appContext)) {
+            hadUsageAccess = false
+            foregroundPackage = null
+            lastEventTime = now
+            publish(null)
+            scheduleNext()
+            return
+        }
+
+        // Re-bootstrap once after permission is granted/re-granted so an already-open game is found.
+        if (!hadUsageAccess) {
+            hadUsageAccess = true
+            foregroundPackage = null
+            lastEventTime = now - INITIAL_LOOKBACK_MS
+        }
+
         val manager = appContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         try {
             val events = manager.queryEvents(lastEventTime, now)
@@ -49,11 +63,11 @@ class NativeGameMonitor(context: Context, private val onGameChanged: (NativeGame
                     batch += NativeUsageEvent(packageName, event.timeStamp, foreground)
                 }
                 foregroundPackage = NativeGameCatalog.reduceForegroundPackage(foregroundPackage, batch)
+                lastEventTime = now
+                publish(NativeGameCatalog.forPackage(foregroundPackage))
             }
-            lastEventTime = now
-            publish(NativeGameCatalog.forPackage(foregroundPackage))
         } catch (_: RuntimeException) {
-            publish(null)
+            // Keep the last verified game during transient UsageStats failures.
         }
         scheduleNext()
     }
@@ -82,8 +96,8 @@ class NativeGameMonitor(context: Context, private val onGameChanged: (NativeGame
     private fun scheduleNext() { if (running) handler?.postDelayed(::poll, POLL_INTERVAL_MS) }
 
     companion object {
-        private const val INITIAL_LOOKBACK_MS = 12_000L
-        private const val POLL_INTERVAL_MS = 1_250L
+        private const val INITIAL_LOOKBACK_MS = 24 * 60 * 60 * 1000L
+        private const val POLL_INTERVAL_MS = 1_500L
         @Volatile var currentGame: NativeGame? = null
             private set
     }
