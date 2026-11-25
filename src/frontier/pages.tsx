@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { haptic, playSfx } from "./audio";
 import type { Mode, Telemetry } from "./telemetry";
 import type { Settings } from "./store";
+import { parseDeviceSnapshot, type DeviceSnapshot } from "./platform/device-snapshot";
 import { Label, Ring, Seg, Slider, Src, Toggle } from "./ui";
 import * as Ic from "./icons";
 import { PerformanceArtwork } from "./components/Artwork";
@@ -84,7 +85,7 @@ function QT({ icon: I, label, on, onClick, color = "var(--cyan)", dot }: { icon:
 }
 const MODE_COL: Record<Mode, string> = { stealth: "var(--lime)", balanced: "var(--cyan)", hyper: "var(--magenta)", overdrive: "var(--gold)" };
 
-export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, androidOverlay = false, language = "en" }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void; androidOverlay?: boolean; language?: FrontierLanguage }) {
+export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, androidOverlay = false, deviceSnapshot = null, language = "en" }: { t: Telemetry; mode: Mode; setMode: (m: Mode) => void; ts: ToolState; setTs: (p: Partial<ToolState>) => void; onRecord: () => void; onToolsMore: () => void; androidOverlay?: boolean; deviceSnapshot?: DeviceSnapshot | null; language?: FrontierLanguage }) {
   const fps = useCount(t.fps, 260);
   const [purged, setPurged] = useState(false);
   const tog = (k: keyof ToolState) => () => { playSfx(ts[k] ? "toggle-off" : "toggle-on"); haptic(); setTs({ [k]: !ts[k] } as Partial<ToolState>); };
@@ -95,7 +96,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
       <Card>
         <div className="flex items-center gap-2">
           <div className="shrink-0 leading-none">
-            <div className="tnum text-[40px] font-bold leading-[0.9] text-cyan [text-shadow:0_0_18px_var(--cyan)]">{androidOverlay ? "—" : fps}</div>
+            <div className={cn("tnum font-bold leading-[0.9] text-cyan [text-shadow:0_0_18px_var(--cyan)]", androidOverlay ? "text-[23px]" : "text-[40px]")}>{androidOverlay ? "—" : fps}</div>
             <div className="mt-0.5 flex items-center gap-1 font-display text-[11px] text-cyan">{androidOverlay ? "GAME FPS · NATIVE REQUIRED" : <>FPS <Src k="live" /></>}</div>
           </div>
           {!androidOverlay && <div className="min-w-0 flex-1"><Wave data={t.history} color="var(--cyan)" /></div>}
@@ -106,10 +107,20 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
         </div>
       </Card>
       <Card glow="var(--magenta)">
-        {androidOverlay ? <div className="grid grid-cols-3 gap-2 py-3 text-center">{["CPU", "GPU", "THERMAL"].map((label) => <div key={label}><div className="tnum text-[22px] font-bold text-muted-foreground">—</div><div className="text-[8px] tracking-wider text-muted-foreground">{label}</div><div className="text-[7px] text-gold">NATIVE DATA REQUIRED</div></div>)}</div> : <><div className="flex items-center justify-around"><BigRing value={t.cpu} label="CPU" color="var(--cyan)" /><BigRing value={t.gpu} label="GPU" color="var(--crimson)" /><BigRing value={Math.round(t.temp)} label="TEMP" unit="°C" max={55} color={t.temp > 43 ? "var(--gold)" : "var(--lime)"} /></div><div className="absolute right-2 top-1.5"><Src k="sim" /></div></>}
+        {androidOverlay ? <div className="grid grid-cols-3 gap-2 py-2 text-center">
+          {[
+            ["CPU", "—", "NOT EXPOSED"],
+            ["GPU", "—", "NOT EXPOSED"],
+            ["THERMAL", deviceSnapshot?.thermalStatus ?? "—", "ANDROID DEVICE"],
+          ].map(([label, value, source]) => <div key={label} className="min-w-0">
+            <div className="tnum truncate text-[11px] font-bold text-muted-foreground">{value}</div>
+            <div className="text-[8px] tracking-wider text-muted-foreground">{label}</div>
+            <div className="text-[7px] text-gold">{source}</div>
+          </div>)}
+        </div> : <><div className="flex items-center justify-around"><BigRing value={t.cpu} label="CPU" color="var(--cyan)" /><BigRing value={t.gpu} label="GPU" color="var(--crimson)" /><BigRing value={Math.round(t.temp)} label="TEMP" unit="°C" max={55} color={t.temp > 43 ? "var(--gold)" : "var(--lime)"} /></div><div className="absolute right-2 top-1.5"><Src k="sim" /></div></>}
       </Card>
       <Card>
-        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>{tr(language, "Performance Mode")}</div>
+        <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.IPerf width={14} height={14} /></span>{tr(language, androidOverlay ? "Overlay Profile" : "Performance Mode")}</div>
         <div className="frontier-mode-grid grid grid-cols-2 gap-1.5">
           {(Object.keys(MODES) as Mode[]).map((k) => { const M = MODES[k]; const on = k === mode; const c = MODE_COL[k]; const od = k === "overdrive"; return (
             <motion.button key={k} whileTap={{ scale: 0.92 }} aria-label={M.name} aria-pressed={on} onClick={() => setMode(k)}
@@ -124,7 +135,7 @@ export function HomePage({ t, mode, setMode, ts, setTs, onRecord, onToolsMore, a
       </Card>
       <Card glow="var(--magenta)">
         <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold"><span className="text-cyan"><Ic.ITools width={14} height={14} /></span>{androidOverlay ? "NATIVE CAPABILITIES" : "Quick Tools"}<button onClick={onToolsMore} className="tnum ml-auto text-[10px] text-muted-foreground">{androidOverlay ? "DETAILS" : "6 ›"}</button></div>
-        {androidOverlay ? <div className="space-y-2 text-[9px]"><div className="flex justify-between"><span>{tr(language, "Foreground game detector")}</span><span className="text-gold">{tr(language, "USAGE ACCESS REQUIRED")}</span></div><div className="flex justify-between"><span>{tr(language, "Launch selected game")}</span><span className="text-lime">{tr(language, "AVAILABLE FOR INSTALLED TITLES")}</span></div><div className="flex justify-between"><span>{tr(language, "System memory / thermal")}</span><span className="text-gold">{tr(language, "DIAGNOSTICS")}</span></div><div className="flex justify-between"><span>{tr(language, "Notification filter")}</span><span className="text-gold">{tr(language, "OPT-IN · NOTIFICATION ACCESS")}</span></div><div className="flex justify-between"><span>{tr(language, "Game FPS / GPU tuning")}</span><span className="text-gold">{tr(language, "NOT EXPOSED BY ANDROID")}</span></div></div> : <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5"><QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} /><QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} /><QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} /><QT icon={Ic.ICross} label="Crosshair" on={ts.crosshair} onClick={tog("crosshair")} color="var(--crimson)" /><QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" /><QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot /></motion.div>}
+        {androidOverlay ? <div className="space-y-2 text-[9px]"><div className="flex justify-between"><span>{tr(language, "Foreground game detector")}</span><span className="text-gold">{tr(language, "USAGE ACCESS")}</span></div><div className="flex justify-between"><span>{tr(language, "Launch selected game")}</span><span className="text-lime">{tr(language, "AVAILABLE FOR INSTALLED TITLES")}</span></div><div className="flex justify-between"><span>{tr(language, "System memory / thermal")}</span><span className="text-gold">{tr(language, "DIAGNOSTICS")}</span></div><div className="flex justify-between"><span>{tr(language, "Notification filter")}</span><span className="text-gold">{tr(language, "OPT-IN · NOTIFICATION ACCESS")}</span></div><div className="flex justify-between"><span>{tr(language, "Game FPS / GPU tuning")}</span><span className="text-gold">{tr(language, "NOT EXPOSED BY ANDROID")}</span></div></div> : <motion.div variants={list} className="frontier-quick-tools-grid grid grid-cols-2 gap-1.5"><QT icon={Ic.IRam} label={purged ? "Purging…" : "RAM Purge"} on={purged} onClick={purge} /><QT icon={Ic.ITouch} label="Touch Boost" on={ts.touch} onClick={tog("touch")} /><QT icon={Ic.INet} label="Ping Stabilizer" on={ts.net} onClick={tog("net")} /><QT icon={Ic.ICross} label="Crosshair" on={ts.crosshair} onClick={tog("crosshair")} color="var(--crimson)" /><QT icon={Ic.IShield} label="No Disturb" on={ts.shield} onClick={tog("shield")} color="var(--lime)" /><QT icon={Ic.IRec} label="Screen Recorder" on={ts.recording} onClick={onRecord} dot /></motion.div>}
       </Card>
       {!androidOverlay && <Card glow="var(--lime)">
         <div className="flex items-center gap-2">
@@ -154,7 +165,7 @@ export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = fal
               <span className="flex h-9 w-9 items-center justify-center chamfer-sm" style={{ color: M.color, background: `color-mix(in oklab, ${M.color} ${on ? 18 : 6}%, transparent)` }}><M.icon /></span>
               <div className="flex-1">
                 <div className={cn("text-[13px] font-semibold", od && "font-display text-[11px] tracking-widest")} style={{ color: on ? M.color : undefined }}>{od ? "FRONTIER OVERDRIVE" : M.name}</div>
-                <div className="text-[10px] text-muted-foreground">{androidOverlay ? "FRONTIER overlay presentation profile · no game tuning" : <>{M.tag} · target <span className="tnum">{M.target}</span> fps</>}</div>
+                <div className="text-[10px] text-muted-foreground">{androidOverlay ? tr(s.language, "FRONTIER overlay presentation profile · no game tuning") : <>{M.tag} · target <span className="tnum">{M.target}</span> fps</>}</div>
               </div>
               <span className={cn("h-2 w-2 rotate-45", on ? "fx-pulse" : "opacity-20")} style={{ background: od && on ? "var(--gold)" : M.color }} />
             </div>
@@ -168,14 +179,14 @@ export function PerformancePage({ mode, setMode, t, s, upd, androidOverlay = fal
         <Label right={<Src k="native" />}>{tr(s.language, "Display")}</Label>
         <Seg label={tr(s.language, "Refresh rate")} value={s.refresh} onChange={(v) => upd({ refresh: v })} options={[60, 90, 120, 144].map((v) => ({ v, l: `${v}Hz` }))} />
         <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Frame pacing lock")}</span><Toggle label={tr(s.language, "Frame pacing")} on={s.pacing} onChange={(v) => upd({ pacing: v })} /></div>
-      </motion.div> : <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">Android overlay profiles only affect FRONTIER presentation. Display refresh-rate and game frame-pacing controls require OEM or privileged APIs and are not exposed as active toggles.</motion.div>}
+      </motion.div> : <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">{tr(s.language, "Android overlay profiles only affect FRONTIER presentation. Display refresh-rate and game frame-pacing controls require OEM or privileged APIs and are not exposed as active toggles.")}</motion.div>}
       {!androidOverlay && <motion.div variants={item}>
         <Label right={<Src k="sim" />}>{tr(s.language, "Thermal envelope")}</Label>
         <div className="relative h-2 bg-gradient-to-r from-lime via-gold to-crimson opacity-80 chamfer-sm" />
         <div className="relative h-3"><motion.span animate={{ left: `${Math.min(100, ((t.temp - 25) / 30) * 100)}%` }} className="absolute top-0 h-3 w-[2px] bg-foreground" /></div>
         <div className="tnum flex justify-between text-[9px] text-muted-foreground"><span>25°</span><span>{t.temp}°C</span><span>55°</span></div>
       </motion.div>}
-      {androidOverlay && <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">FRONTIER profiles adjust the overlay experience only. Game FPS, GPU clocks and per-game thermal readings require OEM or privileged integrations.</motion.div>}
+      {androidOverlay && <motion.div variants={item} className="border border-line bg-foreground/[0.03] p-3 text-[10px] text-muted-foreground">{tr(s.language, "FRONTIER profiles adjust the overlay experience only. Game FPS, GPU clocks and per-game thermal readings require OEM or privileged integrations.")}</motion.div>}
     </motion.div>
     </LocalizedTree>
   );
@@ -207,7 +218,7 @@ export function ToolsPage({ ts, setTs, blocked, onRecord, onReplay, onClip, recE
     <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-2 frontier-page frontier-page-tools">
       <Label>{tr(language, "Android capability status")}</Label>
-      {[["Foreground game detection", "LIVE · USAGE ACCESS"], ["Launch selected games", "LIVE · PACKAGE INTENT"], ["Memory diagnostics", "READ-ONLY · DEVICE API"], ["Thermal status", "ANDROID THERMAL API"], ["Touch Boost", "UNAVAILABLE · OEM API"], ["Game FPS / GPU tuning", "UNAVAILABLE · PRIVILEGED API"], ["In-game voice routing", "UNAVAILABLE · GAME INTEGRATION"], ["Screen recording / replay", "NATIVE CAPTURE CONSENT REQUIRED"], ["Crosshair over game", "DISABLED · TOUCH SAFETY"]].map(([name, status]) => <div key={name} className="flex items-center justify-between gap-2 border border-line bg-foreground/[0.03] px-3 py-3"><span className="text-[10px] font-semibold">{name}</span><span className="text-right text-[8px] tracking-wider text-gold">{status}</span></div>)}
+      {[["Foreground game detection", "READY · USAGE ACCESS + OVERLAY SERVICE"], ["Launch selected games", "AVAILABLE · PACKAGE LAUNCH INTENT"], ["Memory diagnostics", "READ-ONLY · DEVICE API"], ["Thermal status", "READ-ONLY · ANDROID THERMAL API"], ["Touch Boost", "UNAVAILABLE · OEM API"], ["Game FPS / GPU tuning", "UNAVAILABLE · PRIVILEGED API"], ["In-game voice routing", "UNAVAILABLE · GAME INTEGRATION"], ["Screen recording / replay", "UNAVAILABLE · NOT IMPLEMENTED IN THIS BUILD"], ["Crosshair over game", "UNAVAILABLE · TOUCH-SAFE WINDOW NOT IMPLEMENTED"]].map(([name, status]) => <div key={name} className="flex items-center justify-between gap-2 border border-line bg-foreground/[0.03] px-3 py-3"><span className="text-[10px] font-semibold">{name}</span><span className="text-right text-[8px] tracking-wider text-gold">{status}</span></div>)}
       <p className="text-[9px] leading-relaxed text-muted-foreground">{tr(language, "Only controls with a verified Android implementation are enabled. Unsupported game-level tuning is not simulated.")}</p>
     </motion.div>
     </LocalizedTree>
@@ -260,6 +271,21 @@ export function VoicePage({ engine, androidOverlay = false, language = "en" }: {
     catch { playSfx("tool-error"); setErr("Microphone access was blocked. Allow it in your browser to use the voice changer."); }
   };
   const pick = (v: VoicePreset) => setP((o) => ({ ...o, preset: v, ...(v === "off" ? {} : PRESETS[v]) }));
+  if (androidOverlay) return (
+    <LocalizedTree language={language}>
+      <motion.div variants={list} initial="hidden" animate="show" className="space-y-3 frontier-page frontier-page-voice">
+        <div className="flex items-center gap-3 border border-magenta/25 bg-foreground/[0.03] p-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-magenta/30 bg-magenta/10 text-magenta"><Ic.IVoice width={20} height={20} /></span>
+          <div className="min-w-0">
+            <strong className="block text-[11px]">IN-GAME VOICE ROUTING</strong>
+            <span className="block text-[8px] tracking-wider text-gold">UNAVAILABLE · GAME AUDIO API</span>
+          </div>
+        </div>
+        <p className="text-[10px] leading-relaxed text-muted-foreground">{tr(language, "Android does not expose another game microphone input to a normal overlay app.")}</p>
+        <p className="border border-line bg-foreground/[0.02] p-3 text-[9px] leading-relaxed text-muted-foreground">{tr(language, "No microphone is opened and no demo voice processing is running in this build.")}</p>
+      </motion.div>
+    </LocalizedTree>
+  );
   return (
     <LocalizedTree language={language}>
     <motion.div variants={list} initial="hidden" animate="show" className="space-y-4 frontier-page frontier-page-voice">
@@ -295,12 +321,12 @@ export function VoicePage({ engine, androidOverlay = false, language = "en" }: {
 }
 
 function DeviceDiagnostics({ language }: { language: FrontierLanguage }) {
-  const [snapshot, setSnapshot] = useState<{availableMemoryMb?:number;totalMemoryMb?:number;lowMemory?:boolean;batteryPercent?:number;thermalStatus?:string}|null>(null);
+  const [snapshot, setSnapshot] = useState<DeviceSnapshot | null>(null);
   const [game, setGame] = useState<{name:string;packageName:string}|null>(null);
   const [notificationAccess, setNotificationAccess] = useState("unknown");
   useEffect(() => {
     const readDevice = () => {
-      try { const encoded = window.FrontierAndroid?.getDeviceSnapshot?.(); if (encoded) setSnapshot(JSON.parse(encoded)); }
+      try { setSnapshot(parseDeviceSnapshot(window.FrontierAndroid?.getDeviceSnapshot?.())); }
       catch { setSnapshot(null); }
     };
     const readGameAndPermissions = () => {
@@ -312,10 +338,10 @@ function DeviceDiagnostics({ language }: { language: FrontierLanguage }) {
     };
     readDevice(); readGameAndPermissions();
     const deviceTimer = window.setInterval(readDevice, 15000);
-    const gameTimer = window.setInterval(readGameAndPermissions, 1800);
+    const gameTimer = window.setInterval(readGameAndPermissions, 2500);
     return () => { window.clearInterval(deviceTimer); window.clearInterval(gameTimer); };
   }, []);
-  if (!snapshot) return <LocalizedTree language={language}><p className="text-[10px] text-muted-foreground">{tr(language, "Native device diagnostics are available in the Android overlay.")}</p></LocalizedTree>;
+  if (!snapshot) return <LocalizedTree language={language}><p className="text-[10px] text-muted-foreground">{tr(language, "Android device diagnostics are temporarily unavailable.")}</p></LocalizedTree>;
   return <LocalizedTree language={language}><div className="grid grid-cols-2 gap-2 text-[10px]">
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Available RAM")}</span><strong className="mt-1 block">{snapshot.availableMemoryMb ?? "—"} MB</strong></div>
     <div className="border border-line p-2"><span className="text-muted-foreground">{tr(language, "Battery")}</span><strong className="mt-1 block">{snapshot.batteryPercent ?? "—"}%</strong></div>
@@ -326,8 +352,14 @@ function DeviceDiagnostics({ language }: { language: FrontierLanguage }) {
   </div></LocalizedTree>;
 }
 
+type PendingNativePermission = {
+  permission: "usage-access" | "notification-access";
+  setting: "autoDetect" | "zeroDistraction";
+};
+
 export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: Partial<Settings>) => void; onManageSetup?: () => void }) {
   const [selectedGameIds, setSelectedGameIds] = useState<string[]>([]);
+  const [pendingPermission, setPendingPermission] = useState<PendingNativePermission | null>(null);
   const [launchFeedback, setLaunchFeedback] = useState<string | null>(null);
   useEffect(() => {
     try {
@@ -340,6 +372,50 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
     setLaunchFeedback(launched ? (s.language === "ru" ? "Игра запускается…" : "Launching game…") : (s.language === "ru" ? "Игра не установлена или запуск недоступен." : "Game is not installed or cannot be launched."));
     playSfx(launched ? "tool-complete" : "tool-error");
   };
+  const toggleNativeSetting = (setting: PendingNativePermission["setting"], permission: PendingNativePermission["permission"], enabled: boolean) => {
+    const updateSetting = (value: boolean) => upd(setting === "autoDetect" ? { autoDetect: value } : { zeroDistraction: value });
+    if (!enabled) {
+      setPendingPermission(null);
+      updateSetting(false);
+      return;
+    }
+    const bridge = window.FrontierAndroid;
+    if (!bridge || bridge.getPermissionStatus(permission) === "granted") {
+      updateSetting(true);
+      return;
+    }
+    setPendingPermission({ permission, setting });
+    bridge.openPermissionSettings(permission);
+  };
+  useEffect(() => {
+    const bridge = window.FrontierAndroid;
+    if (!bridge) return;
+    try {
+      if (s.autoDetect && bridge.getPermissionStatus("usage-access") !== "granted") upd({ autoDetect: false });
+      if (s.zeroDistraction && bridge.getPermissionStatus("notification-access") !== "granted") upd({ zeroDistraction: false });
+    } catch {
+      if (s.autoDetect || s.zeroDistraction) upd({ autoDetect: false, zeroDistraction: false });
+    }
+  }, [s.autoDetect, s.zeroDistraction, upd]);
+  useEffect(() => {
+    if (!pendingPermission) return;
+    const verifyPermission = () => {
+      try {
+        if (window.FrontierAndroid?.getPermissionStatus(pendingPermission.permission) !== "granted") return;
+        upd(pendingPermission.setting === "autoDetect" ? { autoDetect: true } : { zeroDistraction: true });
+        setPendingPermission(null);
+      } catch {
+        // Keep the setting disabled until Android confirms access.
+      }
+    };
+    verifyPermission();
+    const timer = window.setInterval(verifyPermission, 1000);
+    window.addEventListener("focus", verifyPermission);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", verifyPermission);
+    };
+  }, [pendingPermission, upd]);
   const accents = [["cyan", "var(--cyan)"], ["lime", "var(--lime)"], ["crimson", "var(--crimson)"], ["gold", "var(--gold)"]] as const;
   return (
     <LocalizedTree language={s.language}>
@@ -355,8 +431,9 @@ export function SettingsPage({ s, upd, onManageSetup }: { s: Settings; upd: (p: 
         <DeviceDiagnostics language={s.language} />
       </motion.div>
       <motion.div variants={item} className="frontier-settings-group space-y-3"><Label>{tr(s.language, "Game integration")}</Label>
-        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Auto-detect selected games")}</span><Toggle label="Auto-detect games" on={s.autoDetect} onChange={(v) => { if (v && window.FrontierAndroid?.getPermissionStatus("usage-access") !== "granted") window.FrontierAndroid?.openPermissionSettings("usage-access"); upd({ autoDetect: v }); }} /></div>
-        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Zero-Distraction during a game")}</span><Toggle label="Zero-Distraction" on={s.zeroDistraction} onChange={(v) => { if (v && window.FrontierAndroid?.getPermissionStatus("notification-access") !== "granted") window.FrontierAndroid?.openPermissionSettings("notification-access"); upd({ zeroDistraction: v }); }} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Auto-detect selected games")}</span><Toggle label="Auto-detect games" on={s.autoDetect} onChange={(v) => toggleNativeSetting("autoDetect", "usage-access", v)} /></div>
+        <div className="flex items-center justify-between text-[12px]"><span>{tr(s.language, "Zero-Distraction during a game")}</span><Toggle label="Zero-Distraction" on={s.zeroDistraction} onChange={(v) => toggleNativeSetting("zeroDistraction", "notification-access", v)} /></div>
+        {pendingPermission && <p role="status" className="border border-gold/20 bg-gold/[0.04] p-2 text-[9px] leading-relaxed text-muted-foreground">{tr(s.language, "Grant this Android access in system Settings and return. FRONTIER enables the feature only after it verifies the permission.")}</p>}
       </motion.div>
       <motion.div variants={item}><Label>{tr(s.language, "Lighting")}</Label>
         <div className="flex gap-2">{accents.map(([k, c]) => <button key={k} aria-label={`Accent ${k}`} onClick={() => { playSfx("setting-change"); upd({ accent: k }); }} className={cn("h-8 flex-1 chamfer-sm transition-transform", s.accent === k && "scale-110 ring-1 ring-foreground")} style={{ background: `linear-gradient(135deg, ${c}, color-mix(in oklab, ${c} 30%, transparent))` }} />)}</div>

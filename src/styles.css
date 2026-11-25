@@ -773,3 +773,39 @@ html.frontier-android-overlay,html.frontier-android-overlay body,html.frontier-a
   .frontier-app[data-android-overlay="true"] .frontier-wing-left { top: 46px !important; }
   .frontier-app[data-android-overlay="true"] .frontier-dock-item { min-height: 36px; }
 }
+
+
+/* Android phone fit pass: keep the original FRONTIER layout inside the bounded left window. */
+.frontier-app[data-android-overlay="true"] .frontier-command-dock {
+  transform: none !important;
+}
+.frontier-app[data-android-overlay="true"] .frontier-page-scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 7px 8px 12px;
+}
+.frontier-app[data-android-overlay="true"] .frontier-telemetry {
+  margin-inline: 8px;
+  padding-block: 5px;
+}
+.frontier-app[data-android-overlay="true"] .frontier-page-home .frontier-hud-card {
+  padding: 8px;
+}
+.frontier-app[data-android-overlay="true"] .frontier-page [class*="text-[13px]"] { font-size: 11px; }
+.frontier-app[data-android-overlay="true"] .frontier-page [class*="text-[12px]"] { font-size: 10px; }
+.frontier-app[data-android-overlay="true"] .frontier-page [class*="text-[11px]"] { font-size: 9px; }
+@media (max-width: 380px) {
+  .frontier-app[data-android-overlay="true"] .frontier-wing-left .frontier-wing-header { min-height: 38px; padding: 6px 8px; }
+  .frontier-app[data-android-overlay="true"] .frontier-page-scroll { padding: 6px 7px 10px; }
+  .frontier-app[data-android-overlay="true"] .frontier-telemetry { margin-inline: 7px; padding-block: 4px; }
+  .frontier-app[data-android-overlay="true"] .frontier-dock-item { min-height: 38px; }
+}
+@media (max-height: 480px) {
+  .frontier-app[data-android-overlay="true"] .frontier-wing-left { top: 44px !important; }
+  .frontier-app[data-android-overlay="true"] .frontier-wing-left .frontier-wing-header { min-height: 36px; padding-block: 5px; }
+  .frontier-app[data-android-overlay="true"] .frontier-page-scroll { padding-block: 5px 8px; }
+}

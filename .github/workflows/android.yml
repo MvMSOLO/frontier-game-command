@@ -5,12 +5,17 @@ on:
     branches:
       - main
       - "feat/**"
+      - "fix/**"
     paths:
       - "android/**"
       - "src/android/**"
       - "src/frontier/platform/**"
       - "src/frontier/onboarding/**"
       - "src/frontier/store.ts"
+      - "src/frontier/Frontier.tsx"
+      - "src/frontier/pages.tsx"
+      - "src/frontier/telemetry.ts"
+      - "src/frontier/i18n.ts"
       - "src/styles.css"
       - "index.android.html"
       - "index.overlay.html"
@@ -27,6 +32,10 @@ on:
       - "src/frontier/platform/**"
       - "src/frontier/onboarding/**"
       - "src/frontier/store.ts"
+      - "src/frontier/Frontier.tsx"
+      - "src/frontier/pages.tsx"
+      - "src/frontier/telemetry.ts"
+      - "src/frontier/i18n.ts"
       - "src/styles.css"
       - "index.android.html"
       - "index.overlay.html"
@@ -78,6 +87,47 @@ jobs:
 
       - name: Run native unit tests and assemble debug APK
         run: gradle -p android --no-daemon :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Upload debug APK (available even if emulator smoke test fails)
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontier-android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Android emulator launch and rotation smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          script: |
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -n com.mvmsolo.frontier/.MainActivity
+            sleep 10
+            if ! adb shell pidof com.mvmsolo.frontier >/dev/null; then
+              echo "FRONTIER process did not start"
+              exit 1
+            fi
+            if adb logcat -d -t 2500 | grep -E "FATAL EXCEPTION|Unable to start activity.*com.mvmsolo.frontier"; then
+              echo "FRONTIER startup crash detected"
+              exit 1
+            fi
+            mkdir -p frontier-emulator-smoke
+            adb exec-out screencap -p > frontier-emulator-smoke/portrait.png
+            adb shell settings put system accelerometer_rotation 0
+            adb shell settings put system user_rotation 1
+            sleep 4
+            adb exec-out screencap -p > frontier-emulator-smoke/landscape.png
+
+      - name: Upload emulator screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontier-android-emulator-smoke
+          path: frontier-emulator-smoke/*.png
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4

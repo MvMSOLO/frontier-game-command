@@ -6,4 +6,4 @@ const root = document.getElementById("root");
 if (!root) throw new Error("FRONTIER Android root element is missing.");
 
 document.documentElement.classList.add("frontier-android-app");
-createRoot(root).render(<FrontierEntry />);
+createRoot(root).render(<FrontierEntry androidOverlay />);

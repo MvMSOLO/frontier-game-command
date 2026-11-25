@@ -10,9 +10,11 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import java.util.Locale
@@ -23,6 +25,8 @@ class MainActivity : Activity(), FrontierBridgeHost {
     private lateinit var brandLabel: TextView
     private lateinit var startButton: Button
     private lateinit var stopButton: Button
+    private lateinit var loadingOverlay: TextView
+    private var localPageFailed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,21 +40,21 @@ class MainActivity : Activity(), FrontierBridgeHost {
         val toolbar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(12), dp(7), dp(10), dp(7))
+            setPadding(dp(8), dp(5), dp(8), dp(5))
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
                 intArrayOf(Color.rgb(13, 29, 43), Color.rgb(7, 12, 20)),
             )
         }
         brandLabel = TextView(this).apply {
-            text = "FRONTIER  /  ANDROID CORE"
+            text = "FRONTIER"
             setTextColor(Color.rgb(109, 226, 248))
-            textSize = 10f
+            textSize = 9f
             typeface = Typeface.MONOSPACE
             letterSpacing = 0.08f
         }
         statusLabel = TextView(this).apply {
-            textSize = 8f
+            textSize = 7f
             setTextColor(Color.rgb(126, 155, 177))
             typeface = Typeface.MONOSPACE
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
@@ -63,11 +67,11 @@ class MainActivity : Activity(), FrontierBridgeHost {
         }
         stopButton.setOnClickListener { stopOverlay() }
 
-        toolbar.addView(brandLabel, LinearLayout.LayoutParams(0, dp(36), 1f))
-        toolbar.addView(statusLabel, LinearLayout.LayoutParams(dp(92), dp(36)))
-        toolbar.addView(startButton, LinearLayout.LayoutParams(dp(122), dp(36)).apply { leftMargin = dp(6) })
-        toolbar.addView(stopButton, LinearLayout.LayoutParams(dp(54), dp(36)).apply { leftMargin = dp(6) })
-        root.addView(toolbar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(52)))
+        toolbar.addView(brandLabel, LinearLayout.LayoutParams(0, dp(32), 1f))
+        toolbar.addView(statusLabel, LinearLayout.LayoutParams(dp(78), dp(32)))
+        toolbar.addView(startButton, LinearLayout.LayoutParams(dp(94), dp(32)).apply { leftMargin = dp(4) })
+        toolbar.addView(stopButton, LinearLayout.LayoutParams(dp(48), dp(32)).apply { leftMargin = dp(4) })
+        root.addView(toolbar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44)))
 
         webView = WebView(this).apply {
             setBackgroundColor(Color.rgb(6, 8, 13))
@@ -78,19 +82,65 @@ class MainActivity : Activity(), FrontierBridgeHost {
             settings.blockNetworkLoads = true
             settings.mediaPlaybackRequiresUserGesture = true
             settings.javaScriptCanOpenWindowsAutomatically = false
-            webViewClient = LocalAssetWebViewClient()
+            webViewClient = LocalAssetWebViewClient(
+                onPageFinished = {
+                    runOnUiThread {
+                        if (!localPageFailed && ::loadingOverlay.isInitialized) {
+                            loadingOverlay.animate().alpha(0f).setDuration(220).withEndAction {
+                                if (!localPageFailed) loadingOverlay.visibility = View.GONE
+                            }.start()
+                        }
+                    }
+                },
+                onPageError = {
+                    runOnUiThread {
+                        localPageFailed = true
+                        if (::loadingOverlay.isInitialized) {
+                            loadingOverlay.animate().cancel()
+                            loadingOverlay.alpha = 1f
+                            loadingOverlay.text = localizedContext().getString(R.string.load_error_retry)
+                            loadingOverlay.visibility = View.VISIBLE
+                        }
+                    }
+                },
+            )
             addJavascriptInterface(
                 FrontierJavascriptBridge(this@MainActivity, this@MainActivity),
                 "FrontierAndroid",
             )
         }
-        root.addView(
-            webView,
-            LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f),
-        )
+        val webContent = FrameLayout(this)
+        webContent.addView(webView, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+        ))
+        loadingOverlay = TextView(this).apply {
+            text = getString(R.string.loading_app)
+            gravity = Gravity.CENTER
+            textSize = 11f
+            letterSpacing = 0.12f
+            typeface = Typeface.MONOSPACE
+            setTextColor(Color.rgb(109, 226, 248))
+            setBackgroundColor(Color.rgb(6, 8, 13))
+            setOnClickListener { loadLocalInterface() }
+        }
+        webContent.addView(loadingOverlay, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+        ))
+        root.addView(webContent, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         setContentView(root)
-        webView.loadUrl(LocalAssetWebViewClient.APP_URL)
+        loadLocalInterface()
         refreshPermissionLabel()
+    }
+
+    private fun loadLocalInterface() {
+        localPageFailed = false
+        loadingOverlay.animate().cancel()
+        loadingOverlay.alpha = 1f
+        loadingOverlay.text = localizedContext().getString(R.string.loading_app)
+        loadingOverlay.visibility = View.VISIBLE
+        webView.loadUrl(LocalAssetWebViewClient.APP_URL)
     }
 
     override fun onResume() {

@@ -5,9 +5,9 @@ import org.junit.Test
 
 class OverlayWindowSizingTest {
     @Test
-    fun `expanded overlay preserves at least twenty two percent of a normal display`() {
+    fun `expanded overlay preserves at least twenty eight percent of a normal display`() {
         val width = OverlayWindowSizing.expandedWidth(393, 1f)
-        assertTrue(width <= 393 * 0.78f)
+        assertTrue(width <= 393 * 0.72f)
         assertTrue(width < 393)
     }
 
@@ -36,4 +36,10 @@ class OverlayWindowSizingTest {
         assertTrue(width <= displayWidthPx)
         assertTrue(width <= 390 * 3)
     }
+    @Test
+    fun `expanded overlay keeps enough gameplay visible on a 393dp phone`() {
+        val width = OverlayWindowSizing.expandedWidth(393, 1f)
+        assertTrue("overlay width $width must not exceed 72% of the display", width <= 393 * 0.72f)
+    }
+
 }
