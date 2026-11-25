@@ -9,6 +9,7 @@ import * as Ic from "./icons";
 import { SceneArtwork } from "./components/Artwork";
 import { HomePage, MODES, PerformancePage, SettingsPage, ToolsPage, VoicePage, type ToolState } from "./pages";
 import type { VoiceEngine } from "./voice";
+import { parseDeviceSnapshot, type DeviceSnapshot } from "./platform/device-snapshot";
 
 type Tab = "home" | "perf" | "tools" | "voice" | "settings";
 const MODE_SFX: Record<Mode, SfxEvent> = { stealth: "mode-stealth", balanced: "mode-balanced", hyper: "mode-hyper", overdrive: "mode-overdrive" };
@@ -19,6 +20,30 @@ const NAV: { id: Tab; label: string; icon: typeof Ic.IHome }[] = [
 const SPRING = { type: "spring" as const, stiffness: 380, damping: 28 };
 const NOTES = ["Squad invite from N1GHTFALL", "New message: 'gg wp'", "Battery saver suggestion", "Store: weekend bundle -40%", "Friend is now online"];
 
+function useNativeDeviceSnapshot(enabled: boolean): DeviceSnapshot | null {
+  const [snapshot, setSnapshot] = useState<DeviceSnapshot | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    let active = true;
+    const read = () => {
+      try {
+        const next = parseDeviceSnapshot(window.FrontierAndroid?.getDeviceSnapshot?.());
+        if (active) setSnapshot(next);
+      } catch {
+        if (active) setSnapshot(null);
+      }
+    };
+    read();
+    const timer = window.setInterval(read, 15000);
+    window.addEventListener("focus", read);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", read);
+    };
+  }, [enabled]);
+  return snapshot;
+}
 function GameScene({ overdrive }: { overdrive: boolean }) {
   // Browser-only preview art. The future Android overlay must stay transparent over live gameplay.
   return (
@@ -55,7 +80,8 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
   const [activeWing, setActiveWing] = useState<"core" | "nexus">("core");
   const [mode, setModeRaw] = useState<Mode>("balanced");
   const [activating, setActivating] = useState(false);
-  const t = useTelemetry(mode, Infinity);
+  const t = useTelemetry(mode, Infinity, !androidOverlay);
+  const deviceSnapshot = useNativeDeviceSnapshot(androidOverlay);
   const [ts, setTsRaw] = useState<ToolState>({ touch: false, net: false, crosshair: false, crossStyle: "cross", crossColor: "var(--crimson)", shield: false, replay: false, recording: false });
   const setTs = (p: Partial<ToolState>) => setTsRaw((o) => ({ ...o, ...p }));
   const [notes, setNotes] = useState<{ id: number; text: string }[]>([]); const [blocked, setBlocked] = useState(0);
@@ -221,15 +247,25 @@ export function Frontier({ onManageSetup, androidOverlay = false }: { onManageSe
                   <div className="min-w-0"><div className="font-display text-[10px] tracking-[0.18em] text-cyan">01 / CORE SYSTEM</div><div className="mt-0.5 truncate text-[9px] font-semibold tracking-wider text-foreground">{tr(s.language, NAV.find((n) => n.id === tab)?.label ?? "Home").toUpperCase()} CONTROL</div></div>
                   <span className="tnum shrink-0 text-[10px]" style={{ color: M.color }}>{M.name.toUpperCase()}</span>
                 </header>
-                <div aria-label={`Simulated telemetry: CPU ${t.cpu}%, GPU ${t.gpu}%, temperature ${Math.round(t.temp)} degrees Celsius`} className="frontier-telemetry relative mx-3 grid grid-cols-3 divide-x divide-line border-b border-line/70 py-2">
-                  {([[ "CPU", `${t.cpu}%` ], [ "GPU", `${t.gpu}%` ], [ "THERMAL", `${Math.round(t.temp)}°C` ]] as const).map(([label, value]) => (
-                    <div key={label} className="text-center leading-tight"><div className="tnum text-[12px] font-semibold text-foreground">{value}</div><div className="font-display text-[7px] tracking-[0.12em] text-muted-foreground">{label} <span className="text-gold">SIM</span></div></div>
+                <div aria-label={androidOverlay ? "Native Android device diagnostics: available memory, battery and thermal status" : `Simulated telemetry: CPU ${t.cpu}%, GPU ${t.gpu}%, temperature ${Math.round(t.temp)} degrees Celsius`} className="frontier-telemetry relative mx-3 grid grid-cols-3 divide-x divide-line border-b border-line/70 py-2">
+                  {(androidOverlay
+                    ? [
+                        ["AVAILABLE RAM", deviceSnapshot ? `${deviceSnapshot.availableMemoryMb} MB` : "—"],
+                        ["BATTERY", deviceSnapshot?.batteryPercent == null ? "—" : `${deviceSnapshot.batteryPercent}%`],
+                        ["THERMAL", deviceSnapshot?.thermalStatus ?? "—"],
+                      ]
+                    : [["CPU", `${t.cpu}%`], ["GPU", `${t.gpu}%`], ["THERMAL", `${Math.round(t.temp)}°C`]]
+                  ).map(([label, value]) => (
+                    <div key={label} className="min-w-0 text-center leading-tight">
+                      <div className={androidOverlay ? "tnum truncate text-[10px] font-semibold text-foreground" : "tnum text-[12px] font-semibold text-foreground"}>{value}</div>
+                      <div className="font-display text-[7px] tracking-[0.08em] text-muted-foreground">{label} <span className="text-gold">{androidOverlay ? "DEVICE" : "SIM"}</span></div>
+                    </div>
                   ))}
                 </div>
                 <div className="frontier-page-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 [scrollbar-width:none]">
                   <AnimatePresence mode="wait">
                     <motion.div key={tab} initial={{ opacity: 0, y: 10, scale: 0.992 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.996, transition: { duration: 0.16, ease: "easeOut" } }} transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}>
-                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} androidOverlay={androidOverlay} language={s.language} />}
+                      {tab === "home" && <HomePage t={t} mode={mode} setMode={setMode} ts={ts} setTs={setTs} onRecord={onRecord} onToolsMore={() => { setTab("tools"); playSfx("navigation"); }} androidOverlay={androidOverlay} deviceSnapshot={deviceSnapshot} language={s.language} />}
                       {tab === "perf" && <PerformancePage t={t} mode={mode} setMode={setMode} s={s} upd={upd} androidOverlay={androidOverlay} />}
                       {tab === "tools" && <ToolsPage ts={ts} setTs={setTs} blocked={blocked} onRecord={onRecord} onReplay={onReplay} onClip={onClip} recErr={recErr} goVoice={() => { setTab("voice"); playSfx("navigation"); }} androidOverlay={androidOverlay} language={s.language} />}
                       {tab === "voice" && <VoicePage engine={voice} androidOverlay={androidOverlay} language={s.language} />}
